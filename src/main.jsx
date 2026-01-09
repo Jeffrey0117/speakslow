@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
 import { Toaster } from './components/ui/sonner'
+import { LanguageProvider } from './i18n'
 
 // 检查是否在Electron环境中
 const isElectron = () => {
@@ -160,8 +161,10 @@ const root = ReactDOM.createRoot(document.getElementById('root'))
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
-      <App />
-      <Toaster />
+      <LanguageProvider>
+        <App />
+        <Toaster />
+      </LanguageProvider>
     </ErrorBoundary>
   </React.StrictMode>
 )
@@ -175,7 +178,10 @@ if (process.env.NODE_ENV === 'development') {
         root.render(
           <React.StrictMode>
             <ErrorBoundary>
-              <NextApp />
+              <LanguageProvider>
+                <NextApp />
+                <Toaster />
+              </LanguageProvider>
             </ErrorBoundary>
           </React.StrictMode>
         )

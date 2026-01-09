@@ -5,7 +5,7 @@ import { toast, Toaster } from "sonner";
 import { Settings, Save, Eye, EyeOff, X, Loader2, TestTube, CheckCircle, XCircle, Mic, Shield, Globe } from "lucide-react";
 import { usePermissions } from "./hooks/usePermissions";
 import PermissionCard from "./components/ui/permission-card";
-import { useTranslation } from "./i18n";
+import { useTranslation, LanguageProvider } from "./i18n";
 
 const SettingsPage = () => {
   const { t, language, setLanguage, languages } = useTranslation();
@@ -675,5 +675,10 @@ export { SettingsPage };
 // 如果是直接访问settings.html，则渲染应用
 if (document.getElementById("settings-root")) {
   const root = ReactDOM.createRoot(document.getElementById("settings-root"));
-  root.render(<SettingsPage />);
+  root.render(
+    <LanguageProvider>
+      <SettingsPage />
+      <Toaster />
+    </LanguageProvider>
+  );
 }

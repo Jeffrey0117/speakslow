@@ -1,7 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
-import { useTranslation } from "./i18n";
+import { useTranslation, LanguageProvider } from "./i18n";
 
 // 历史记录页面组件
 const HistoryPage = () => {
@@ -266,4 +266,8 @@ const HistoryContent = ({ onCopy, t }) => {
 // 渲染应用
 const container = document.getElementById('history-root');
 const root = createRoot(container);
-root.render(<HistoryPage />);
+root.render(
+  <LanguageProvider>
+    <HistoryPage />
+  </LanguageProvider>
+);
