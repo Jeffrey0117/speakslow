@@ -286,23 +286,19 @@ export default function App() {
 
     // 防重复粘贴：如果是相同文本且在防抖时间内，则跳过
     if (lastPaste.text === text && (now - lastPaste.timestamp) < PASTE_DEBOUNCE_TIME) {
-      console.log("🚫 跳过重复粘贴，文本:", text.substring(0, 50) + "...");
       return;
     }
 
     // 更新最后粘贴记录
     lastPasteRef.current = { text, timestamp: now };
 
-    console.log("🔄 safePaste 被调用，文本:", text.substring(0, 50) + "...");
     try {
       // 先用 navigator.clipboard 直接在前端寫入（最可靠）
       try {
         await navigator.clipboard.writeText(text);
         // 等待一下確保剪貼簿寫入完成
         await new Promise(resolve => setTimeout(resolve, 50));
-        console.log("✅ navigator.clipboard 寫入成功");
       } catch (clipErr) {
-        console.warn("⚠️ navigator.clipboard 失敗，嘗試 Electron API:", clipErr);
         // 備用：用 Electron 寫入剪貼簿
         if (window.electronAPI) {
           await window.electronAPI.copyText(text);
@@ -313,20 +309,16 @@ export default function App() {
       // 再透過 Electron API 嘗試自動貼上
       if (window.electronAPI) {
         // 先恢復焦點到原本的視窗
-        console.log("🔄 嘗試恢復焦點到原本視窗");
         await window.electronAPI.restoreForegroundWindow();
 
         // 給一點時間讓視窗切換完成
         await new Promise(resolve => setTimeout(resolve, 150));
 
-        console.log("📱 呼叫 Electron pasteText");
         await window.electronAPI.pasteText(text);
-        console.log("✅ Electron pasteText 完成");
       }
 
       showNotification('success', t('notifications.copied'));
     } catch (error) {
-      console.error("❌ 粘贴文本失败:", error);
       showNotification('error', t('notifications.pasteFailed'), {
         description: t('notifications.pasteFailedDesc')
       });
@@ -335,10 +327,8 @@ export default function App() {
 
   // 处理录音完成（FunASR识别完成）
   const handleRecordingComplete = useCallback(async (transcriptionResult) => {
-    console.log("🎤 handleRecordingComplete 被调用:", transcriptionResult);
     const text = transcriptionResult?.text;
     if (text) {
-      console.log("✅ 转录成功，文本:", text);
       // 立即显示FunASR识别的原始文本
       setOriginalText(text);
       setShowTextArea(true);
@@ -347,53 +337,34 @@ export default function App() {
       setProcessedText("");
 
       showNotification('success', t('notifications.transcriptionComplete'));
-    } else {
-      console.log("❌ 转录失败或无文本:", transcriptionResult);
     }
   }, [showNotification, t]);
 
   // 处理AI优化完成
   const handleAIOptimizationComplete = useCallback(async (optimizedResult) => {
-    console.log('AI优化完成回调被触发:', optimizedResult);
     if (optimizedResult.success && optimizedResult.enhanced_by_ai && optimizedResult.text) {
       // 显示AI优化后的文本
       setProcessedText(optimizedResult.text);
 
       // 自动粘贴AI优化后的文本
-      console.log("📋 准备粘贴AI优化后的文本:", optimizedResult.text);
       await safePaste(optimizedResult.text);
-      console.log("✅ AI优化文本粘贴完成");
 
       showNotification('success', t('notifications.aiComplete'));
-      console.log('AI优化文本已设置:', optimizedResult.text);
     } else {
       // AI优化未启用或失败，使用 optimizedResult.text（即原始文本）
-      // 注意：不使用閉包中的 originalText，因為可能是過時的值
       const textToPaste = optimizedResult.text;
-      console.log('AI优化未启用或失败，使用原始文本:', textToPaste);
       if (textToPaste) {
-        console.log("📋 粘贴原始文本:", textToPaste);
         await safePaste(textToPaste);
-      } else {
-        console.warn('無可用文本進行粘貼');
       }
     }
   }, [safePaste, showNotification, t]);
 
   // 设置转录完成回调
   useEffect(() => {
-    console.log('设置回调函数');
     window.onTranscriptionComplete = handleRecordingComplete;
     window.onAIOptimizationComplete = handleAIOptimizationComplete;
-    
-    // 验证回调函数是否正确设置
-    console.log('回调函数设置完成:', {
-      onTranscriptionComplete: typeof window.onTranscriptionComplete,
-      onAIOptimizationComplete: typeof window.onAIOptimizationComplete
-    });
-    
+
     return () => {
-      console.log('清理回调函数');
       window.onTranscriptionComplete = null;
       window.onAIOptimizationComplete = null;
     };
@@ -547,24 +518,18 @@ export default function App() {
     // 检查是否为控制面板窗口
     const urlParams = new URLSearchParams(window.location.search);
     const isControlPanel = urlParams.get('panel') === 'control';
-    
+
     // 只有主窗口才注册热键
     if (isControlPanel) {
-      console.log('控制面板窗口，跳过热键注册');
       return;
     }
 
     const initializeHotkey = async () => {
       try {
         // 注册默认热键 Ctrl+Shift+Space
-        const success = await registerHotkey('CommandOrControl+Shift+Space');
-        if (success) {
-          console.log('主窗口热键注册成功');
-        } else {
-          console.error('主窗口热键注册失败');
-        }
+        await registerHotkey('CommandOrControl+Shift+Space');
       } catch (error) {
-        console.error('主窗口热键注册异常:', error);
+        // 热键注册失败时静默处理
       }
     };
 
@@ -602,16 +567,12 @@ export default function App() {
   useEffect(() => {
     if (window.electronAPI) {
       // 监听传统热键触发
-      const unsubscribeHotkey = window.electronAPI.onHotkeyTriggered((event, data) => {
-        console.log('收到热键触发事件:', data);
-        console.log('当前录音状态:', isRecording, '处理状态:', isRecordingProcessing);
+      const unsubscribeHotkey = window.electronAPI.onHotkeyTriggered(() => {
         toggleRecording();
       });
 
       // 监听旧的toggle事件（保持兼容性）
       const unsubscribeToggle = window.electronAPI.onToggleDictation(() => {
-        console.log('收到旧版toggle事件');
-        console.log('当前录音状态:', isRecording, '处理状态:', isRecordingProcessing);
         toggleRecording();
       });
 
@@ -620,7 +581,7 @@ export default function App() {
         if (unsubscribeToggle) unsubscribeToggle();
       };
     }
-  }, [toggleRecording, isRecording, isRecordingProcessing]);
+  }, [toggleRecording]);
 
   // 同步录音状态到热键管理器
   useEffect(() => {

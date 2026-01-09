@@ -111,9 +111,8 @@ class ClipboardManager {
 
         this.safeLog("✅ 权限已授予，尝试粘贴");
         return await this.pasteMacOS(originalClipboard);
-      } else if (process.platform === "win32") {
-        return await this.pasteWindows(originalClipboard);
       } else {
+        // Linux
         return await this.pasteLinux(originalClipboard);
       }
     } catch (error) {
@@ -175,37 +174,6 @@ class ClipboardManager {
           reject(new Error(errorMsg));
         }, 3000);
       }, 100);
-    });
-  }
-
-  // Windows 專用：使用 PowerShell 寫入剪貼簿
-  async copyToClipboardWindows(text) {
-    return new Promise((resolve, reject) => {
-      // 使用 PowerShell 的 Set-Clipboard，比 Electron clipboard 更可靠
-      const escapedText = text.replace(/'/g, "''"); // 轉義單引號
-      const psCommand = `Set-Clipboard -Value '${escapedText}'`;
-
-      this.safeLog("📋 使用 PowerShell Set-Clipboard 寫入剪貼簿");
-
-      const copyProcess = spawn("powershell", ["-Command", psCommand]);
-
-      copyProcess.on("close", (code) => {
-        if (code === 0) {
-          this.safeLog("✅ PowerShell 剪貼簿寫入成功");
-          resolve();
-        } else {
-          this.safeLog(`⚠️ PowerShell 剪貼簿寫入失敗，代碼: ${code}`);
-          // 失敗時回退到 Electron clipboard
-          clipboard.writeText(text);
-          resolve();
-        }
-      });
-
-      copyProcess.on("error", (error) => {
-        this.safeLog(`⚠️ PowerShell 執行失敗: ${error.message}，回退到 Electron`);
-        clipboard.writeText(text);
-        resolve();
-      });
     });
   }
 
