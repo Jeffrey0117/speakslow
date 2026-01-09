@@ -880,6 +880,10 @@ class FunASRManager {
       
     const possiblePaths = [
       // 优先使用 uv 虚拟环境中的 Python
+      // Windows 路徑
+      path.join(projectRoot, ".venv", "Scripts", "python.exe"),
+      path.join(projectRoot, ".venv", "Scripts", "python3.exe"),
+      // Unix/macOS 路徑
       path.join(projectRoot, ".venv", "bin", "python3.11"),
       path.join(projectRoot, ".venv", "bin", "python3"),
       path.join(projectRoot, ".venv", "bin", "python"),

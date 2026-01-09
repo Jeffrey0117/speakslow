@@ -4,16 +4,35 @@ const os = require('os');
 
 class LogManager {
   constructor() {
-    this.logDir = this.getLogDirectory();
+    // 使用臨時目錄作為初始值，等 Electron 準備好後再更新
+    this.logDir = path.join(os.tmpdir(), 'ququ-logs');
     this.logFile = path.join(this.logDir, 'app.log');
     this.funasrLogFile = path.join(this.logDir, 'funasr.log');
+    this._initialized = false;
     this.ensureLogDirectory();
   }
 
+  // 嘗試更新到正確的日誌目錄
+  _tryUpdateLogDir() {
+    if (this._initialized) return;
+    try {
+      const electron = require('electron');
+      if (electron.app && typeof electron.app.getPath === 'function') {
+        const userDataPath = electron.app.getPath('userData');
+        this.logDir = path.join(userDataPath, 'logs');
+        this.logFile = path.join(this.logDir, 'app.log');
+        this.funasrLogFile = path.join(this.logDir, 'funasr.log');
+        this.ensureLogDirectory();
+        this._initialized = true;
+      }
+    } catch (e) {
+      // Electron 尚未準備好，使用臨時目錄
+    }
+  }
+
   getLogDirectory() {
-    // 在用户目录下创建日志文件夹
-    const userDataPath = require('electron').app.getPath('userData');
-    return path.join(userDataPath, 'logs');
+    this._tryUpdateLogDir();
+    return this.logDir;
   }
 
   ensureLogDirectory() {
@@ -27,6 +46,7 @@ class LogManager {
   }
 
   log(level, message, data = null) {
+    this._tryUpdateLogDir();
     const timestamp = new Date().toISOString();
     const logEntry = {
       timestamp,
@@ -165,13 +185,25 @@ class LogManager {
 
   // 获取系统信息用于调试
   getSystemInfo() {
+    this._tryUpdateLogDir();
+    let appVersion = 'unknown';
+    let userDataPath = this.logDir;
+    try {
+      const electron = require('electron');
+      if (electron.app && typeof electron.app.getVersion === 'function') {
+        appVersion = electron.app.getVersion();
+        userDataPath = electron.app.getPath('userData');
+      }
+    } catch (e) {
+      // Electron 尚未準備好
+    }
     return {
       platform: process.platform,
       arch: process.arch,
       nodeVersion: process.version,
       electronVersion: process.versions.electron,
-      appVersion: require('electron').app.getVersion(),
-      userDataPath: require('electron').app.getPath('userData'),
+      appVersion,
+      userDataPath,
       logDir: this.logDir,
       env: {
         NODE_ENV: process.env.NODE_ENV,

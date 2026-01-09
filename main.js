@@ -106,11 +106,7 @@ function setupProductionPath() {
 // 在初始化管理器之前设置PATH
 setupProductionPath();
 
-// 设置用户数据目录环境变量，供Python脚本使用
-process.env.ELECTRON_USER_DATA = app.getPath('userData');
-logger.info('设置用户数据目录环境变量', {
-  ELECTRON_USER_DATA: process.env.ELECTRON_USER_DATA
-});
+// 用户数据目录环境变量将在 app ready 后设置
 
 // 初始化管理器
 const environmentManager = new EnvironmentManager();
@@ -125,19 +121,24 @@ const hotkeyManager = new HotkeyManager();
 const dataDirectory = environmentManager.ensureDataDirectory();
 databaseManager.initialize(dataDirectory);
 
-// 使用所有管理器初始化IPC处理器
-const ipcHandlers = new IPCHandlers({
-  environmentManager,
-  databaseManager,
-  clipboardManager,
-  funasrManager,
-  windowManager,
-  hotkeyManager,
-  logger, // 传递logger实例
-});
+// IPC处理器将在 app ready 后初始化
+let ipcHandlers = null;
 
 // 主应用启动函数
 async function startApp() {
+  // 在 app ready 后初始化 IPC 处理器
+  if (!ipcHandlers) {
+    ipcHandlers = new IPCHandlers({
+      environmentManager,
+      databaseManager,
+      clipboardManager,
+      funasrManager,
+      windowManager,
+      hotkeyManager,
+      logger,
+    });
+  }
+
   logger.info('应用启动开始', {
     nodeEnv: process.env.NODE_ENV,
     platform: process.platform,
@@ -210,6 +211,11 @@ async function startApp() {
 
 // 应用事件处理器
 app.whenReady().then(() => {
+  // 设置用户数据目录环境变量，供Python脚本使用
+  process.env.ELECTRON_USER_DATA = app.getPath('userData');
+  logger.info('设置用户数据目录环境变量', {
+    ELECTRON_USER_DATA: process.env.ELECTRON_USER_DATA
+  });
   startApp();
 });
 
