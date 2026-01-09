@@ -83,6 +83,7 @@ export default {
     optimizing: 'AI正在優化文字，請稍候...',
     clickToRecord: '點擊麥克風或按 {hotkey} 開始錄音',
     startRecording: '按 [{hotkey}] 開始錄音',
+    waitingForTarget: '請點擊目標位置...',
 
     aiOptimized: 'AI優化後',
     aiOptimizing: 'AI正在優化文字...',
@@ -115,7 +116,7 @@ export default {
     aiDisabled: '已關閉AI文字優化',
     copied: '文字已複製到剪貼簿',
     copyFailed: '無法複製文字到剪貼簿: {error}',
-    pasted: '文字已自動貼上到當前輸入框',
+    pasted: '已複製並嘗試貼上 (Ctrl+V)',
     pasteToClipboard: '文字已複製到剪貼簿，請手動貼上',
     pasteFailed: '貼上失敗',
     pasteFailedDesc: '請檢查輔助功能權限。文字已複製到剪貼簿 - 請手動使用 Cmd+V 貼上。',
@@ -131,7 +132,9 @@ export default {
     modelDownloading: '模型正在下載中，請稍候...',
     modelLoading: '模型正在載入中，請稍候...',
     modelNotReady: '模型未就緒，請稍候...',
-    languageChanged: '語言已切換'
+    languageChanged: '語言已切換',
+    clickTarget: '請點擊要貼上文字的位置',
+    cancelled: '已取消'
   },
 
   // 語言選項

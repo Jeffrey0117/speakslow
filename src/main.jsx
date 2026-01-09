@@ -190,24 +190,4 @@ if (process.env.NODE_ENV === 'development') {
   }
 }
 
-// 性能监控（开发环境）
-if (process.env.NODE_ENV === 'development') {
-  // 监控渲染性能
-  const observer = new PerformanceObserver((list) => {
-    for (const entry of list.getEntries()) {
-      if (entry.entryType === 'measure') {
-        console.log(`性能测量: ${entry.name} - ${entry.duration.toFixed(2)}ms`)
-      }
-    }
-  })
-  
-  observer.observe({ entryTypes: ['measure'] })
-  
-  // 监控内存使用
-  if (performance.memory) {
-    setInterval(() => {
-      const memory = performance.memory
-      console.log(`内存使用: ${(memory.usedJSHeapSize / 1024 / 1024).toFixed(2)}MB / ${(memory.totalJSHeapSize / 1024 / 1024).toFixed(2)}MB`)
-    }, 30000) // 每30秒检查一次
-  }
-}
+// 性能监控已禁用 - 太吵了

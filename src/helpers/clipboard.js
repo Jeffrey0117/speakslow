@@ -1,11 +1,14 @@
 const { clipboard } = require("electron");
-const { spawn } = require("child_process");
+const { spawn, execSync } = require("child_process");
 
 class ClipboardManager {
   constructor(logger) {
     // 初始化剪贴板管理器
     this.logger = logger;
-    
+
+    // Windows: 儲存之前的前景視窗 handle
+    this.previousForegroundWindow = null;
+
     // 尝试加载 osascript 模块（仅在 macOS 上）
     this.osascript = null;
     if (process.platform === "darwin") {
@@ -80,19 +83,19 @@ class ClipboardManager {
 
   async pasteText(text) {
     try {
-      // 首先保存原始剪贴板内容
-      const originalClipboard = clipboard.readText();
-      this.safeLog(
-        "💾 已保存原始剪贴板内容",
-        originalClipboard.substring(0, 50) + "..."
-      );
+      this.safeLog("🎯 pasteText:", text?.substring(0, 30));
 
-      // 将文本复制到剪贴板 - 这总是有效的
+      if (process.platform === "win32") {
+        // Windows: 前端已經用 navigator.clipboard 寫入了
+        // 這裡只需要嘗試自動貼上（模擬 Ctrl+V）
+        this.safeLog("⌨️ 嘗試自動貼上 (SendKeys)");
+        await this.pasteWindows();
+        return;
+      }
+
+      // macOS/Linux: 使用 Electron clipboard
+      const originalClipboard = clipboard.readText();
       clipboard.writeText(text);
-      this.safeLog(
-        "📋 文本已复制到剪贴板",
-        text.substring(0, 50) + "..."
-      );
 
       if (process.platform === "darwin") {
         // 简化权限检查，直接尝试粘贴
@@ -175,8 +178,40 @@ class ClipboardManager {
     });
   }
 
-  async pasteWindows(originalClipboard) {
+  // Windows 專用：使用 PowerShell 寫入剪貼簿
+  async copyToClipboardWindows(text) {
     return new Promise((resolve, reject) => {
+      // 使用 PowerShell 的 Set-Clipboard，比 Electron clipboard 更可靠
+      const escapedText = text.replace(/'/g, "''"); // 轉義單引號
+      const psCommand = `Set-Clipboard -Value '${escapedText}'`;
+
+      this.safeLog("📋 使用 PowerShell Set-Clipboard 寫入剪貼簿");
+
+      const copyProcess = spawn("powershell", ["-Command", psCommand]);
+
+      copyProcess.on("close", (code) => {
+        if (code === 0) {
+          this.safeLog("✅ PowerShell 剪貼簿寫入成功");
+          resolve();
+        } else {
+          this.safeLog(`⚠️ PowerShell 剪貼簿寫入失敗，代碼: ${code}`);
+          // 失敗時回退到 Electron clipboard
+          clipboard.writeText(text);
+          resolve();
+        }
+      });
+
+      copyProcess.on("error", (error) => {
+        this.safeLog(`⚠️ PowerShell 執行失敗: ${error.message}，回退到 Electron`);
+        clipboard.writeText(text);
+        resolve();
+      });
+    });
+  }
+
+  async pasteWindows() {
+    // 不再需要 originalClipboard 參數，因為我們不恢復剪貼簿
+    return new Promise((resolve) => {
       const pasteProcess = spawn("powershell", [
         "-Command",
         'Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait("^v")',
@@ -184,26 +219,16 @@ class ClipboardManager {
 
       pasteProcess.on("close", (code) => {
         if (code === 0) {
-          // 文本粘贴成功
-          setTimeout(() => {
-            clipboard.writeText(originalClipboard);
-          }, 100);
-          resolve();
+          this.safeLog("✅ SendKeys 貼上成功");
         } else {
-          reject(
-            new Error(
-              `Windows 粘贴失败，代码 ${code}。文本已复制到剪贴板。`
-            )
-          );
+          this.safeLog(`⚠️ SendKeys 返回代碼 ${code}，文字仍在剪貼簿，可手動 Ctrl+V`);
         }
+        resolve();
       });
 
       pasteProcess.on("error", (error) => {
-        reject(
-          new Error(
-            `Windows 粘贴失败: ${error.message}。文本已复制到剪贴板。`
-          )
-        );
+        this.safeLog(`⚠️ SendKeys 失敗: ${error.message}，文字仍在剪貼簿`);
+        resolve();
       });
     });
   }
@@ -374,6 +399,142 @@ class ClipboardManager {
     };
 
     tryNextCommand();
+  }
+
+  /**
+   * Windows: 儲存當前前景視窗 (在錄音開始前呼叫)
+   * 使用同步方式確保在熱鍵觸發時立即獲取
+   * @returns {{success: boolean, handle?: string}}
+   */
+  saveForegroundWindow() {
+    if (process.platform !== "win32") {
+      return { success: true, message: "非 Windows 平台" };
+    }
+
+    try {
+      this.safeLog("🔍 同步獲取前景視窗 handle...");
+
+      // 使用更簡單的 PowerShell 命令，速度更快
+      // 注意：需要正確轉義引號
+      const psCommand = `Add-Type -TypeDefinition 'using System;using System.Runtime.InteropServices;public class W{[DllImport(\\\"user32.dll\\\")]public static extern IntPtr GetForegroundWindow();}';[W]::GetForegroundWindow().ToInt64()`;
+
+      const output = execSync(
+        `powershell -NoProfile -ExecutionPolicy Bypass -Command "${psCommand}"`,
+        {
+          encoding: 'utf8',
+          timeout: 1000, // 1秒超時
+          windowsHide: true
+        }
+      );
+
+      const handle = output.trim();
+      if (handle && handle !== "0") {
+        this.previousForegroundWindow = handle;
+        this.safeLog(`✅ 已儲存前景視窗 handle: ${handle}`);
+        return { success: true, handle };
+      } else {
+        this.safeLog(`⚠️ 無法取得前景視窗 handle: 空結果或 0`);
+        return { success: false, error: "空結果" };
+      }
+    } catch (error) {
+      this.safeLog(`❌ 取得前景視窗失敗: ${error.message}`);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Windows: 恢復焦點到之前儲存的視窗
+   * @returns {Promise<{success: boolean}>}
+   */
+  async restoreForegroundWindow() {
+    if (process.platform !== "win32") {
+      return { success: true, message: "非 Windows 平台" };
+    }
+
+    if (!this.previousForegroundWindow) {
+      this.safeLog("⚠️ 沒有儲存的前景視窗 handle");
+      return { success: false, error: "沒有儲存的前景視窗" };
+    }
+
+    return new Promise((resolve) => {
+      const handle = this.previousForegroundWindow;
+      this.safeLog(`🔄 嘗試恢復焦點到視窗 handle: ${handle}`);
+
+      // 使用 PowerShell 設定前景視窗
+      const psCommand = `
+        Add-Type @"
+          using System;
+          using System.Runtime.InteropServices;
+          public class Win32 {
+            [DllImport("user32.dll")]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            public static extern bool SetForegroundWindow(IntPtr hWnd);
+            [DllImport("user32.dll")]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+            [DllImport("user32.dll")]
+            public static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+            [DllImport("user32.dll")]
+            public static extern uint GetWindowThreadProcessId(IntPtr hWnd, IntPtr ProcessId);
+            [DllImport("kernel32.dll")]
+            public static extern uint GetCurrentThreadId();
+          }
+"@
+        $hwnd = [IntPtr]::new(${handle})
+
+        # 先 ShowWindow 確保視窗不是最小化
+        [Win32]::ShowWindow($hwnd, 9) | Out-Null  # SW_RESTORE = 9
+
+        # 嘗試 AttachThreadInput 讓 SetForegroundWindow 更可靠
+        $foregroundThread = [Win32]::GetWindowThreadProcessId($hwnd, [IntPtr]::Zero)
+        $currentThread = [Win32]::GetCurrentThreadId()
+
+        if ($foregroundThread -ne $currentThread) {
+          [Win32]::AttachThreadInput($currentThread, $foregroundThread, $true) | Out-Null
+        }
+
+        $result = [Win32]::SetForegroundWindow($hwnd)
+
+        if ($foregroundThread -ne $currentThread) {
+          [Win32]::AttachThreadInput($currentThread, $foregroundThread, $false) | Out-Null
+        }
+
+        $result
+      `;
+
+      const setWindowProcess = spawn("powershell", ["-Command", psCommand]);
+
+      let output = "";
+      let errorOutput = "";
+
+      setWindowProcess.stdout.on("data", (data) => {
+        output += data.toString();
+      });
+
+      setWindowProcess.stderr.on("data", (data) => {
+        errorOutput += data.toString();
+      });
+
+      setWindowProcess.on("close", (code) => {
+        if (code === 0) {
+          const success = output.trim().toLowerCase() === "true";
+          if (success) {
+            this.safeLog(`✅ 已恢復焦點到視窗 handle: ${handle}`);
+          } else {
+            this.safeLog(`⚠️ SetForegroundWindow 返回 false，可能需要手動點擊`);
+          }
+          resolve({ success });
+        } else {
+          this.safeLog(`⚠️ 恢復焦點失敗: ${errorOutput}`);
+          resolve({ success: false, error: errorOutput });
+        }
+      });
+
+      setWindowProcess.on("error", (error) => {
+        this.safeLog(`❌ 恢復焦點失敗: ${error.message}`);
+        resolve({ success: false, error: error.message });
+      });
+    });
   }
 
   /**

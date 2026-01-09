@@ -163,10 +163,13 @@ export const useRecording = () => {
 
           // 异步处理AI优化和保存（只保存一次）
           setIsOptimizing(true);
+          console.log("🔄 開始異步處理，準備呼叫 onAIOptimizationComplete");
           setTimeout(async () => {
             try {
+              console.log("⏰ setTimeout 執行中...");
               // 从设置中读取是否启用AI优化（默认关闭）
               const useAI = await window.electronAPI.getSetting('enable_ai_optimization', false);
+              console.log("🔧 AI優化設定:", useAI);
 
               let finalData = { ...transcriptionData };
 
@@ -211,6 +214,7 @@ export const useRecording = () => {
                 }
 
                 // 通知UI更新并触发复制操作
+                console.log("📤 準備呼叫 onAIOptimizationComplete, useAI:", useAI, "processed_text:", finalData.processed_text?.substring(0, 30));
                 if (useAI && finalData.processed_text && finalData.processed_text !== raw_text) {
                   // 有AI优化结果时
                   const enhancedResult = {
@@ -219,6 +223,7 @@ export const useRecording = () => {
                     processed_text: finalData.processed_text,
                     enhanced_by_ai: true,
                   };
+                  console.log("✨ 呼叫 onAIOptimizationComplete (AI優化版)", window.onAIOptimizationComplete ? "回調存在" : "回調不存在!");
                   if (window.onAIOptimizationComplete) {
                     window.onAIOptimizationComplete(enhancedResult);
                   }
@@ -229,6 +234,7 @@ export const useRecording = () => {
                     text: raw_text,
                     enhanced_by_ai: false,
                   };
+                  console.log("📝 呼叫 onAIOptimizationComplete (原始文本)", window.onAIOptimizationComplete ? "回調存在" : "回調不存在!");
                   if (window.onAIOptimizationComplete) {
                     window.onAIOptimizationComplete(finalResult);
                   }

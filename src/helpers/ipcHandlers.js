@@ -213,6 +213,25 @@ class IPCHandlers {
       }
     });
 
+    // 焦點管理 - 儲存和恢復前景視窗
+    ipcMain.handle("save-foreground-window", () => {
+      try {
+        return this.clipboardManager.saveForegroundWindow();
+      } catch (error) {
+        this.logger.error("儲存前景視窗失敗:", error);
+        return { success: false, error: error.message };
+      }
+    });
+
+    ipcMain.handle("restore-foreground-window", async () => {
+      try {
+        return await this.clipboardManager.restoreForegroundWindow();
+      } catch (error) {
+        this.logger.error("恢復前景視窗失敗:", error);
+        return { success: false, error: error.message };
+      }
+    });
+
     ipcMain.handle("get-clipboard-history", () => {
       // TODO: 实现剪贴板历史功能
       return [];
@@ -313,16 +332,25 @@ class IPCHandlers {
       try {
         if (this.hotkeyManager) {
           const senderId = event.sender.id;
-          
+
           // 检查是否已经为这个发送者注册过热键
           if (this.hotkeyRegisteredSenders.has(senderId)) {
             this.logger.info(`发送者 ${senderId} 已注册过热键，跳过重复注册`);
             return { success: true };
           }
-          
+
           const success = this.hotkeyManager.registerHotkey(hotkey, () => {
-            // 只发送热键触发事件到主窗口，避免重复触发
-            this.logger.info(`热键 ${hotkey} 被触发，发送事件到主窗口`);
+            // 熱鍵觸發時同步儲存當前前景視窗（在主進程）
+            // 使用 execSync 確保在發送事件前完成
+            this.logger.info(`热键 ${hotkey} 被触发，同步儲存前景視窗`);
+            try {
+              const result = this.clipboardManager.saveForegroundWindow();
+              this.logger.info('儲存前景視窗結果:', result);
+            } catch (err) {
+              this.logger.warn('儲存前景視窗失敗:', err.message);
+            }
+
+            // 發送热键触发事件到主窗口（在儲存視窗 handle 後）
             if (this.windowManager && this.windowManager.mainWindow && !this.windowManager.mainWindow.isDestroyed()) {
               this.windowManager.mainWindow.webContents.send("hotkey-triggered", { hotkey });
             }

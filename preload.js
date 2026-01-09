@@ -37,6 +37,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
   readClipboard: () => ipcRenderer.invoke("read-clipboard"),
   writeClipboard: (text) => ipcRenderer.invoke("write-clipboard", text),
 
+  // 焦點管理 (Windows: 儲存和恢復前景視窗)
+  saveForegroundWindow: () => ipcRenderer.invoke("save-foreground-window"),
+  restoreForegroundWindow: () => ipcRenderer.invoke("restore-foreground-window"),
+
   // 数据库操作
   saveTranscription: (text, processedText) => 
     ipcRenderer.invoke("save-transcription", text, processedText),

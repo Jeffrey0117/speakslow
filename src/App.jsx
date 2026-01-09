@@ -227,6 +227,9 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
+  // 點擊錄音流程：等待使用者點擊目標位置
+  const [waitingForTarget, setWaitingForTarget] = useState(false);
+
   // i18n
   const { t, language, convert } = useTranslation();
 
@@ -280,29 +283,48 @@ export default function App() {
   const safePaste = useCallback(async (text) => {
     const now = Date.now();
     const lastPaste = lastPasteRef.current;
-    
+
     // 防重复粘贴：如果是相同文本且在防抖时间内，则跳过
     if (lastPaste.text === text && (now - lastPaste.timestamp) < PASTE_DEBOUNCE_TIME) {
       console.log("🚫 跳过重复粘贴，文本:", text.substring(0, 50) + "...");
       return;
     }
-    
+
     // 更新最后粘贴记录
     lastPasteRef.current = { text, timestamp: now };
-    
+
     console.log("🔄 safePaste 被调用，文本:", text.substring(0, 50) + "...");
     try {
-      if (window.electronAPI) {
-        console.log("📱 使用 Electron API 进行粘贴");
-        await window.electronAPI.pasteText(text);
-        console.log("✅ 粘贴成功");
-        showNotification('success', t('notifications.pasted'));
-      } else {
-        // Web环境下只能复制到剪贴板
-        console.log("🌐 Web环境，仅复制到剪贴板");
+      // 先用 navigator.clipboard 直接在前端寫入（最可靠）
+      try {
         await navigator.clipboard.writeText(text);
-        showNotification('info', t('notifications.pasteToClipboard'));
+        // 等待一下確保剪貼簿寫入完成
+        await new Promise(resolve => setTimeout(resolve, 50));
+        console.log("✅ navigator.clipboard 寫入成功");
+      } catch (clipErr) {
+        console.warn("⚠️ navigator.clipboard 失敗，嘗試 Electron API:", clipErr);
+        // 備用：用 Electron 寫入剪貼簿
+        if (window.electronAPI) {
+          await window.electronAPI.copyText(text);
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
       }
+
+      // 再透過 Electron API 嘗試自動貼上
+      if (window.electronAPI) {
+        // 先恢復焦點到原本的視窗
+        console.log("🔄 嘗試恢復焦點到原本視窗");
+        await window.electronAPI.restoreForegroundWindow();
+
+        // 給一點時間讓視窗切換完成
+        await new Promise(resolve => setTimeout(resolve, 150));
+
+        console.log("📱 呼叫 Electron pasteText");
+        await window.electronAPI.pasteText(text);
+        console.log("✅ Electron pasteText 完成");
+      }
+
+      showNotification('success', t('notifications.copied'));
     } catch (error) {
       console.error("❌ 粘贴文本失败:", error);
       showNotification('error', t('notifications.pasteFailed'), {
@@ -314,19 +336,15 @@ export default function App() {
   // 处理录音完成（FunASR识别完成）
   const handleRecordingComplete = useCallback(async (transcriptionResult) => {
     console.log("🎤 handleRecordingComplete 被调用:", transcriptionResult);
-    if (transcriptionResult.success && transcriptionResult.text) {
-      console.log("✅ 转录成功，文本:", transcriptionResult.text);
+    const text = transcriptionResult?.text;
+    if (text) {
+      console.log("✅ 转录成功，文本:", text);
       // 立即显示FunASR识别的原始文本
-      setOriginalText(transcriptionResult.text);
+      setOriginalText(text);
       setShowTextArea(true);
-      
+
       // 清空之前的处理结果，等待AI优化
       setProcessedText("");
-
-      // 不立即粘贴，等待AI优化完成后再粘贴
-      console.log("⏳ 等待AI优化完成后再进行粘贴...");
-      
-      // 注意：不在这里保存到数据库，由 useRecording.js 统一处理保存逻辑
 
       showNotification('success', t('notifications.transcriptionComplete'));
     } else {
@@ -340,7 +358,7 @@ export default function App() {
     if (optimizedResult.success && optimizedResult.enhanced_by_ai && optimizedResult.text) {
       // 显示AI优化后的文本
       setProcessedText(optimizedResult.text);
-      
+
       // 自动粘贴AI优化后的文本
       console.log("📋 准备粘贴AI优化后的文本:", optimizedResult.text);
       await safePaste(optimizedResult.text);
@@ -349,15 +367,18 @@ export default function App() {
       showNotification('success', t('notifications.aiComplete'));
       console.log('AI优化文本已设置:', optimizedResult.text);
     } else {
-      console.warn('AI优化结果无效，使用原始文本:', optimizedResult);
-      // 如果AI优化失败，则粘贴原始文本
-      if (originalText) {
-        console.log("📋 AI优化失败，粘贴原始文本:", originalText);
-        await safePaste(originalText);
-        showNotification('info', t('notifications.aiFailedUsedOriginal'));
+      // AI优化未启用或失败，使用 optimizedResult.text（即原始文本）
+      // 注意：不使用閉包中的 originalText，因為可能是過時的值
+      const textToPaste = optimizedResult.text;
+      console.log('AI优化未启用或失败，使用原始文本:', textToPaste);
+      if (textToPaste) {
+        console.log("📋 粘贴原始文本:", textToPaste);
+        await safePaste(textToPaste);
+      } else {
+        console.warn('無可用文本進行粘貼');
       }
     }
-  }, [safePaste, originalText, showNotification, t]);
+  }, [safePaste, showNotification, t]);
 
   // 设置转录完成回调
   useEffect(() => {
@@ -438,40 +459,85 @@ export default function App() {
     }
   }, [modelStatus, showNotification, t]);
 
-  // 切换录音状态
-  const toggleRecording = useCallback(() => {
-    // 检查模型状态
+  // 檢查模型狀態的輔助函數
+  const checkModelReady = useCallback(() => {
     if (modelStatus.stage === 'need_download') {
       showNotification('warning', t('notifications.pleaseDownload'));
-      return;
+      return false;
     }
-
     if (modelStatus.stage === 'downloading') {
       showNotification('warning', t('notifications.modelDownloading'));
-      return;
+      return false;
     }
-
     if (modelStatus.stage === 'loading') {
       showNotification('warning', t('notifications.modelLoading'));
-      return;
+      return false;
     }
-
     if (modelStatus.stage === 'error') {
       showNotification('error', `${t('app.modelError')}: ${modelStatus.error}`);
-      return;
+      return false;
     }
-
     if (!modelStatus.isReady) {
       showNotification('warning', t('notifications.modelNotReady'));
-      return;
+      return false;
     }
+    return true;
+  }, [modelStatus, showNotification, t]);
+
+  // 熱鍵觸發的錄音切換（前景視窗已由主進程儲存）
+  const toggleRecordingByHotkey = useCallback(async () => {
+    if (!checkModelReady()) return;
 
     if (!isRecording && !isRecordingProcessing) {
+      // 熱鍵觸發：前景視窗已在主進程儲存，直接開始錄音
       startRecording();
     } else if (isRecording) {
       stopRecording();
     }
-  }, [modelStatus, isRecording, isRecordingProcessing, startRecording, stopRecording, showNotification, t]);
+  }, [checkModelReady, isRecording, isRecordingProcessing, startRecording, stopRecording]);
+
+  // 點擊按鈕觸發的錄音 - 簡單版：直接開始錄音
+  const handleClickRecording = useCallback(async () => {
+    if (!checkModelReady()) return;
+
+    if (isRecording) {
+      // 如果正在錄音，停止錄音
+      stopRecording();
+      return;
+    }
+
+    if (isRecordingProcessing) {
+      // 正在處理中，忽略
+      return;
+    }
+
+    // 直接開始錄音
+    startRecording();
+  }, [checkModelReady, isRecording, isRecordingProcessing, stopRecording, startRecording]);
+
+  // 當熱鍵觸發且在等待模式時，儲存視窗並開始錄音
+  const handleHotkeyWhileWaiting = useCallback(async () => {
+    if (waitingForTarget) {
+      setWaitingForTarget(false);
+      // 前景視窗已由主進程在熱鍵觸發時儲存
+      startRecording();
+      // 顯示 QuQu 視窗
+      if (window.electronAPI) {
+        window.electronAPI.showWindow();
+      }
+    }
+  }, [waitingForTarget, startRecording]);
+
+  // 統一的錄音切換（供熱鍵使用）
+  const toggleRecording = useCallback(async () => {
+    if (waitingForTarget) {
+      // 在等待模式中按熱鍵，開始錄音
+      await handleHotkeyWhileWaiting();
+    } else {
+      // 正常熱鍵觸發
+      await toggleRecordingByHotkey();
+    }
+  }, [waitingForTarget, handleHotkeyWhileWaiting, toggleRecordingByHotkey]);
 
   // 使用热键Hook，不再使用F2双击功能
   const { hotkey, syncRecordingState, registerHotkey } = useHotkey();
@@ -490,7 +556,7 @@ export default function App() {
 
     const initializeHotkey = async () => {
       try {
-        // 注册默认热键 CommandOrControl+Shift+Space
+        // 注册默认热键 Ctrl+Shift+Space
         const success = await registerHotkey('CommandOrControl+Shift+Space');
         if (success) {
           console.log('主窗口热键注册成功');
@@ -703,7 +769,7 @@ export default function App() {
             <button
               onClick={(e) => {
                 if (handleClick(e) && !micProps.disabled) {
-                  toggleRecording();
+                  handleClickRecording();
                 }
               }}
               onMouseEnter={() => {
@@ -747,6 +813,8 @@ export default function App() {
               `${t('app.modelError')}: ${modelStatus.error}`
             ) : !modelStatus.isReady ? (
               t('app.modelNotReady')
+            ) : waitingForTarget ? (
+              t('app.waitingForTarget') || '請點擊目標位置後按熱鍵'
             ) : micState === "recording" ? (
               t('app.recording')
             ) : micState === "processing" ? (
