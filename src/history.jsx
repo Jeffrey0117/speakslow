@@ -1,17 +1,19 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
-import HistoryModal from "./components/ui/history-modal";
+import { useTranslation } from "./i18n";
 
 // 历史记录页面组件
 const HistoryPage = () => {
+  const { t } = useTranslation();
+
   const handleCopy = async (text) => {
     try {
       if (window.electronAPI) {
         await window.electronAPI.copyText(text);
         // 可以添加一个简单的提示
         const toast = document.createElement('div');
-        toast.textContent = '文本已复制到剪贴板';
+        toast.textContent = t('notifications.copied');
         toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
         document.body.appendChild(toast);
         setTimeout(() => {
@@ -38,19 +40,19 @@ const HistoryPage = () => {
         {/* 标题栏 */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
           <div className="flex items-center space-x-3">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 chinese-title">蛐蛐 - 转录历史</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 chinese-title">{t('appName')} - {t('history.title')}</h1>
           </div>
           <button
             onClick={handleClose}
             className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
-            关闭窗口
+            {t('common.close')}
           </button>
         </div>
 
         {/* 历史记录内容 */}
         <div className="flex-1 overflow-hidden">
-          <HistoryContent onCopy={handleCopy} />
+          <HistoryContent onCopy={handleCopy} t={t} />
         </div>
       </div>
     </div>
@@ -58,7 +60,7 @@ const HistoryPage = () => {
 };
 
 // 历史记录内容组件
-const HistoryContent = ({ onCopy }) => {
+const HistoryContent = ({ onCopy, t }) => {
   const [transcriptions, setTranscriptions] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -67,7 +69,7 @@ const HistoryContent = ({ onCopy }) => {
   // 加载转录历史
   const loadTranscriptions = async () => {
     if (!window.electronAPI) return;
-    
+
     setLoading(true);
     try {
       const result = await window.electronAPI.getTranscriptions(100, 0);
@@ -85,7 +87,7 @@ const HistoryContent = ({ onCopy }) => {
     if (!searchQuery.trim()) {
       setFilteredTranscriptions(transcriptions);
     } else {
-      const filtered = transcriptions.filter(item => 
+      const filtered = transcriptions.filter(item =>
         item.text?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.processed_text?.toLowerCase().includes(searchQuery.toLowerCase())
       );
@@ -101,7 +103,7 @@ const HistoryContent = ({ onCopy }) => {
   // 删除转录记录
   const handleDelete = async (id) => {
     if (!window.electronAPI) return;
-    
+
     try {
       await window.electronAPI.deleteTranscription(id);
       setTranscriptions(prev => prev.filter(item => item.id !== id));
@@ -118,14 +120,14 @@ const HistoryContent = ({ onCopy }) => {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays === 1) {
-      return `今天 ${date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`;
+      return `${date.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}`;
     } else if (diffDays === 2) {
-      return `昨天 ${date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`;
+      return `${date.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}`;
     } else if (diffDays <= 7) {
-      return `${diffDays - 1}天前`;
+      return `${diffDays - 1}d`;
     } else {
-      return date.toLocaleDateString('zh-CN', { 
-        month: 'short', 
+      return date.toLocaleDateString('zh-TW', {
+        month: 'short',
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit'
@@ -144,7 +146,7 @@ const HistoryContent = ({ onCopy }) => {
             </svg>
             <input
               type="text"
-              placeholder="搜索转录内容..."
+              placeholder={t('history.search')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent chinese-text text-lg"
@@ -152,7 +154,7 @@ const HistoryContent = ({ onCopy }) => {
           </div>
           <div className="mt-3 flex items-center justify-between">
             <span className="text-sm text-gray-600 dark:text-gray-400">
-              共 {filteredTranscriptions.length} 条记录
+              {filteredTranscriptions.length}
             </span>
             <button
               onClick={() => {
@@ -162,7 +164,7 @@ const HistoryContent = ({ onCopy }) => {
               }}
               className="px-4 py-2 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
             >
-              导出全部
+              {t('app.export')}
             </button>
           </div>
         </div>
@@ -174,7 +176,7 @@ const HistoryContent = ({ onCopy }) => {
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-              <span className="ml-3 text-gray-600 dark:text-gray-400">加载中...</span>
+              <span className="ml-3 text-gray-600 dark:text-gray-400">{t('common.loading')}</span>
             </div>
           ) : filteredTranscriptions.length === 0 ? (
             <div className="text-center py-12">
@@ -182,7 +184,7 @@ const HistoryContent = ({ onCopy }) => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               <p className="text-gray-500 dark:text-gray-400 chinese-text text-lg">
-                {searchQuery ? "没有找到匹配的记录" : "暂无转录历史"}
+                {searchQuery ? t('history.noMatch') : t('history.noRecords')}
               </p>
             </div>
           ) : (
@@ -200,7 +202,7 @@ const HistoryContent = ({ onCopy }) => {
                       <span>{formatDate(item.created_at)}</span>
                       {item.confidence && (
                         <span className="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2 py-1 rounded text-xs">
-                          置信度: {Math.round(item.confidence * 100)}%
+                          {Math.round(item.confidence * 100)}%
                         </span>
                       )}
                     </div>
@@ -208,7 +210,7 @@ const HistoryContent = ({ onCopy }) => {
                       <button
                         onClick={() => onCopy(item.processed_text || item.text)}
                         className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                        title="复制文本"
+                        title={t('history.copyText')}
                       >
                         <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -217,7 +219,7 @@ const HistoryContent = ({ onCopy }) => {
                       <button
                         onClick={() => handleDelete(item.id)}
                         className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                        title="删除记录"
+                        title={t('history.delete')}
                       >
                         <svg className="w-4 h-4 text-red-500 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -228,7 +230,6 @@ const HistoryContent = ({ onCopy }) => {
 
                   {/* 最终文本 */}
                   <div className="mb-4">
-                    <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">最终结果:</h4>
                     <p className="chinese-content leading-relaxed bg-gray-50 dark:bg-gray-700/60 p-4 rounded-lg border dark:border-gray-600/30">
                       {item.text}
                     </p>
@@ -237,7 +238,7 @@ const HistoryContent = ({ onCopy }) => {
                   {/* AI优化文本 */}
                   {item.processed_text && item.processed_text.trim() !== (item.raw_text || '').trim() && (
                     <div className="mb-4">
-                      <h4 className="text-sm font-medium text-emerald-700 dark:text-emerald-400 mb-2">AI优化:</h4>
+                      <h4 className="text-sm font-medium text-emerald-700 dark:text-emerald-400 mb-2">{t('history.aiOptimized')}:</h4>
                       <p className="chinese-content leading-relaxed bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-lg border border-emerald-200 dark:border-emerald-700">
                         {item.processed_text}
                       </p>
@@ -247,7 +248,6 @@ const HistoryContent = ({ onCopy }) => {
                   {/* 原始识别文本 */}
                   {item.raw_text && item.raw_text.trim() !== item.text.trim() && (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">原始识别:</h4>
                       <p className="text-xs chinese-content leading-relaxed bg-gray-100 dark:bg-gray-700/40 p-3 rounded-lg border dark:border-gray-600/20 text-gray-600 dark:text-gray-200">
                         {item.raw_text}
                       </p>

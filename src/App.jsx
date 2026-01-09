@@ -195,12 +195,13 @@ const TextDisplay = ({ originalText, processedText, isProcessing, onCopy, onExpo
 
 // 设置页面包装组件 - 用于 ?page=settings 路由
 const SettingsPageWrapper = () => {
+  const { t } = useTranslation();
   return (
     <React.Suspense fallback={
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="flex items-center space-x-3">
           <LoadingDots />
-          <span className="text-gray-700 dark:text-gray-300">加载设置页面...</span>
+          <span className="text-gray-700 dark:text-gray-300">{t('app.loadingSettings')}</span>
         </div>
       </div>
     }>
@@ -295,20 +296,20 @@ export default function App() {
         console.log("📱 使用 Electron API 进行粘贴");
         await window.electronAPI.pasteText(text);
         console.log("✅ 粘贴成功");
-        showNotification('success', "文本已自动粘贴到当前输入框");
+        showNotification('success', t('notifications.pasted'));
       } else {
         // Web环境下只能复制到剪贴板
         console.log("🌐 Web环境，仅复制到剪贴板");
         await navigator.clipboard.writeText(text);
-        showNotification('info', "文本已复制到剪贴板，请手动粘贴");
+        showNotification('info', t('notifications.pasteToClipboard'));
       }
     } catch (error) {
       console.error("❌ 粘贴文本失败:", error);
-      showNotification('error', "粘贴失败", {
-        description: "请检查辅助功能权限。文本已复制到剪贴板 - 请手动使用 Cmd+V 粘贴。"
+      showNotification('error', t('notifications.pasteFailed'), {
+        description: t('notifications.pasteFailedDesc')
       });
     }
-  }, [showNotification]);
+  }, [showNotification, t]);
 
   // 处理录音完成（FunASR识别完成）
   const handleRecordingComplete = useCallback(async (transcriptionResult) => {
@@ -327,11 +328,11 @@ export default function App() {
       
       // 注意：不在这里保存到数据库，由 useRecording.js 统一处理保存逻辑
 
-      showNotification('success', "语音识别完成");
+      showNotification('success', t('notifications.transcriptionComplete'));
     } else {
       console.log("❌ 转录失败或无文本:", transcriptionResult);
     }
-  }, [showNotification]);
+  }, [showNotification, t]);
 
   // 处理AI优化完成
   const handleAIOptimizationComplete = useCallback(async (optimizedResult) => {
@@ -345,7 +346,7 @@ export default function App() {
       await safePaste(optimizedResult.text);
       console.log("✅ AI优化文本粘贴完成");
 
-      showNotification('success', "AI文本优化完成");
+      showNotification('success', t('notifications.aiComplete'));
       console.log('AI优化文本已设置:', optimizedResult.text);
     } else {
       console.warn('AI优化结果无效，使用原始文本:', optimizedResult);
@@ -353,10 +354,10 @@ export default function App() {
       if (originalText) {
         console.log("📋 AI优化失败，粘贴原始文本:", originalText);
         await safePaste(originalText);
-        showNotification('info', "已粘贴原始识别文本");
+        showNotification('info', t('notifications.aiFailedUsedOriginal'));
       }
     }
-  }, [safePaste, originalText, showNotification]);
+  }, [safePaste, originalText, showNotification, t]);
 
   // 设置转录完成回调
   useEffect(() => {
@@ -383,19 +384,19 @@ export default function App() {
       if (window.electronAPI) {
         const result = await window.electronAPI.copyText(text);
         if (result.success) {
-          showNotification('success', "文本已复制到剪贴板");
+          showNotification('success', t('notifications.copied'));
         } else {
-          throw new Error(result.error || "复制失败");
+          throw new Error(result.error || t('common.error'));
         }
       } else {
         await navigator.clipboard.writeText(text);
-        showNotification('success', "文本已复制到剪贴板");
+        showNotification('success', t('notifications.copied'));
       }
     } catch (error) {
       console.error("复制文本失败:", error);
-      showNotification('error', `无法复制文本到剪贴板: ${error.message}`);
+      showNotification('error', t('notifications.copyFailed', { error: error.message }));
     }
-  }, [showNotification]);
+  }, [showNotification, t]);
 
 
   // 处理导出文本
@@ -403,65 +404,65 @@ export default function App() {
     try {
       if (window.electronAPI) {
         await window.electronAPI.exportTranscriptions('txt');
-        showNotification('success', "文本已导出到文件");
+        showNotification('success', t('notifications.exported'));
       } else {
         // Web环境下载文件
         const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `蛐蛐转录_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
+        a.download = `${t('appName')}_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
         a.click();
         URL.revokeObjectURL(url);
       }
     } catch (error) {
-      showNotification('error', "无法导出文本文件");
+      showNotification('error', t('notifications.exportFailed'));
     }
-  }, [showNotification]);
+  }, [showNotification, t]);
 
   // 处理模型下载
   const handleDownloadModels = useCallback(async () => {
     try {
       // 显示开始下载的提示
-      showNotification('info', "开始下载模型文件...");
+      showNotification('info', t('notifications.downloadStarted'));
 
       const result = await modelStatus.downloadModels();
       if (result.success) {
-        showNotification('success', "模型下载完成，正在加载...");
+        showNotification('success', t('notifications.downloadComplete'));
       } else {
-        showNotification('error', `模型下载失败: ${result.error}`);
+        showNotification('error', t('notifications.downloadFailed', { error: result.error }));
       }
     } catch (error) {
       console.error('下载模型失败:', error);
-      showNotification('error', `模型下载失败: ${error.message}`);
+      showNotification('error', t('notifications.downloadFailed', { error: error.message }));
     }
-  }, [modelStatus, showNotification]);
+  }, [modelStatus, showNotification, t]);
 
   // 切换录音状态
   const toggleRecording = useCallback(() => {
     // 检查模型状态
     if (modelStatus.stage === 'need_download') {
-      showNotification('warning', "请先下载AI模型文件");
+      showNotification('warning', t('notifications.pleaseDownload'));
       return;
     }
 
     if (modelStatus.stage === 'downloading') {
-      showNotification('warning', "模型正在下载中，请稍候...");
+      showNotification('warning', t('notifications.modelDownloading'));
       return;
     }
 
     if (modelStatus.stage === 'loading') {
-      showNotification('warning', "模型正在加载中，请稍候...");
+      showNotification('warning', t('notifications.modelLoading'));
       return;
     }
 
     if (modelStatus.stage === 'error') {
-      showNotification('error', `模型错误: ${modelStatus.error}`);
+      showNotification('error', `${t('app.modelError')}: ${modelStatus.error}`);
       return;
     }
 
     if (!modelStatus.isReady) {
-      showNotification('warning', "模型未就绪，请稍候...");
+      showNotification('warning', t('notifications.modelNotReady'));
       return;
     }
 
@@ -470,7 +471,7 @@ export default function App() {
     } else if (isRecording) {
       stopRecording();
     }
-  }, [modelStatus, isRecording, isRecordingProcessing, startRecording, stopRecording, showNotification]);
+  }, [modelStatus, isRecording, isRecordingProcessing, startRecording, stopRecording, showNotification, t]);
 
   // 使用热键Hook，不再使用F2双击功能
   const { hotkey, syncRecordingState, registerHotkey } = useHotkey();
@@ -611,11 +612,11 @@ export default function App() {
     if (!modelStatus.isReady) {
       return {
         className: `${baseClasses} bg-gradient-to-br from-gray-300 to-gray-400 dark:from-gray-600 dark:to-gray-700 cursor-not-allowed opacity-70`,
-        tooltip: modelStatus.stage === 'need_download' ? "请先下载AI模型文件" :
-                 modelStatus.stage === 'downloading' ? `模型下载中... ${modelStatus.downloadProgress || 0}%` :
-                 modelStatus.stage === 'loading' ? "模型加载中，请稍候..." :
-                 modelStatus.stage === 'error' ? `模型错误: ${modelStatus.error}` :
-                 "模型未就绪，请稍候...",
+        tooltip: modelStatus.stage === 'need_download' ? t('notifications.pleaseDownload') :
+                 modelStatus.stage === 'downloading' ? `${t('app.downloading')} ${modelStatus.downloadProgress || 0}%` :
+                 modelStatus.stage === 'loading' ? t('app.loading') :
+                 modelStatus.stage === 'error' ? `${t('app.modelError')}: ${modelStatus.error}` :
+                 t('app.modelNotReady'),
         disabled: true
       };
     }
@@ -624,37 +625,37 @@ export default function App() {
       case "idle":
         return {
           className: `${buttonStyle} cursor-pointer`,
-          tooltip: `按 [${hotkey}] 开始录音`,
+          tooltip: t('app.startRecording', { hotkey }),
           disabled: false
         };
       case "hover":
         return {
           className: `${buttonStyle} scale-105 shadow-2xl cursor-pointer`,
-          tooltip: `按 [${hotkey}] 开始录音`,
+          tooltip: t('app.startRecording', { hotkey }),
           disabled: false
         };
       case "recording":
         return {
           className: `${buttonStyle} recording-pulse cursor-pointer`,
-          tooltip: "正在录音...",
+          tooltip: t('app.recording'),
           disabled: false
         };
       case "processing":
         return {
           className: `${buttonStyle} cursor-not-allowed opacity-70`,
-          tooltip: "正在识别语音...",
+          tooltip: t('app.processing'),
           disabled: true
         };
       case "optimizing":
         return {
           className: `${buttonStyle} cursor-not-allowed opacity-70`,
-          tooltip: "AI正在优化文本...",
+          tooltip: t('app.optimizing'),
           disabled: true
         };
       default:
         return {
           className: `${buttonStyle} cursor-pointer`,
-          tooltip: "点击开始录音",
+          tooltip: t('app.clickToRecord', { hotkey }),
           disabled: false
         };
     }
@@ -674,10 +675,10 @@ export default function App() {
           onMouseUp={handleMouseUp}
         >
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 chinese-title">
-            蛐蛐
+            {t('appName')}
           </h1>
           <div className="flex items-center space-x-3 non-draggable">
-            <Tooltip content="历史记录" position="bottom">
+            <Tooltip content={t('app.history')} position="bottom">
               <button
                 onClick={handleOpenHistory}
                 className="p-3 hover:bg-white/70 dark:hover:bg-gray-700/70 rounded-xl transition-colors shadow-sm"
@@ -685,7 +686,7 @@ export default function App() {
                 <History className="w-6 h-6 text-gray-700 dark:text-gray-300" />
               </button>
             </Tooltip>
-            <Tooltip content="设置" position="bottom">
+            <Tooltip content={t('app.settings')} position="bottom">
               <button
                 onClick={handleOpenSettings}
                 className="p-3 hover:bg-white/70 dark:hover:bg-gray-700/70 rounded-xl transition-colors shadow-sm"
@@ -737,23 +738,23 @@ export default function App() {
           
           <p className="mt-4 status-text text-gray-700 dark:text-gray-300">
             {modelStatus.stage === 'need_download' ? (
-              "需要下载AI模型文件才能开始使用"
+              t('app.needDownload')
             ) : modelStatus.stage === 'downloading' ? (
-              `正在下载模型文件... ${modelStatus.downloadProgress || 0}%`
+              `${t('app.downloading')} ${modelStatus.downloadProgress || 0}%`
             ) : modelStatus.stage === 'loading' ? (
-              "模型加载中，请稍候..."
+              t('app.loading')
             ) : modelStatus.stage === 'error' ? (
-              `模型错误: ${modelStatus.error}`
+              `${t('app.modelError')}: ${modelStatus.error}`
             ) : !modelStatus.isReady ? (
-              "模型未就绪，请稍候..."
+              t('app.modelNotReady')
             ) : micState === "recording" ? (
-              "正在录音，再次点击停止"
+              t('app.recording')
             ) : micState === "processing" ? (
-              "正在识别语音..."
+              t('app.processing')
             ) : micState === "optimizing" ? (
-              "AI正在优化文本，请稍候..."
+              t('app.optimizing')
             ) : (
-              `点击麦克风或按 ${hotkey} 开始录音`
+              t('app.clickToRecord', { hotkey })
             )}
           </p>
         </div>
