@@ -193,25 +193,30 @@ const TextDisplay = ({ originalText, processedText, isProcessing, onCopy, onExpo
   );
 };
 
+// 设置页面包装组件 - 用于 ?page=settings 路由
+const SettingsPageWrapper = () => {
+  return (
+    <React.Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+        <div className="flex items-center space-x-3">
+          <LoadingDots />
+          <span className="text-gray-700 dark:text-gray-300">加载设置页面...</span>
+        </div>
+      </div>
+    }>
+      <SettingsPage />
+    </React.Suspense>
+  );
+};
+
 export default function App() {
   // 检查URL参数来决定渲染哪个页面
   const urlParams = new URLSearchParams(window.location.search);
   const page = urlParams.get('page');
-  
-  // 如果是设置页面，直接渲染设置组件
+
+  // 如果是设置页面，直接渲染设置组件（使用单独组件避免hooks规则问题）
   if (page === 'settings') {
-    return (
-      <React.Suspense fallback={
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-          <div className="flex items-center space-x-3">
-            <LoadingDots />
-            <span className="text-gray-700 dark:text-gray-300">加载设置页面...</span>
-          </div>
-        </div>
-      }>
-        <SettingsPage />
-      </React.Suspense>
-    );
+    return <SettingsPageWrapper />;
   }
 
   const [isHovered, setIsHovered] = useState(false);
