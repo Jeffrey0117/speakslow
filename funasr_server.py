@@ -275,7 +275,7 @@ class FunASRServer:
             return {"success": False, "error": error_msg, "type": "init_error"}
 
     def transcribe_audio(self, audio_path, options=None):
-        """转录音频文件"""
+        """转录音频文件（支援 VAD 分段優化）"""
         if not self.initialized:
             init_result = self.initialize()
             if not init_result["success"]:
@@ -295,19 +295,31 @@ class FunASRServer:
                 "use_vad": True,
                 "use_punc": True,  # 使用FunASR自带的标点恢复
                 "language": "zh",
+                "use_vad_segmentation": True,  # 新增：是否使用 VAD 分段辨識
             }
 
             if options:
                 default_options.update(options)
 
-            # 执行语音识别
-            if default_options["use_vad"]:
-                vad_result = self.vad_model.generate(
-                    input=audio_path, batch_size_s=default_options["batch_size_s"]
-                )
-                logger.info("VAD处理完成")
+            # 執行 VAD 檢測
+            vad_segments = None
+            if default_options["use_vad"] and self.vad_model:
+                try:
+                    vad_result = self.vad_model.generate(
+                        input=audio_path, batch_size_s=default_options["batch_size_s"]
+                    )
+                    # VAD 結果格式: [[start_ms, end_ms], [start_ms, end_ms], ...]
+                    if isinstance(vad_result, list) and len(vad_result) > 0:
+                        if isinstance(vad_result[0], list):
+                            vad_segments = vad_result[0] if isinstance(vad_result[0][0], list) else vad_result
+                        elif isinstance(vad_result[0], dict) and "value" in vad_result[0]:
+                            vad_segments = vad_result[0]["value"]
+                    logger.info(f"VAD处理完成，检测到 {len(vad_segments) if vad_segments else 0} 个语音段")
+                except Exception as e:
+                    logger.warning(f"VAD检测失败，使用整段辨識: {str(e)}")
+                    vad_segments = None
 
-            # 执行ASR识别
+            # 執行 ASR 識別（FunASR 內部會自動利用 VAD 結果優化處理）
             asr_result = self.asr_model.generate(
                 input=audio_path,
                 batch_size_s=default_options["batch_size_s"],
@@ -358,6 +370,8 @@ class FunASRServer:
                 "duration": duration,
                 "language": "zh-CN",
                 "model_type": "pytorch",  # 标识使用的是pytorch版本
+                "vad_segments": vad_segments,  # 新增：返回 VAD 分段信息
+                "segment_count": len(vad_segments) if vad_segments else 1,
             }
 
             # 生产环境：每10次转录后进行内存清理

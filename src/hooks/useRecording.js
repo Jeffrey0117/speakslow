@@ -23,6 +23,9 @@ export const useRecording = () => {
   // 預熱的 AudioContext 用於減少錄音啟動延遲
   const prewarmedAudioContextRef = useRef(null);
 
+  // 錄音用的 AudioContext（保持活躍以減少轉換延遲）
+  const recordingAudioContextRef = useRef(null);
+
   // 麥克風權限狀態快取
   const micPermissionRef = useRef('unknown');
 
@@ -68,6 +71,11 @@ export const useRecording = () => {
         prewarmedAudioContextRef.current.close().catch(() => {});
         prewarmedAudioContextRef.current = null;
       }
+      // 清理錄音用的 AudioContext
+      if (recordingAudioContextRef.current) {
+        recordingAudioContextRef.current.close().catch(() => {});
+        recordingAudioContextRef.current = null;
+      }
     };
   }, []);
 
@@ -112,6 +120,13 @@ export const useRecording = () => {
       });
 
       mediaRecorderRef.current = mediaRecorder;
+
+      // 預先創建 AudioContext 以減少停止錄音後的轉換延遲
+      if (!recordingAudioContextRef.current || recordingAudioContextRef.current.state === 'closed') {
+        recordingAudioContextRef.current = new (window.AudioContext || window.webkitAudioContext)({
+          sampleRate: 16000
+        });
+      }
 
       // 设置事件处理器
       mediaRecorder.ondataavailable = (event) => {
@@ -308,7 +323,7 @@ export const useRecording = () => {
     }
   }, []);
 
-  // 转换音频格式为WAV
+  // 转换音频格式为WAV（使用預先創建的 AudioContext 以減少延遲）
   const convertToWav = useCallback(async (audioBlob) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -317,20 +332,34 @@ export const useRecording = () => {
         try {
           const arrayBuffer = reader.result;
 
-          // 创建AudioContext
-          const audioContext = new (window.AudioContext || window.webkitAudioContext)({
-            sampleRate: 16000
-          });
+          // 優先使用預先創建的 AudioContext，減少創建開銷
+          let audioContext = recordingAudioContextRef.current;
+          let shouldCloseContext = false;
 
-          // 解码音频数据
-          const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+          if (!audioContext || audioContext.state === 'closed') {
+            // 如果沒有預熱的 context，才創建新的
+            audioContext = new (window.AudioContext || window.webkitAudioContext)({
+              sampleRate: 16000
+            });
+            shouldCloseContext = true;
+          }
+
+          // 確保 AudioContext 是活躍的
+          if (audioContext.state === 'suspended') {
+            await audioContext.resume();
+          }
+
+          // 解码音频数据（需要複製 arrayBuffer，因為 decodeAudioData 會消耗它）
+          const audioBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
 
           // 转换为WAV格式
           const wavBuffer = audioBufferToWav(audioBuffer);
           const wavBlob = new Blob([wavBuffer], { type: 'audio/wav' });
 
-          // 关闭AudioContext释放资源
-          audioContext.close();
+          // 只關閉臨時創建的 context
+          if (shouldCloseContext) {
+            audioContext.close();
+          }
 
           resolve(wavBlob);
         } catch (err) {
