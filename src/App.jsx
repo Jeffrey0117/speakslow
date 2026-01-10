@@ -77,15 +77,11 @@ const VoiceWaveIndicator = React.memo(({ isListening }) => {
   );
 });
 
-// 處理中小進度條 - 簡單一條放在文字下面
-const ProcessingProgressBar = React.memo(({ stage = 'processing' }) => {
-  const barColor = stage === 'optimizing'
-    ? 'bg-gradient-to-r from-emerald-400 to-emerald-500'
-    : 'bg-gradient-to-r from-blue-400 to-blue-500';
-
+// 處理中小進度條 - 簡單一條放在文字下面（統一藍色，不變色）
+const ProcessingProgressBar = React.memo(() => {
   return (
     <div className="w-32 h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mx-auto mt-2">
-      <div className={`h-full ${barColor} rounded-full processing-progress-bar`} />
+      <div className="h-full bg-gradient-to-r from-blue-400 to-blue-500 rounded-full processing-progress-bar" />
     </div>
   );
 });
@@ -652,36 +648,36 @@ export default function App() {
     if (isRecording) {
       // 直接停止錄音但不處理結果
       stopRecording();
-      toast.info('錄音已取消');
+      showNotification('info', '錄音已取消');
     }
-  }, [isRecording, stopRecording]);
+  }, [isRecording, stopRecording, showNotification]);
 
   // 處理複製上次結果
   const handleCopyLastResult = useCallback(async () => {
     if (processedText) {
       try {
         await navigator.clipboard.writeText(processedText);
-        toast.success('已複製上次結果');
+        showNotification('success', '已複製上次結果');
       } catch (err) {
         if (window.electronAPI) {
           await window.electronAPI.copyText(processedText);
-          toast.success('已複製上次結果');
+          showNotification('success', '已複製上次結果');
         }
       }
     } else if (originalText) {
       try {
         await navigator.clipboard.writeText(originalText);
-        toast.success('已複製原始文字');
+        showNotification('success', '已複製原始文字');
       } catch (err) {
         if (window.electronAPI) {
           await window.electronAPI.copyText(originalText);
-          toast.success('已複製原始文字');
+          showNotification('success', '已複製原始文字');
         }
       }
     } else {
-      toast.warning('沒有可複製的結果');
+      showNotification('warning', '沒有可複製的結果');
     }
-  }, [processedText, originalText]);
+  }, [processedText, originalText, showNotification]);
 
   // 监听全局热键触发事件
   useEffect(() => {
@@ -928,7 +924,7 @@ export default function App() {
 
           {/* 處理中/優化中的小進度條 */}
           {(micState === "processing" || micState === "optimizing") && (
-            <ProcessingProgressBar stage={micState === "optimizing" ? 'optimizing' : 'processing'} />
+            <ProcessingProgressBar />
           )}
 
           {/* 串流辨識即時文字顯示 */}
