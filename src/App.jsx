@@ -86,6 +86,39 @@ const ProcessingProgressBar = React.memo(() => {
   );
 });
 
+// 有趣的處理中訊息列表（幽默版）
+const PROCESSING_MESSAGES = [
+  '正在聽你的幹話...',
+  '話不要說太多啊...',
+  '這是你說的第二句話...',
+  '認真聽你唬爛中...',
+  '努力理解你在說啥...',
+  '解碼你的聲波中...',
+  '文字正在組裝...',
+  '啟動語音魔法...',
+  '正在努力辨識...',
+  '收到收到處理中...',
+  '嗯嗯好我聽到了...',
+  '讓我想想你說啥...',
+];
+
+// 隨機訊息 Hook - 在狀態變化時隨機選擇，之後保持不變
+const useRandomMessage = (isActive, messages) => {
+  const [message, setMessage] = useState('');
+  const prevActiveRef = useRef(false);
+
+  useEffect(() => {
+    // 只在狀態從 false 變成 true 時選擇新訊息
+    if (isActive && !prevActiveRef.current) {
+      const randomIndex = Math.floor(Math.random() * messages.length);
+      setMessage(messages[randomIndex]);
+    }
+    prevActiveRef.current = isActive;
+  }, [isActive, messages]);
+
+  return message;
+};
+
 // 增强的工具提示组件
 const Tooltip = ({ children, content, position = "top" }) => {
   const [isVisible, setIsVisible] = useState(false);
@@ -128,37 +161,30 @@ const Tooltip = ({ children, content, position = "top" }) => {
 };
 
 // 文本显示区域组件 - 簡化版，只顯示一個結果
-const TextDisplay = React.memo(({ originalText, processedText, isProcessing, onCopy, t }) => {
+// 移除了 isProcessing 時的載入文字，避免閃跳
+const TextDisplay = React.memo(({ originalText, processedText, onCopy, t }) => {
   // 顯示的文字：優先顯示 AI 優化後的，沒有就顯示原始的
   const displayText = processedText || originalText;
 
-  if (!displayText && !isProcessing) {
+  // 沒有文字就不顯示這個區塊
+  if (!displayText) {
     return null;
   }
 
   return (
     <div className="relative bg-slate-100/80 dark:bg-gray-800/80 rounded-lg p-4 pr-12 shadow-sm">
       {/* 右上角複製按鈕 */}
-      {displayText && (
-        <button
-          onClick={() => onCopy(displayText)}
-          className="absolute top-3 right-3 p-1.5 hover:bg-slate-200/70 dark:hover:bg-gray-700/70 rounded-md transition-colors"
-          title={t ? t('app.copy') : "複製文字"}
-        >
-          <Copy className="w-4 h-4 text-slate-500 dark:text-gray-400" />
-        </button>
-      )}
+      <button
+        onClick={() => onCopy(displayText)}
+        className="absolute top-3 right-3 p-1.5 hover:bg-slate-200/70 dark:hover:bg-gray-700/70 rounded-md transition-colors"
+        title={t ? t('app.copy') : "複製文字"}
+      >
+        <Copy className="w-4 h-4 text-slate-500 dark:text-gray-400" />
+      </button>
 
-      {isProcessing && !displayText ? (
-        <div className="flex items-center space-x-3 text-slate-600 dark:text-gray-400">
-          <LoadingDots />
-          <span className="status-text">{t ? t('app.aiOptimizing') : 'AI正在優化文字...'}</span>
-        </div>
-      ) : (
-        <p className="chinese-content text-gray-800 dark:text-gray-200 leading-relaxed fade-in">
-          {displayText}
-        </p>
-      )}
+      <p className="chinese-content text-gray-800 dark:text-gray-200 leading-relaxed fade-in">
+        {displayText}
+      </p>
     </div>
   );
 });
@@ -719,6 +745,12 @@ export default function App() {
   const micState = getMicState();
   const isListening = isRecording || isRecordingProcessing;
 
+  // 隨機處理中訊息（processing 和 optimizing 都用同一組）
+  const processingMessage = useRandomMessage(
+    micState === "processing" || micState === "optimizing",
+    PROCESSING_MESSAGES
+  );
+
   // 获取麦克风按钮属性
   const getMicButtonProps = () => {
     const baseClasses =
@@ -870,10 +902,8 @@ export default function App() {
               t('app.waitingForTarget') || '請點擊目標位置後按熱鍵'
             ) : micState === "recording" ? (
               streamingMode ? '串流辨識中...' : t('app.recording')
-            ) : micState === "processing" ? (
-              t('app.processing')
-            ) : micState === "optimizing" ? (
-              t('app.optimizing')
+            ) : (micState === "processing" || micState === "optimizing") ? (
+              processingMessage || t('app.processing')
             ) : (
               t('app.clickToRecord', { hotkey })
             )}
@@ -914,7 +944,6 @@ export default function App() {
           <TextDisplay
             originalText={originalText}
             processedText={processedText}
-            isProcessing={isTextProcessing || isOptimizing}
             onCopy={handleCopyText}
             t={t}
           />
