@@ -127,77 +127,37 @@ const Tooltip = ({ children, content, position = "top" }) => {
   );
 };
 
-// 文本显示区域组件 - 使用 React.memo 優化避免不必要的重渲染
-const TextDisplay = React.memo(({ originalText, processedText, isProcessing, onCopy, onExport, onPaste, t }) => {
-  if (!originalText && !processedText) {
+// 文本显示区域组件 - 簡化版，只顯示一個結果
+const TextDisplay = React.memo(({ originalText, processedText, isProcessing, onCopy, t }) => {
+  // 顯示的文字：優先顯示 AI 優化後的，沒有就顯示原始的
+  const displayText = processedText || originalText;
+
+  if (!displayText && !isProcessing) {
     return null;
   }
 
   return (
-    <div className="space-y-4">
-      {/* 原始识别文本 - 复制按钮在右上角 */}
-      {originalText && (
-        <div className="relative bg-slate-100/80 dark:bg-gray-800/80 rounded-lg p-4 pr-12 shadow-sm">
-          <button
-            onClick={() => onCopy(originalText)}
-            className="absolute top-3 right-3 p-1.5 hover:bg-slate-200/70 dark:hover:bg-gray-700/70 rounded-md transition-colors"
-            title={t ? t('app.copyOriginal') : "複製辨識文字"}
-          >
-            <Copy className="w-4 h-4 text-slate-500 dark:text-gray-400" />
-          </button>
-          <p className="chinese-content text-gray-800 dark:text-gray-200 leading-relaxed">
-            {originalText}
-          </p>
-        </div>
+    <div className="relative bg-slate-100/80 dark:bg-gray-800/80 rounded-lg p-4 pr-12 shadow-sm">
+      {/* 右上角複製按鈕 */}
+      {displayText && (
+        <button
+          onClick={() => onCopy(displayText)}
+          className="absolute top-3 right-3 p-1.5 hover:bg-slate-200/70 dark:hover:bg-gray-700/70 rounded-md transition-colors"
+          title={t ? t('app.copy') : "複製文字"}
+        >
+          <Copy className="w-4 h-4 text-slate-500 dark:text-gray-400" />
+        </button>
       )}
 
-      {/* AI处理后文本 */}
-      {(processedText || isProcessing) && (
-        <div className="relative bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 rounded-xl p-5 pr-14 border-l-4 border-emerald-400 dark:border-emerald-500 shadow-lg border border-emerald-200/50 dark:border-emerald-700/50">
-          {/* 右上角按钮组 */}
-          {processedText && (
-            <div className="absolute top-3 right-3 flex space-x-1">
-              <button
-                onClick={() => onPaste(processedText)}
-                className="p-1.5 hover:bg-emerald-200/70 dark:hover:bg-emerald-700/30 rounded-md transition-colors"
-                title={t ? t('app.paste') : "貼上優化文字"}
-              >
-                <svg className="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-              </button>
-              <button
-                onClick={() => onCopy(processedText)}
-                className="p-1.5 hover:bg-emerald-200/70 dark:hover:bg-emerald-700/30 rounded-md transition-colors"
-                title={t ? t('app.copyOptimized') : "複製優化文字"}
-              >
-                <Copy className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              </button>
-              <button
-                onClick={() => onExport(processedText)}
-                className="p-1.5 hover:bg-emerald-200/70 dark:hover:bg-emerald-700/30 rounded-md transition-colors"
-                title={t ? t('app.export') : "匯出文字"}
-              >
-                <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              </button>
-            </div>
-          )}
-
-          <h3 className="text-base font-semibold chinese-title text-emerald-700 dark:text-emerald-400 mb-3">
-            {t ? t('app.aiOptimized') : 'AI優化後'}
-          </h3>
-
-          {isProcessing ? (
-            <div className="flex items-center space-x-3 text-emerald-700 dark:text-emerald-400">
-              <LoadingDots />
-              <span className="status-text">{t ? t('app.aiOptimizing') : 'AI正在優化文字...'}</span>
-            </div>
-          ) : (
-            <p className="chinese-content leading-loose fade-in text-gray-800 dark:text-gray-200">
-              {processedText}
-            </p>
-          )}
+      {isProcessing && !displayText ? (
+        <div className="flex items-center space-x-3 text-slate-600 dark:text-gray-400">
+          <LoadingDots />
+          <span className="status-text">{t ? t('app.aiOptimizing') : 'AI正在優化文字...'}</span>
         </div>
+      ) : (
+        <p className="chinese-content text-gray-800 dark:text-gray-200 leading-relaxed fade-in">
+          {displayText}
+        </p>
       )}
     </div>
   );
@@ -959,8 +919,6 @@ export default function App() {
             processedText={processedText}
             isProcessing={isTextProcessing || isOptimizing}
             onCopy={handleCopyText}
-            onExport={handleExportText}
-            onPaste={safePaste}
             t={t}
           />
         </div>
