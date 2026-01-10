@@ -339,13 +339,10 @@ export default function App() {
       }
 
       // 再透過 Electron API 嘗試自動貼上
+      // 注意：不再呼叫 restoreForegroundWindow，因為：
+      // 1. 如果使用者用熱鍵停止錄音，焦點本來就在正確的位置
+      // 2. 如果使用者用滑鼠點擊了新的輸入位置，不應該搶回舊焦點
       if (window.electronAPI) {
-        // 先恢復焦點到原本的視窗
-        await window.electronAPI.restoreForegroundWindow();
-
-        // 給一點時間讓視窗切換完成
-        await new Promise(resolve => setTimeout(resolve, 150));
-
         await window.electronAPI.pasteText(text);
       }
 
