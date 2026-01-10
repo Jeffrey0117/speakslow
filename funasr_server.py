@@ -70,10 +70,15 @@ class FunASRServer:
         self.asr_model = None
         self.vad_model = None
         self.punc_model = None
+        self.streaming_model = None  # 串流 ASR 模型
         self.initialized = False
         self.running = True
         self.transcription_count = 0
         self.total_audio_duration = 0.0
+
+        # 串流辨識狀態
+        self.streaming_cache = {}
+        self.streaming_text = ""
 
         # 外部传入的 damo 根目录（例如 /Volumes/APFS/AI/models/damo）
         self.damo_root = damo_root or os.environ.get("DAMO_ROOT")
@@ -169,6 +174,25 @@ class FunASRServer:
             return True
         except Exception as e:
             logger.error(f"标点恢复模型加载失败: {str(e)}")
+            return False
+
+    def _load_streaming_model(self):
+        """加载串流 ASR 模型"""
+        try:
+            logger.info("开始加载串流ASR模型...")
+            with suppress_stdout():
+                from funasr import AutoModel
+
+                self.streaming_model = AutoModel(
+                    model="paraformer-zh-streaming",
+                    model_revision="v2.0.4",
+                    disable_update=True,
+                    device="cpu",
+                )
+            logger.info("串流ASR模型加载完成")
+            return True
+        except Exception as e:
+            logger.error(f"串流ASR模型加载失败: {str(e)}")
             return False
 
     def initialize(self):
@@ -350,6 +374,122 @@ class FunASRServer:
             logger.error(traceback.format_exc())
             return {"success": False, "error": error_msg, "type": "transcription_error"}
 
+    def streaming_start(self):
+        """開始串流辨識會話"""
+        try:
+            # 確保串流模型已載入
+            if not self.streaming_model:
+                logger.info("串流模型未載入，開始載入...")
+                if not self._load_streaming_model():
+                    return {"success": False, "error": "串流模型載入失敗"}
+
+            # 重置串流狀態
+            self.streaming_cache = {}
+            self.streaming_text = ""
+            logger.info("串流辨識會話已開始")
+            return {"success": True, "message": "串流會話已開始"}
+        except Exception as e:
+            error_msg = f"開始串流會話失敗: {str(e)}"
+            logger.error(error_msg)
+            return {"success": False, "error": error_msg}
+
+    def streaming_feed(self, audio_chunk_base64, is_final=False):
+        """餵入音頻數據塊進行串流辨識"""
+        try:
+            if not self.streaming_model:
+                return {"success": False, "error": "串流模型未初始化，請先調用 streaming_start"}
+
+            import base64
+            import numpy as np
+
+            # 解碼 base64 音頻數據
+            audio_bytes = base64.b64decode(audio_chunk_base64)
+            # 假設是 16-bit PCM，16kHz
+            audio_chunk = np.frombuffer(audio_bytes, dtype=np.int16).astype(np.float32) / 32768.0
+
+            # 串流辨識參數
+            chunk_size = [0, 10, 5]  # 600ms 延遲
+            encoder_chunk_look_back = 4
+            decoder_chunk_look_back = 1
+
+            # 執行串流辨識
+            res = self.streaming_model.generate(
+                input=audio_chunk,
+                cache=self.streaming_cache,
+                is_final=is_final,
+                chunk_size=chunk_size,
+                encoder_chunk_look_back=encoder_chunk_look_back,
+                decoder_chunk_look_back=decoder_chunk_look_back,
+            )
+
+            # 提取文字
+            partial_text = ""
+            if isinstance(res, list) and len(res) > 0:
+                if isinstance(res[0], dict) and "text" in res[0]:
+                    partial_text = res[0]["text"]
+                else:
+                    partial_text = str(res[0]) if res[0] else ""
+
+            # 累積文字
+            if partial_text:
+                self.streaming_text += partial_text
+
+            result = {
+                "success": True,
+                "partial_text": partial_text,  # 這次辨識的增量文字
+                "full_text": self.streaming_text,  # 累積的完整文字
+                "is_final": is_final,
+            }
+
+            if is_final:
+                logger.info(f"串流辨識完成，最終文字: {self.streaming_text[:100]}...")
+                # 重置狀態
+                self.streaming_cache = {}
+                final_text = self.streaming_text
+                self.streaming_text = ""
+                result["final_text"] = final_text
+
+            return result
+
+        except Exception as e:
+            error_msg = f"串流辨識失敗: {str(e)}"
+            logger.error(error_msg)
+            logger.error(traceback.format_exc())
+            return {"success": False, "error": error_msg}
+
+    def streaming_end(self):
+        """結束串流辨識會話"""
+        try:
+            final_text = self.streaming_text
+
+            # 如果有文字且有標點模型，進行標點恢復
+            if final_text.strip() and self.punc_model:
+                try:
+                    punc_result = self.punc_model.generate(input=final_text)
+                    if isinstance(punc_result, list) and len(punc_result) > 0:
+                        if isinstance(punc_result[0], dict) and "text" in punc_result[0]:
+                            final_text = punc_result[0]["text"]
+                        else:
+                            final_text = str(punc_result[0])
+                    logger.info("串流結果標點恢復完成")
+                except Exception as e:
+                    logger.warning(f"標點恢復失敗: {str(e)}")
+
+            # 重置狀態
+            self.streaming_cache = {}
+            self.streaming_text = ""
+
+            logger.info(f"串流會話結束，最終文字: {final_text[:100] if final_text else '(空)'}...")
+            return {
+                "success": True,
+                "final_text": final_text,
+                "message": "串流會話已結束"
+            }
+        except Exception as e:
+            error_msg = f"結束串流會話失敗: {str(e)}"
+            logger.error(error_msg)
+            return {"success": False, "error": error_msg}
+
     def _get_audio_duration(self, audio_path):
         """获取音频时长"""
         try:
@@ -502,6 +642,15 @@ class FunASRServer:
                 elif command.get("action") == "cleanup":
                     self._cleanup_memory()
                     result = {"success": True, "message": "内存清理完成"}
+                # 串流辨識命令
+                elif command.get("action") == "streaming_start":
+                    result = self.streaming_start()
+                elif command.get("action") == "streaming_feed":
+                    audio_chunk = command.get("audio_chunk")
+                    is_final = command.get("is_final", False)
+                    result = self.streaming_feed(audio_chunk, is_final)
+                elif command.get("action") == "streaming_end":
+                    result = self.streaming_end()
                 elif command.get("action") == "exit":
                     result = {"success": True, "message": "服务器退出"}
                     print(json.dumps(result, ensure_ascii=False))

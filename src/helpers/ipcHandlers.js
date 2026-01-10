@@ -103,6 +103,19 @@ class IPCHandlers {
       return await this.funasrManager.transcribeAudio(audioData, options);
     });
 
+    // 串流辨識 API
+    ipcMain.handle("streaming-start", async () => {
+      return await this.funasrManager.streamingStart();
+    });
+
+    ipcMain.handle("streaming-feed", async (event, audioChunk, isFinal) => {
+      return await this.funasrManager.streamingFeed(audioChunk, isFinal);
+    });
+
+    ipcMain.handle("streaming-end", async () => {
+      return await this.funasrManager.streamingEnd();
+    });
+
     // 数据库相关
     ipcMain.handle("save-transcription", (event, data) => {
       return this.databaseManager.saveTranscription(data);

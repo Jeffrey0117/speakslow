@@ -1211,6 +1211,63 @@ class FunASRManager {
     }
   }
 
+  // ==================== 串流辨識 API ====================
+
+  /**
+   * 開始串流辨識會話
+   */
+  async streamingStart() {
+    if (!this.serverReady) {
+      throw new Error('FunASR服務器未就緒');
+    }
+
+    this.logger.info && this.logger.info('開始串流辨識會話');
+    return await this._sendServerCommand({ action: 'streaming_start' });
+  }
+
+  /**
+   * 餵入音頻數據進行串流辨識
+   * @param {Buffer|Uint8Array|string} audioChunk - 音頻數據（16-bit PCM, 16kHz）
+   * @param {boolean} isFinal - 是否為最後一個數據塊
+   */
+  async streamingFeed(audioChunk, isFinal = false) {
+    if (!this.serverReady) {
+      throw new Error('FunASR服務器未就緒');
+    }
+
+    // 轉換為 base64
+    let base64Data;
+    if (typeof audioChunk === 'string') {
+      base64Data = audioChunk;
+    } else if (audioChunk instanceof Buffer) {
+      base64Data = audioChunk.toString('base64');
+    } else if (audioChunk instanceof Uint8Array) {
+      base64Data = Buffer.from(audioChunk).toString('base64');
+    } else if (audioChunk instanceof ArrayBuffer) {
+      base64Data = Buffer.from(audioChunk).toString('base64');
+    } else {
+      throw new Error('不支援的音頻數據格式');
+    }
+
+    return await this._sendServerCommand({
+      action: 'streaming_feed',
+      audio_chunk: base64Data,
+      is_final: isFinal
+    });
+  }
+
+  /**
+   * 結束串流辨識會話並獲取最終結果
+   */
+  async streamingEnd() {
+    if (!this.serverReady) {
+      throw new Error('FunASR服務器未就緒');
+    }
+
+    this.logger.info && this.logger.info('結束串流辨識會話');
+    return await this._sendServerCommand({ action: 'streaming_end' });
+  }
+
   async checkStatus() {
     try {
       if (this.serverReady) {

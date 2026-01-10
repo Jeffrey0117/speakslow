@@ -22,6 +22,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
   installFunASR: () => ipcRenderer.invoke("install-funasr"),
   restartFunasrServer: () => ipcRenderer.invoke("restart-funasr-server"),
 
+  // 串流辨識 API
+  streamingStart: () => ipcRenderer.invoke("streaming-start"),
+  streamingFeed: (audioChunk, isFinal) => ipcRenderer.invoke("streaming-feed", audioChunk, isFinal),
+  streamingEnd: () => ipcRenderer.invoke("streaming-end"),
+
   // 模型文件管理
   checkModelFiles: () => ipcRenderer.invoke("check-model-files"),
   getDownloadProgress: () => ipcRenderer.invoke("get-download-progress"),
