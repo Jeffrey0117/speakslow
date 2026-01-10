@@ -5,7 +5,7 @@
   "main": "main.js",
   "private": true,
   "scripts": {
-    "start": "electron .",
+    "start": "node start-electron.js",
     "dev": "concurrently -k -r \"npm:dev:renderer\" \"npm:dev:main\"",
     "dev:main": "cross-env NODE_ENV=development node start-electron.js --dev",
     "dev:renderer": "cd src && vite",

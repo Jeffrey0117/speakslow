@@ -157,19 +157,27 @@ export const useStreamingRecording = () => {
         // 發送到後端進行辨識
         if (window.electronAPI && mergedBuffer.length > 0) {
           try {
+            // 使用瀏覽器原生方式轉換為 base64
+            const uint8Array = new Uint8Array(mergedBuffer.buffer);
+            const base64 = btoa(String.fromCharCode(...uint8Array));
             const result = await window.electronAPI.streamingFeed(
-              Buffer.from(mergedBuffer.buffer).toString('base64'),
+              base64,
               false
             );
 
+            console.log('串流辨識結果:', result);
             if (result.success) {
               // 更新即時文字
               if (result.partial_text) {
+                console.log('設置 partialText:', result.partial_text);
                 setPartialText(result.partial_text);
               }
               if (result.full_text) {
+                console.log('設置 fullText:', result.full_text);
                 setFullText(result.full_text);
               }
+            } else {
+              console.warn('串流辨識返回失敗:', result);
             }
           } catch (err) {
             console.error('串流辨識錯誤:', err);
@@ -203,9 +211,11 @@ export const useStreamingRecording = () => {
         }
         audioBufferRef.current = [];
 
-        // 標記為最後一個 chunk
+        // 標記為最後一個 chunk - 使用瀏覽器原生方式轉換為 base64
+        const uint8Array = new Uint8Array(mergedBuffer.buffer);
+        const base64 = btoa(String.fromCharCode(...uint8Array));
         await window.electronAPI.streamingFeed(
-          Buffer.from(mergedBuffer.buffer).toString('base64'),
+          base64,
           true
         );
       }

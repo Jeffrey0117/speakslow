@@ -1268,6 +1268,18 @@ class FunASRManager {
     return await this._sendServerCommand({ action: 'streaming_end' });
   }
 
+  /**
+   * 預載串流模型（用於啟用串流模式時提前載入）
+   */
+  async preloadStreamingModel() {
+    if (!this.serverReady) {
+      throw new Error('FunASR服務器未就緒');
+    }
+
+    this.logger.info && this.logger.info('預載串流模型');
+    return await this._sendServerCommand({ action: 'preload_streaming_model' });
+  }
+
   async checkStatus() {
     try {
       if (this.serverReady) {

@@ -374,6 +374,23 @@ class FunASRServer:
             logger.error(traceback.format_exc())
             return {"success": False, "error": error_msg, "type": "transcription_error"}
 
+    def preload_streaming_model(self):
+        """預載串流模型（用於用戶啟用串流模式時提前載入）"""
+        try:
+            if self.streaming_model:
+                logger.info("串流模型已載入，無需重複載入")
+                return {"success": True, "already_loaded": True, "message": "串流模型已就緒"}
+
+            logger.info("開始預載串流模型...")
+            if self._load_streaming_model():
+                return {"success": True, "already_loaded": False, "message": "串流模型預載完成"}
+            else:
+                return {"success": False, "error": "串流模型預載失敗"}
+        except Exception as e:
+            error_msg = f"預載串流模型失敗: {str(e)}"
+            logger.error(error_msg)
+            return {"success": False, "error": error_msg}
+
     def streaming_start(self):
         """開始串流辨識會話"""
         try:
@@ -422,21 +439,21 @@ class FunASRServer:
                 decoder_chunk_look_back=decoder_chunk_look_back,
             )
 
-            # 提取文字
-            partial_text = ""
+            # 提取文字 - FunASR 串流模型返回的是當前累積的完整結果，不是增量
+            current_text = ""
             if isinstance(res, list) and len(res) > 0:
                 if isinstance(res[0], dict) and "text" in res[0]:
-                    partial_text = res[0]["text"]
+                    current_text = res[0]["text"]
                 else:
-                    partial_text = str(res[0]) if res[0] else ""
+                    current_text = str(res[0]) if res[0] else ""
 
-            # 累積文字
-            if partial_text:
-                self.streaming_text += partial_text
+            # 更新累積文字（直接替換，不是累加）
+            if current_text:
+                self.streaming_text = current_text
 
             result = {
                 "success": True,
-                "partial_text": partial_text,  # 這次辨識的增量文字
+                "partial_text": "",  # 串流模式下不使用增量文字
                 "full_text": self.streaming_text,  # 累積的完整文字
                 "is_final": is_final,
             }
@@ -651,6 +668,8 @@ class FunASRServer:
                     result = self.streaming_feed(audio_chunk, is_final)
                 elif command.get("action") == "streaming_end":
                     result = self.streaming_end()
+                elif command.get("action") == "preload_streaming_model":
+                    result = self.preload_streaming_model()
                 elif command.get("action") == "exit":
                     result = {"success": True, "message": "服务器退出"}
                     print(json.dumps(result, ensure_ascii=False))

@@ -116,6 +116,10 @@ class IPCHandlers {
       return await this.funasrManager.streamingEnd();
     });
 
+    ipcMain.handle("preload-streaming-model", async () => {
+      return await this.funasrManager.preloadStreamingModel();
+    });
+
     // 数据库相关
     ipcMain.handle("save-transcription", (event, data) => {
       return this.databaseManager.saveTranscription(data);

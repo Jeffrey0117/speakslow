@@ -1,3 +1,7 @@
+// 修復 VSCode/Claude Code 內開發 Electron 應用的問題
+// 這些環境基於 Electron，會繼承 ELECTRON_RUN_AS_NODE=1，導致 Electron API 無法使用
+delete process.env.ELECTRON_RUN_AS_NODE;
+
 const { app, globalShortcut, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 const { spawn } = require("child_process");

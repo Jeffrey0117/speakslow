@@ -26,6 +26,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   streamingStart: () => ipcRenderer.invoke("streaming-start"),
   streamingFeed: (audioChunk, isFinal) => ipcRenderer.invoke("streaming-feed", audioChunk, isFinal),
   streamingEnd: () => ipcRenderer.invoke("streaming-end"),
+  preloadStreamingModel: () => ipcRenderer.invoke("preload-streaming-model"),
 
   // 模型文件管理
   checkModelFiles: () => ipcRenderer.invoke("check-model-files"),

@@ -125,6 +125,26 @@ const SettingsPage = () => {
           toast.success(value ? t('notifications.enabled') : t('notifications.disabled'));
         } else if (key === 'enable_streaming_mode') {
           toast.success(value ? '串流辨識模式已開啟' : '串流辨識模式已關閉');
+          // 當啟用串流模式時，預載串流模型以減少首次錄音延遲
+          if (value) {
+            toast.info('正在預載串流模型，請稍候...');
+            window.electronAPI.preloadStreamingModel()
+              .then(result => {
+                if (result.success) {
+                  if (result.already_loaded) {
+                    toast.success('串流模型已就緒');
+                  } else {
+                    toast.success('串流模型預載完成');
+                  }
+                } else {
+                  toast.error(`串流模型預載失敗: ${result.error || '未知錯誤'}`);
+                }
+              })
+              .catch(err => {
+                console.error('預載串流模型失敗:', err);
+                toast.error('串流模型預載失敗，首次錄音可能會較慢');
+              });
+          }
         }
         // 設定變更會透過 IPC 自動廣播到所有視窗
       }
@@ -390,8 +410,8 @@ const SettingsPage = () => {
                     <label htmlFor="streaming-toggle" className="text-sm font-medium text-gray-800 dark:text-gray-200">
                       串流辨識模式
                     </label>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                      邊錄音邊顯示辨識文字（實驗功能）
+                    <p className="text-xs text-orange-500 dark:text-orange-400 mt-0.5">
+                      ⚠️ 實驗功能：CPU 模式下辨識較慢且準確度較低，建議使用傳統模式
                     </p>
                   </div>
                   <button
