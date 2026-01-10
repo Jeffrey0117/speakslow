@@ -456,14 +456,15 @@ class FunASRServer:
             # 假設是 16-bit PCM，16kHz
             audio_chunk = np.frombuffer(audio_bytes, dtype=np.int16).astype(np.float32) / 32768.0
 
-            # 串流辨識參數 - 極速優化
+            # 串流辨識參數 - 超極速模式
             # [0, 10, 5] = 600ms 延遲（原設定）
             # [0, 8, 4] = 480ms 延遲（較快響應）
             # [0, 6, 3] = 360ms 延遲（極速模式）
-            # [0, 5, 2] = 300ms 延遲（超極速，可能影響準確度）
-            chunk_size = [0, 6, 3]  # 極速：360ms 延遲
-            encoder_chunk_look_back = 2  # 從 4 降到 2，減少上下文依賴
-            decoder_chunk_look_back = 0  # 從 1 降到 0，最快解碼
+            # [0, 5, 2] = 300ms 延遲（超極速）
+            # [0, 4, 2] = 240ms 延遲（瘋狂模式）
+            chunk_size = [0, 5, 2]  # 超極速：300ms 延遲
+            encoder_chunk_look_back = 1  # 最小上下文，最快速度
+            decoder_chunk_look_back = 0  # 無回看，最快解碼
 
             # 執行串流辨識
             res = self.streaming_model.generate(

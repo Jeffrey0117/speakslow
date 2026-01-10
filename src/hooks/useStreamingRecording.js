@@ -28,6 +28,13 @@ export const useStreamingRecording = () => {
   const audioBufferRef = useRef([]);
   const sendIntervalRef = useRef(null);
 
+  // VAD 停頓偵測
+  const silenceStartRef = useRef(null);  // 靜音開始時間
+  const lastVoiceTimeRef = useRef(null); // 最後有聲音的時間
+  const segmentTextRef = useRef('');     // 當前段落累積的文字
+  const SILENCE_THRESHOLD = 0.01;        // 靜音門檻（音量 RMS）
+  const SILENCE_DURATION = 400;          // 靜音持續多久觸發分段（ms）- 更快的分段
+
   // 使用模型狀態 Hook
   const modelStatus = useModelStatus();
 
@@ -60,6 +67,9 @@ export const useStreamingRecording = () => {
 
     audioBufferRef.current = [];
     streamingActiveRef.current = false;
+    silenceStartRef.current = null;
+    lastVoiceTimeRef.current = null;
+    segmentTextRef.current = '';
   }, []);
 
   // 開始串流錄音
@@ -116,10 +126,31 @@ export const useStreamingRecording = () => {
         if (!streamingActiveRef.current) return;
 
         const inputData = e.inputBuffer.getChannelData(0);
+
+        // 計算 RMS 音量（用於 VAD 偵測）
+        let sum = 0;
+        for (let i = 0; i < inputData.length; i++) {
+          sum += inputData[i] * inputData[i];
+        }
+        const rms = Math.sqrt(sum / inputData.length);
+
         // 轉換為 16-bit PCM
         const pcmData = new Int16Array(inputData.length);
         for (let i = 0; i < inputData.length; i++) {
           pcmData[i] = Math.max(-32768, Math.min(32767, inputData[i] * 32768));
+        }
+
+        // VAD 偵測：檢查是否有聲音
+        const now = Date.now();
+        if (rms > SILENCE_THRESHOLD) {
+          // 有聲音
+          lastVoiceTimeRef.current = now;
+          silenceStartRef.current = null;
+        } else {
+          // 靜音
+          if (lastVoiceTimeRef.current && !silenceStartRef.current) {
+            silenceStartRef.current = now;
+          }
         }
 
         // 累積到緩衝區
@@ -140,9 +171,15 @@ export const useStreamingRecording = () => {
       streamingActiveRef.current = true;
       setIsRecording(true);
 
-      // 定期發送音頻數據（每 600ms，配合模型的 chunk_size）
+      // 定期發送音頻數據（每 300ms，配合超極速 chunk_size）
       sendIntervalRef.current = setInterval(async () => {
         if (!streamingActiveRef.current || audioBufferRef.current.length === 0) return;
+
+        // 檢查是否偵測到停頓（靜音超過 SILENCE_DURATION）
+        const now = Date.now();
+        const isSilencePause = silenceStartRef.current &&
+                               (now - silenceStartRef.current) > SILENCE_DURATION &&
+                               lastVoiceTimeRef.current;
 
         // 合併緩衝區中的所有數據
         const totalLength = audioBufferRef.current.reduce((sum, arr) => sum + arr.length, 0);
@@ -160,30 +197,40 @@ export const useStreamingRecording = () => {
             // 使用瀏覽器原生方式轉換為 base64
             const uint8Array = new Uint8Array(mergedBuffer.buffer);
             const base64 = btoa(String.fromCharCode(...uint8Array));
+
+            // 如果偵測到停頓，發送 is_final=true 來觸發分段
             const result = await window.electronAPI.streamingFeed(
               base64,
-              false
+              isSilencePause  // 停頓時標記為 final，觸發分段處理
             );
 
-            console.log('串流辨識結果:', result);
             if (result.success) {
               // 更新即時文字
               if (result.partial_text) {
-                console.log('設置 partialText:', result.partial_text);
                 setPartialText(result.partial_text);
               }
               if (result.full_text) {
-                console.log('設置 fullText:', result.full_text);
-                setFullText(result.full_text);
+                // 如果是分段結束，累積文字
+                if (isSilencePause && result.full_text) {
+                  segmentTextRef.current += result.full_text;
+                  setFullText(segmentTextRef.current);
+
+                  // 重置 VAD 狀態，開始新段落
+                  silenceStartRef.current = null;
+                  lastVoiceTimeRef.current = null;
+
+                  // 重新開始串流會話
+                  await window.electronAPI.streamingStart();
+                } else {
+                  setFullText(segmentTextRef.current + result.full_text);
+                }
               }
-            } else {
-              console.warn('串流辨識返回失敗:', result);
             }
           } catch (err) {
             console.error('串流辨識錯誤:', err);
           }
         }
-      }, 600);
+      }, 300);  // 300ms 間隔，配合超極速模式
 
     } catch (err) {
       setError(`無法開始串流錄音: ${err.message}`);
