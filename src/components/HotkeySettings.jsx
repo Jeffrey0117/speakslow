@@ -146,6 +146,13 @@ const HotkeyItem = ({ actionId, actionInfo, currentHotkey, defaultHotkey, onUpda
           setIsRecording(false);
           setTempHotkey('');
           toast.success(`快捷鍵已更新為 ${formatHotkey(tempHotkey)}`);
+
+          // 通知其他組件快捷鍵已變更
+          if (actionId === 'toggle-recording') {
+            window.dispatchEvent(new CustomEvent('hotkey-changed', {
+              detail: { hotkey: tempHotkey, actionId }
+            }));
+          }
         } else {
           setError(result.error || '設置失敗');
         }

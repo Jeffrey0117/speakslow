@@ -27,6 +27,22 @@ export const useHotkey = () => {
     };
 
     getCurrentHotkey();
+
+    // 監聽快捷鍵變更事件
+    const handleHotkeyChange = (event) => {
+      if (event.detail && event.detail.hotkey) {
+        setHotkey(event.detail.hotkey);
+      } else {
+        // 重新獲取快捷鍵
+        getCurrentHotkey();
+      }
+    };
+
+    window.addEventListener('hotkey-changed', handleHotkeyChange);
+
+    return () => {
+      window.removeEventListener('hotkey-changed', handleHotkeyChange);
+    };
   }, []);
 
   // 移除F2双击相关的复杂逻辑，专注于传统热键
