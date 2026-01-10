@@ -586,6 +586,12 @@ class IPCHandlers {
           currentHotkeys[actionId] = accelerator;
           await this.databaseManager.setSetting('custom_hotkeys', currentHotkeys);
           this.logger.info(`快捷鍵已更新: ${actionId} -> ${accelerator}`);
+
+          // 廣播快捷鍵變更到所有視窗
+          const { BrowserWindow } = require('electron');
+          BrowserWindow.getAllWindows().forEach(win => {
+            win.webContents.send('hotkey-changed', { actionId, accelerator });
+          });
         }
 
         return result;

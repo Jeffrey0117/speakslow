@@ -28,20 +28,20 @@ export const useHotkey = () => {
 
     getCurrentHotkey();
 
-    // 監聽快捷鍵變更事件
-    const handleHotkeyChange = (event) => {
-      if (event.detail && event.detail.hotkey) {
-        setHotkey(event.detail.hotkey);
-      } else {
-        // 重新獲取快捷鍵
-        getCurrentHotkey();
-      }
-    };
-
-    window.addEventListener('hotkey-changed', handleHotkeyChange);
+    // 監聽快捷鍵變更事件（來自主進程的跨視窗通知）
+    let unsubscribe = null;
+    if (window.electronAPI && window.electronAPI.onHotkeyChanged) {
+      unsubscribe = window.electronAPI.onHotkeyChanged((data) => {
+        if (data && data.actionId === 'toggle-recording' && data.accelerator) {
+          setHotkey(data.accelerator);
+        }
+      });
+    }
 
     return () => {
-      window.removeEventListener('hotkey-changed', handleHotkeyChange);
+      if (unsubscribe) {
+        unsubscribe();
+      }
     };
   }, []);
 

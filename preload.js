@@ -100,6 +100,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return () => ipcRenderer.removeListener("hotkey-action", callback);
   },
 
+  // 監聽快捷鍵變更事件（跨視窗通知）
+  onHotkeyChanged: (callback) => {
+    const handler = (event, data) => callback(data);
+    ipcRenderer.on("hotkey-changed", handler);
+    return () => ipcRenderer.removeListener("hotkey-changed", handler);
+  },
+
   // 文件操作
   exportTranscriptions: (format) => ipcRenderer.invoke("export-transcriptions", format),
   importSettings: () => ipcRenderer.invoke("import-settings"),
