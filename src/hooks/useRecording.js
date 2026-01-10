@@ -16,12 +16,60 @@ export const useRecording = () => {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const streamRef = useRef(null);
-  
+
   // 添加防重复处理机制
   const processingRef = useRef({ isProcessingAudio: false, lastProcessTime: 0 });
 
+  // 預熱的 AudioContext 用於減少錄音啟動延遲
+  const prewarmedAudioContextRef = useRef(null);
+
+  // 麥克風權限狀態快取
+  const micPermissionRef = useRef('unknown');
+
   // 使用模型状态Hook
   const modelStatus = useModelStatus();
+
+  // 預熱 AudioContext 以減少首次錄音延遲
+  useEffect(() => {
+    const prewarmAudio = async () => {
+      try {
+        // 創建並預熱 AudioContext
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)({
+          sampleRate: 16000
+        });
+
+        // 必須在用戶交互後 resume（暫時保持 suspended 狀態）
+        prewarmedAudioContextRef.current = audioContext;
+
+        // 預查詢麥克風權限狀態
+        if (navigator.permissions) {
+          try {
+            const result = await navigator.permissions.query({ name: 'microphone' });
+            micPermissionRef.current = result.state;
+
+            // 監聽權限變化
+            result.onchange = () => {
+              micPermissionRef.current = result.state;
+            };
+          } catch (e) {
+            // 某些瀏覽器不支援 permissions API
+          }
+        }
+      } catch (e) {
+        // 預熱失敗不影響功能
+      }
+    };
+
+    prewarmAudio();
+
+    return () => {
+      // 清理預熱的 AudioContext
+      if (prewarmedAudioContextRef.current) {
+        prewarmedAudioContextRef.current.close().catch(() => {});
+        prewarmedAudioContextRef.current = null;
+      }
+    };
+  }, []);
 
   // 开始录音
   const startRecording = useCallback(async () => {

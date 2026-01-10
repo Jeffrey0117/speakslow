@@ -514,6 +514,198 @@ class IPCHandlers {
       }
     });
 
+    // =====================================================
+    // 自定義快捷鍵設定 API
+    // =====================================================
+
+    // 獲取所有快捷鍵設定
+    ipcMain.handle("get-hotkey-settings", async () => {
+      try {
+        if (!this.hotkeyManager) {
+          return { success: false, error: "快捷鍵管理器未初始化" };
+        }
+
+        // 從資料庫讀取已保存的快捷鍵設定
+        const savedHotkeys = await this.databaseManager.getSetting('custom_hotkeys', null);
+        const defaultHotkeys = this.hotkeyManager.getDefaultHotkeys();
+        const currentBindings = this.hotkeyManager.getHotkeyBindings();
+
+        return {
+          success: true,
+          hotkeys: savedHotkeys || currentBindings || defaultHotkeys,
+          defaults: defaultHotkeys,
+        };
+      } catch (error) {
+        this.logger.error("獲取快捷鍵設定失敗:", error);
+        return { success: false, error: error.message };
+      }
+    });
+
+    // 獲取預設快捷鍵
+    ipcMain.handle("get-hotkey-defaults", () => {
+      try {
+        if (!this.hotkeyManager) {
+          return { success: false, error: "快捷鍵管理器未初始化" };
+        }
+        return {
+          success: true,
+          defaults: this.hotkeyManager.getDefaultHotkeys(),
+        };
+      } catch (error) {
+        this.logger.error("獲取預設快捷鍵失敗:", error);
+        return { success: false, error: error.message };
+      }
+    });
+
+    // 驗證快捷鍵
+    ipcMain.handle("validate-hotkey", (event, accelerator, excludeActionId = null) => {
+      try {
+        if (!this.hotkeyManager) {
+          return { valid: false, error: "快捷鍵管理器未初始化" };
+        }
+        return this.hotkeyManager.validateHotkey(accelerator, excludeActionId);
+      } catch (error) {
+        this.logger.error("驗證快捷鍵失敗:", error);
+        return { valid: false, error: error.message };
+      }
+    });
+
+    // 設置單個快捷鍵
+    ipcMain.handle("set-action-hotkey", async (event, actionId, accelerator) => {
+      try {
+        if (!this.hotkeyManager) {
+          return { success: false, error: "快捷鍵管理器未初始化" };
+        }
+
+        // 註冊新快捷鍵
+        const result = this.hotkeyManager.registerActionHotkey(actionId, accelerator);
+
+        if (result.success) {
+          // 保存到資料庫
+          const currentHotkeys = await this.databaseManager.getSetting('custom_hotkeys', {});
+          currentHotkeys[actionId] = accelerator;
+          await this.databaseManager.setSetting('custom_hotkeys', currentHotkeys);
+          this.logger.info(`快捷鍵已更新: ${actionId} -> ${accelerator}`);
+        }
+
+        return result;
+      } catch (error) {
+        this.logger.error("設置快捷鍵失敗:", error);
+        return { success: false, error: error.message };
+      }
+    });
+
+    // 重設快捷鍵
+    ipcMain.handle("reset-hotkeys", async (event, actionId = null) => {
+      try {
+        if (!this.hotkeyManager) {
+          return { success: false, error: "快捷鍵管理器未初始化" };
+        }
+
+        const result = this.hotkeyManager.resetToDefault(actionId);
+
+        if (result.success) {
+          if (actionId) {
+            // 更新資料庫中的單個快捷鍵
+            const currentHotkeys = await this.databaseManager.getSetting('custom_hotkeys', {});
+            const defaults = this.hotkeyManager.getDefaultHotkeys();
+            currentHotkeys[actionId] = defaults[actionId];
+            await this.databaseManager.setSetting('custom_hotkeys', currentHotkeys);
+          } else {
+            // 重設所有：清除自定義設定
+            await this.databaseManager.setSetting('custom_hotkeys', null);
+          }
+          this.logger.info(`快捷鍵已重設: ${actionId || '全部'}`);
+        }
+
+        return {
+          success: result.success,
+          hotkeys: this.hotkeyManager.getDefaultHotkeys(),
+        };
+      } catch (error) {
+        this.logger.error("重設快捷鍵失敗:", error);
+        return { success: false, error: error.message };
+      }
+    });
+
+    // 初始化快捷鍵（從資料庫載入並註冊）
+    ipcMain.handle("init-custom-hotkeys", async () => {
+      try {
+        if (!this.hotkeyManager) {
+          return { success: false, error: "快捷鍵管理器未初始化" };
+        }
+
+        // 設置操作回調函數
+        const self = this;
+
+        // 開始/停止錄音
+        this.hotkeyManager.setActionCallback('toggle-recording', (info) => {
+          self.logger.info(`快捷鍵觸發: toggle-recording (${info.accelerator})`);
+          // 儲存前景視窗
+          try {
+            self.clipboardManager.saveForegroundWindow();
+          } catch (err) {
+            self.logger.warn('儲存前景視窗失敗:', err.message);
+          }
+          // 發送事件到主視窗
+          if (self.windowManager?.mainWindow && !self.windowManager.mainWindow.isDestroyed()) {
+            self.windowManager.mainWindow.webContents.send("hotkey-action", { actionId: 'toggle-recording' });
+            // 也發送舊的事件以保持兼容性
+            self.windowManager.mainWindow.webContents.send("hotkey-triggered", { hotkey: info.accelerator });
+          }
+        });
+
+        // 取消錄音
+        this.hotkeyManager.setActionCallback('cancel-recording', (info) => {
+          self.logger.info(`快捷鍵觸發: cancel-recording (${info.accelerator})`);
+          if (self.windowManager?.mainWindow && !self.windowManager.mainWindow.isDestroyed()) {
+            self.windowManager.mainWindow.webContents.send("hotkey-action", { actionId: 'cancel-recording' });
+          }
+        });
+
+        // 顯示主視窗
+        this.hotkeyManager.setActionCallback('show-window', (info) => {
+          self.logger.info(`快捷鍵觸發: show-window (${info.accelerator})`);
+          if (self.windowManager?.mainWindow) {
+            if (self.windowManager.mainWindow.isMinimized()) {
+              self.windowManager.mainWindow.restore();
+            }
+            self.windowManager.mainWindow.show();
+            self.windowManager.mainWindow.focus();
+          }
+        });
+
+        // 複製上次結果
+        this.hotkeyManager.setActionCallback('copy-last', (info) => {
+          self.logger.info(`快捷鍵觸發: copy-last (${info.accelerator})`);
+          if (self.windowManager?.mainWindow && !self.windowManager.mainWindow.isDestroyed()) {
+            self.windowManager.mainWindow.webContents.send("hotkey-action", { actionId: 'copy-last' });
+          }
+        });
+
+        // 從資料庫讀取設定
+        const savedHotkeys = await this.databaseManager.getSetting('custom_hotkeys', null);
+        const defaults = this.hotkeyManager.getDefaultHotkeys();
+        const hotkeyConfig = savedHotkeys || defaults;
+
+        // 註冊所有快捷鍵
+        const results = {};
+        for (const [actionId, accelerator] of Object.entries(hotkeyConfig)) {
+          results[actionId] = this.hotkeyManager.registerActionHotkey(actionId, accelerator);
+        }
+
+        return {
+          success: true,
+          hotkeys: hotkeyConfig,
+          results,
+        };
+      } catch (error) {
+        this.logger.error("初始化快捷鍵失敗:", error);
+        return { success: false, error: error.message };
+      }
+    });
+
+    // =====================================================
     // 文件操作
     ipcMain.handle("export-transcriptions", (event, format) => {
       // TODO: 实现导出转录功能

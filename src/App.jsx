@@ -16,8 +16,8 @@ import { ModelDownloadProgress } from "./components/ui/model-status-indicator";
 // 动态导入设置页面组件
 const SettingsPage = React.lazy(() => import('./settings.jsx').then(module => ({ default: module.SettingsPage })));
 
-// 声波图标组件（空闲/悬停状态）
-const SoundWaveIcon = ({ size = 16, isActive = false }) => {
+// 声波图标组件（空闲/悬停状态）- 使用 React.memo 優化
+const SoundWaveIcon = React.memo(({ size = 16, isActive = false }) => {
   return (
     <div className="flex items-center justify-center gap-1">
       {[...Array(4)].map((_, i) => (
@@ -35,10 +35,10 @@ const SoundWaveIcon = ({ size = 16, isActive = false }) => {
       ))}
     </div>
   );
-};
+});
 
-// 加载指示器组件（FunASR启动中）
-const LoadingIndicator = ({ size = 20 }) => {
+// 加载指示器组件（FunASR启动中）- 使用 React.memo 優化
+const LoadingIndicator = React.memo(({ size = 20 }) => {
   return (
     <div className="flex items-center justify-center gap-0.5">
       {[...Array(3)].map((_, i) => (
@@ -54,10 +54,10 @@ const LoadingIndicator = ({ size = 20 }) => {
       ))}
     </div>
   );
-};
+});
 
-// 语音波形指示器组件（处理状态）
-const VoiceWaveIndicator = ({ isListening }) => {
+// 语音波形指示器组件（处理状态）- 使用 React.memo 優化
+const VoiceWaveIndicator = React.memo(({ isListening }) => {
   return (
     <div className="flex items-center justify-center gap-0.5">
       {[...Array(4)].map((_, i) => (
@@ -74,7 +74,7 @@ const VoiceWaveIndicator = ({ isListening }) => {
       ))}
     </div>
   );
-};
+});
 
 // 增强的工具提示组件
 const Tooltip = ({ children, content, position = "top" }) => {
@@ -117,8 +117,8 @@ const Tooltip = ({ children, content, position = "top" }) => {
   );
 };
 
-// 文本显示区域组件
-const TextDisplay = ({ originalText, processedText, isProcessing, onCopy, onExport, onPaste, t }) => {
+// 文本显示区域组件 - 使用 React.memo 優化避免不必要的重渲染
+const TextDisplay = React.memo(({ originalText, processedText, isProcessing, onCopy, onExport, onPaste, t }) => {
   if (!originalText && !processedText) {
     return null;
   }
@@ -191,7 +191,7 @@ const TextDisplay = ({ originalText, processedText, isProcessing, onCopy, onExpo
       )}
     </div>
   );
-};
+});
 
 // 设置页面包装组件 - 用于 ?page=settings 路由
 const SettingsPageWrapper = () => {
@@ -526,16 +526,23 @@ export default function App() {
 
     const initializeHotkey = async () => {
       try {
-        // 注册默认热键 Ctrl+Shift+Space
-        await registerHotkey('CommandOrControl+Shift+Space');
+        // 初始化自定義快捷鍵系統
+        if (window.electronAPI?.initCustomHotkeys) {
+          const result = await window.electronAPI.initCustomHotkeys();
+          if (result.success) {
+            console.log('自定義快捷鍵初始化成功:', result.hotkeys);
+          }
+        } else {
+          // 後備：使用舊的單一熱鍵註冊
+          await registerHotkey('CommandOrControl+Shift+Space');
+        }
       } catch (error) {
         // 热键注册失败时静默处理
+        console.warn('快捷鍵初始化失敗:', error);
       }
     };
 
-    if (registerHotkey) {
-      initializeHotkey();
-    }
+    initializeHotkey();
   }, [registerHotkey]);
 
   // 处理关闭窗口
@@ -563,10 +570,64 @@ export default function App() {
   };
 
 
+  // 處理取消錄音
+  const handleCancelRecording = useCallback(() => {
+    if (isRecording) {
+      // 直接停止錄音但不處理結果
+      stopRecording();
+      toast.info('錄音已取消');
+    }
+  }, [isRecording, stopRecording]);
+
+  // 處理複製上次結果
+  const handleCopyLastResult = useCallback(async () => {
+    if (processedText) {
+      try {
+        await navigator.clipboard.writeText(processedText);
+        toast.success('已複製上次結果');
+      } catch (err) {
+        if (window.electronAPI) {
+          await window.electronAPI.copyText(processedText);
+          toast.success('已複製上次結果');
+        }
+      }
+    } else if (originalText) {
+      try {
+        await navigator.clipboard.writeText(originalText);
+        toast.success('已複製原始文字');
+      } catch (err) {
+        if (window.electronAPI) {
+          await window.electronAPI.copyText(originalText);
+          toast.success('已複製原始文字');
+        }
+      }
+    } else {
+      toast.warning('沒有可複製的結果');
+    }
+  }, [processedText, originalText]);
+
   // 监听全局热键触发事件
   useEffect(() => {
     if (window.electronAPI) {
-      // 监听传统热键触发
+      // 監聽新的快捷鍵操作事件
+      const unsubscribeAction = window.electronAPI.onHotkeyAction?.((event, data) => {
+        const { actionId } = data;
+        switch (actionId) {
+          case 'toggle-recording':
+            toggleRecording();
+            break;
+          case 'cancel-recording':
+            handleCancelRecording();
+            break;
+          case 'copy-last':
+            handleCopyLastResult();
+            break;
+          default:
+            console.warn('未知的快捷鍵操作:', actionId);
+        }
+      });
+
+      // 监听传统热键触发（兼容舊系統）
       const unsubscribeHotkey = window.electronAPI.onHotkeyTriggered(() => {
         toggleRecording();
       });
@@ -577,11 +638,12 @@ export default function App() {
       });
 
       return () => {
+        if (unsubscribeAction) unsubscribeAction();
         if (unsubscribeHotkey) unsubscribeHotkey();
         if (unsubscribeToggle) unsubscribeToggle();
       };
     }
-  }, [toggleRecording]);
+  }, [toggleRecording, handleCancelRecording, handleCopyLastResult]);
 
   // 同步录音状态到热键管理器
   useEffect(() => {

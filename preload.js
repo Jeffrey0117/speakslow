@@ -82,6 +82,24 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return () => ipcRenderer.removeListener("hotkey-triggered", callback);
   },
 
+  // =====================================================
+  // 自定義快捷鍵設定 API
+  // =====================================================
+  getHotkeySettings: () => ipcRenderer.invoke("get-hotkey-settings"),
+  getHotkeyDefaults: () => ipcRenderer.invoke("get-hotkey-defaults"),
+  validateHotkey: (accelerator, excludeActionId) =>
+    ipcRenderer.invoke("validate-hotkey", accelerator, excludeActionId),
+  setActionHotkey: (actionId, accelerator) =>
+    ipcRenderer.invoke("set-action-hotkey", actionId, accelerator),
+  resetHotkeys: (actionId) => ipcRenderer.invoke("reset-hotkeys", actionId),
+  initCustomHotkeys: () => ipcRenderer.invoke("init-custom-hotkeys"),
+
+  // 快捷鍵操作事件監聽
+  onHotkeyAction: (callback) => {
+    ipcRenderer.on("hotkey-action", callback);
+    return () => ipcRenderer.removeListener("hotkey-action", callback);
+  },
+
   // 文件操作
   exportTranscriptions: (format) => ipcRenderer.invoke("export-transcriptions", format),
   importSettings: () => ipcRenderer.invoke("import-settings"),

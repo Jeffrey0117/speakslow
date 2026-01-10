@@ -1,0 +1,342 @@
+import React, { useState, useEffect, useCallback } from "react";
+import { Keyboard, RotateCcw, Check, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
+
+// 快捷鍵操作定義
+const HOTKEY_ACTIONS = {
+  'toggle-recording': {
+    name: '開始/停止錄音',
+    description: '主要錄音切換快捷鍵',
+  },
+  'cancel-recording': {
+    name: '取消錄音',
+    description: '取消當前錄音不處理',
+  },
+  'show-window': {
+    name: '顯示主視窗',
+    description: '顯示或隱藏應用視窗',
+  },
+  'copy-last': {
+    name: '複製上次結果',
+    description: '複製最近一次辨識結果',
+  },
+};
+
+// 格式化快捷鍵顯示
+const formatHotkey = (accelerator) => {
+  if (!accelerator) return '';
+
+  const isMac = navigator.platform.includes('Mac');
+
+  return accelerator
+    .replace(/CommandOrControl/g, isMac ? '⌘' : 'Ctrl')
+    .replace(/CmdOrCtrl/g, isMac ? '⌘' : 'Ctrl')
+    .replace(/Command/g, '⌘')
+    .replace(/Control/g, 'Ctrl')
+    .replace(/Shift/g, isMac ? '⇧' : 'Shift')
+    .replace(/Alt/g, isMac ? '⌥' : 'Alt')
+    .replace(/Option/g, '⌥')
+    .replace(/Meta/g, isMac ? '⌘' : 'Win')
+    .replace(/Space/g, '空格')
+    .replace(/\+/g, ' + ');
+};
+
+// 將按鍵事件轉換為 Electron accelerator 格式
+const keyEventToAccelerator = (e) => {
+  const parts = [];
+
+  if (e.ctrlKey || e.metaKey) {
+    parts.push('CommandOrControl');
+  }
+  if (e.altKey) {
+    parts.push('Alt');
+  }
+  if (e.shiftKey) {
+    parts.push('Shift');
+  }
+
+  // 獲取按鍵
+  let key = e.key;
+
+  // 特殊鍵映射
+  const specialKeys = {
+    ' ': 'Space',
+    'Escape': 'Escape',
+    'Enter': 'Enter',
+    'Tab': 'Tab',
+    'Backspace': 'Backspace',
+    'Delete': 'Delete',
+    'ArrowUp': 'Up',
+    'ArrowDown': 'Down',
+    'ArrowLeft': 'Left',
+    'ArrowRight': 'Right',
+    'Home': 'Home',
+    'End': 'End',
+    'PageUp': 'PageUp',
+    'PageDown': 'PageDown',
+  };
+
+  if (specialKeys[key]) {
+    key = specialKeys[key];
+  } else if (key.startsWith('F') && key.length <= 3) {
+    // F1-F12
+    key = key.toUpperCase();
+  } else if (key.length === 1) {
+    key = key.toUpperCase();
+  } else if (['Control', 'Shift', 'Alt', 'Meta'].includes(key)) {
+    // 僅修飾鍵，不添加
+    return null;
+  }
+
+  parts.push(key);
+
+  return parts.join('+');
+};
+
+// 單個快捷鍵設定項
+const HotkeyItem = ({ actionId, actionInfo, currentHotkey, defaultHotkey, onUpdate, onReset }) => {
+  const [isRecording, setIsRecording] = useState(false);
+  const [tempHotkey, setTempHotkey] = useState('');
+  const [error, setError] = useState(null);
+
+  const handleKeyDown = useCallback((e) => {
+    if (!isRecording) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const accelerator = keyEventToAccelerator(e);
+    if (accelerator) {
+      setTempHotkey(accelerator);
+      setError(null);
+    }
+  }, [isRecording]);
+
+  const handleStartRecording = () => {
+    setIsRecording(true);
+    setTempHotkey('');
+    setError(null);
+  };
+
+  const handleCancelRecording = () => {
+    setIsRecording(false);
+    setTempHotkey('');
+    setError(null);
+  };
+
+  const handleSaveHotkey = async () => {
+    if (!tempHotkey) {
+      setError('請先按下快捷鍵');
+      return;
+    }
+
+    try {
+      // 驗證快捷鍵
+      if (window.electronAPI) {
+        const validation = await window.electronAPI.validateHotkey(tempHotkey, actionId);
+        if (!validation.valid) {
+          setError(validation.error);
+          return;
+        }
+
+        // 設置快捷鍵
+        const result = await window.electronAPI.setActionHotkey(actionId, tempHotkey);
+        if (result.success) {
+          onUpdate(actionId, tempHotkey);
+          setIsRecording(false);
+          setTempHotkey('');
+          toast.success(`快捷鍵已更新為 ${formatHotkey(tempHotkey)}`);
+        } else {
+          setError(result.error || '設置失敗');
+        }
+      }
+    } catch (err) {
+      setError(err.message || '設置失敗');
+    }
+  };
+
+  const handleReset = async () => {
+    try {
+      if (window.electronAPI) {
+        const result = await window.electronAPI.resetHotkeys(actionId);
+        if (result.success) {
+          onReset(actionId, defaultHotkey);
+          toast.success('已重設為預設快捷鍵');
+        }
+      }
+    } catch (err) {
+      toast.error('重設失敗');
+    }
+  };
+
+  const isDefault = currentHotkey === defaultHotkey;
+
+  return (
+    <div className="p-4 bg-gray-50 rounded-lg">
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <h4 className="font-medium text-gray-900">{actionInfo.name}</h4>
+          <p className="text-sm text-gray-500">{actionInfo.description}</p>
+        </div>
+        {!isDefault && (
+          <button
+            onClick={handleReset}
+            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded transition-colors"
+            title="重設為預設"
+          >
+            <RotateCcw className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
+      <div className="flex items-center gap-2">
+        {isRecording ? (
+          <>
+            <div
+              className="flex-1 px-4 py-2 bg-blue-50 border-2 border-blue-400 rounded-lg text-center font-mono text-blue-700 animate-pulse"
+              tabIndex={0}
+              onKeyDown={handleKeyDown}
+              autoFocus
+            >
+              {tempHotkey ? formatHotkey(tempHotkey) : '請按下快捷鍵...'}
+            </div>
+            <button
+              onClick={handleSaveHotkey}
+              disabled={!tempHotkey}
+              className="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <Check className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleCancelRecording}
+              className="px-3 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+            >
+              取消
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="flex-1 px-4 py-2 bg-white border border-gray-300 rounded-lg text-center font-mono text-gray-700">
+              {formatHotkey(currentHotkey) || '未設置'}
+            </div>
+            <button
+              onClick={handleStartRecording}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              錄製
+            </button>
+          </>
+        )}
+      </div>
+
+      {error && (
+        <div className="mt-2 flex items-center gap-1 text-sm text-red-600">
+          <AlertCircle className="w-4 h-4" />
+          {error}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// 快捷鍵設定主組件
+const HotkeySettings = () => {
+  const [hotkeys, setHotkeys] = useState({});
+  const [defaults, setDefaults] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  // 載入快捷鍵設定
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        if (window.electronAPI) {
+          const result = await window.electronAPI.getHotkeySettings();
+          if (result.success) {
+            setHotkeys(result.hotkeys || {});
+            setDefaults(result.defaults || {});
+          }
+        }
+      } catch (err) {
+        console.error('載入快捷鍵設定失敗:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSettings();
+  }, []);
+
+  const handleUpdate = (actionId, newHotkey) => {
+    setHotkeys(prev => ({ ...prev, [actionId]: newHotkey }));
+  };
+
+  const handleReset = (actionId, defaultHotkey) => {
+    setHotkeys(prev => ({ ...prev, [actionId]: defaultHotkey }));
+  };
+
+  const handleResetAll = async () => {
+    try {
+      if (window.electronAPI) {
+        const result = await window.electronAPI.resetHotkeys();
+        if (result.success) {
+          setHotkeys(result.hotkeys || defaults);
+          toast.success('所有快捷鍵已重設為預設值');
+        }
+      }
+    } catch (err) {
+      toast.error('重設失敗');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="p-4 text-center text-gray-500">
+        載入中...
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Keyboard className="w-5 h-5 text-blue-600" />
+          <h3 className="text-lg font-semibold text-gray-900">快捷鍵設定</h3>
+        </div>
+        <button
+          onClick={handleResetAll}
+          className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-1"
+        >
+          <RotateCcw className="w-4 h-4" />
+          重設全部
+        </button>
+      </div>
+
+      <p className="text-sm text-gray-600 mb-4">
+        自定義應用程式的快捷鍵。點擊「錄製」後按下想要的快捷鍵組合。
+      </p>
+
+      <div className="space-y-3">
+        {Object.entries(HOTKEY_ACTIONS).map(([actionId, actionInfo]) => (
+          <HotkeyItem
+            key={actionId}
+            actionId={actionId}
+            actionInfo={actionInfo}
+            currentHotkey={hotkeys[actionId] || defaults[actionId]}
+            defaultHotkey={defaults[actionId]}
+            onUpdate={handleUpdate}
+            onReset={handleReset}
+          />
+        ))}
+      </div>
+
+      <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+        <p className="text-xs text-blue-700">
+          <strong>提示：</strong>某些快捷鍵可能被系統或其他應用程式佔用，如遇衝突請嘗試其他組合。
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default HotkeySettings;

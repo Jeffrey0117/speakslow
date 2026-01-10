@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Mic, Shield, Settings } from "lucide-react";
 import { usePermissions } from "../hooks/usePermissions";
 import PermissionCard from "./ui/permission-card";
+import HotkeySettings from "./HotkeySettings";
 import { toast } from "sonner";
 
 const SettingsPanel = ({ onClose }) => {
@@ -67,6 +68,11 @@ const SettingsPanel = ({ onClose }) => {
                 buttonText="测试权限"
               />
             </div>
+          </div>
+
+          {/* 快捷鍵設定部分 */}
+          <div className="border-t pt-8">
+            <HotkeySettings />
           </div>
 
           {/* 应用信息部分 */}
