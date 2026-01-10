@@ -5,6 +5,7 @@ import { LoadingDots } from "./components/ui/loading-dots";
 import { useHotkey } from "./hooks/useHotkey";
 import { useWindowDrag } from "./hooks/useWindowDrag";
 import { useRecording } from "./hooks/useRecording";
+import { useStreamingRecording } from "./hooks/useStreamingRecording";
 import { useTextProcessing } from "./hooks/useTextProcessing";
 import { useModelStatus } from "./hooks/useModelStatus";
 import { usePermissions } from "./hooks/usePermissions";
@@ -260,15 +261,64 @@ export default function App() {
   const { isDragging, handleMouseDown, handleMouseMove, handleMouseUp, handleClick } = useWindowDrag();
   const modelStatus = useModelStatus();
   
+  // 傳統錄音模式
   const {
-    isRecording,
-    isProcessing: isRecordingProcessing,
+    isRecording: isRecordingNormal,
+    isProcessing: isRecordingProcessingNormal,
     isOptimizing,
-    startRecording,
-    stopRecording,
-    error: recordingError
+    startRecording: startRecordingNormal,
+    stopRecording: stopRecordingNormal,
+    error: recordingErrorNormal
   } = useRecording();
-  
+
+  // 串流錄音模式
+  const {
+    isRecording: isRecordingStreaming,
+    isProcessing: isProcessingStreaming,
+    error: streamingError,
+    partialText,
+    fullText,
+    startStreaming,
+    stopStreaming,
+    cancelStreaming
+  } = useStreamingRecording();
+
+  // 串流模式設定
+  const [streamingMode, setStreamingMode] = useState(false);
+
+  // 載入串流模式設定
+  useEffect(() => {
+    const loadStreamingMode = async () => {
+      if (window.electronAPI) {
+        const enabled = await window.electronAPI.getSetting('enable_streaming_mode', false);
+        setStreamingMode(enabled);
+      }
+    };
+    loadStreamingMode();
+  }, []);
+
+  // 統一的錄音狀態（根據模式選擇）
+  const isRecording = streamingMode ? isRecordingStreaming : isRecordingNormal;
+  const isRecordingProcessing = streamingMode ? isProcessingStreaming : isRecordingProcessingNormal;
+  const recordingError = streamingMode ? streamingError : recordingErrorNormal;
+
+  // 統一的錄音函數
+  const startRecording = useCallback(() => {
+    if (streamingMode) {
+      startStreaming();
+    } else {
+      startRecordingNormal();
+    }
+  }, [streamingMode, startStreaming, startRecordingNormal]);
+
+  const stopRecording = useCallback(() => {
+    if (streamingMode) {
+      stopStreaming();
+    } else {
+      stopRecordingNormal();
+    }
+  }, [streamingMode, stopStreaming, stopRecordingNormal]);
+
   const {
     processText,
     isProcessing: isTextProcessing,
@@ -839,7 +889,7 @@ export default function App() {
             ) : waitingForTarget ? (
               t('app.waitingForTarget') || '請點擊目標位置後按熱鍵'
             ) : micState === "recording" ? (
-              t('app.recording')
+              streamingMode ? '串流辨識中...' : t('app.recording')
             ) : micState === "processing" ? (
               t('app.processing')
             ) : micState === "optimizing" ? (
@@ -848,6 +898,20 @@ export default function App() {
               t('app.clickToRecord', { hotkey })
             )}
           </p>
+
+          {/* 串流辨識即時文字顯示 */}
+          {streamingMode && isRecording && fullText && (
+            <div className="mt-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg max-h-32 overflow-y-auto">
+              <p className="text-sm text-blue-800 dark:text-blue-200 whitespace-pre-wrap">
+                {fullText}
+                {partialText && (
+                  <span className="text-blue-500 dark:text-blue-400 opacity-70">
+                    {partialText}
+                  </span>
+                )}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* 模型下载进度显示 */}
