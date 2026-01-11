@@ -39,6 +39,72 @@ logger = logging.getLogger(__name__)
 logger.info(f"Sherpa-ONNX 服務器日誌文件: {log_file_path}")
 
 
+def add_punctuation(text):
+    """
+    基於規則的簡易中文標點恢復
+    在 AI 優化之前提供基本的標點符號
+    """
+    if not text or not text.strip():
+        return text
+
+    import re
+    text = text.strip()
+
+    # 問句關鍵詞
+    question_words = [
+        '嗎', '呢', '吧', '啊', '麼', '么',
+        '什麼', '什么', '怎麼', '怎么', '為什麼', '为什么',
+        '哪裡', '哪里', '哪個', '哪个', '誰', '谁',
+        '幾', '几', '多少', '是否', '能否', '可否',
+        '有沒有', '有没有', '是不是', '會不會', '会不会',
+    ]
+
+    # 句子結束詞（通常後面要加句號）
+    statement_endings = [
+        '了', '的', '過', '过', '著', '着',
+        '好', '行', '對', '对', '是', '要',
+    ]
+
+    # 逗號暫停詞
+    pause_words = [
+        '然後', '然后', '接著', '接着', '之後', '之后',
+        '所以', '因此', '但是', '不過', '不过', '可是',
+        '而且', '並且', '并且', '或者', '還是', '还是',
+        '如果', '假如', '雖然', '虽然', '即使', '就是',
+        '那麼', '那么', '這樣', '这样', '那樣', '那样',
+        '首先', '其次', '最後', '最后', '另外', '此外',
+        '總之', '总之', '換句話說', '换句话说',
+    ]
+
+    # 檢查是否為問句
+    is_question = any(word in text for word in question_words)
+
+    # 如果文本很短（可能是單句）
+    if len(text) < 30:
+        if is_question:
+            return text + '？'
+        else:
+            return text + '。'
+
+    # 較長文本：嘗試加入逗號和句號
+    result = text
+
+    # 在暫停詞後加逗號
+    for word in pause_words:
+        # 只在詞後面沒有標點時添加
+        pattern = f'({word})([^，。？！、])'
+        result = re.sub(pattern, r'\1，\2', result)
+
+    # 最後加上句末標點
+    if result and result[-1] not in '，。？！、；：':
+        if is_question:
+            result += '？'
+        else:
+            result += '。'
+
+    return result
+
+
 class SherpaServer:
     def __init__(self, model_dir=None):
         self.recognizer = None
@@ -188,12 +254,15 @@ class SherpaServer:
             self.transcription_count += 1
             self.total_audio_duration += duration
 
-            logger.info(f"轉錄完成: {text[:100]}... (RTF: {rtf:.3f})")
+            # 加入基本標點
+            text_with_punc = add_punctuation(text)
+
+            logger.info(f"轉錄完成: {text_with_punc[:100]}... (RTF: {rtf:.3f})")
 
             return {
                 "success": True,
-                "text": text,
-                "raw_text": text,
+                "text": text_with_punc,
+                "raw_text": text,  # 保留原始無標點文本
                 "confidence": 0.95,  # sherpa-onnx 不提供置信度，給個默認值
                 "duration": duration,
                 "language": "zh-CN",
