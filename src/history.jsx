@@ -59,6 +59,66 @@ const HistoryPage = () => {
   );
 };
 
+// 統計橫幅組件 - 用幽默方式展示成就
+const StatsBanner = ({ transcriptions, t }) => {
+  const stats = React.useMemo(() => {
+    const totalChars = transcriptions.reduce((sum, item) => {
+      const text = item.processed_text || item.text || '';
+      return sum + text.length;
+    }, 0);
+    const totalRecords = transcriptions.length;
+    const totalDuration = transcriptions.reduce((sum, item) => sum + (item.duration || 0), 0);
+
+    return { totalChars, totalRecords, totalDuration };
+  }, [transcriptions]);
+
+  // 根據字數給出幽默評語
+  const getFunMessage = (chars) => {
+    if (chars === 0) return { emoji: '🎤', message: '準備好開始你的語音之旅了嗎？' };
+    if (chars < 100) return { emoji: '🐣', message: '剛起步，繼續加油！' };
+    if (chars < 500) return { emoji: '🚶', message: '小有成就，穩步前進中～' };
+    if (chars < 1000) return { emoji: '🏃', message: '進入狀況了！手指終於可以休息了' };
+    if (chars < 2000) return { emoji: '🚀', message: '效率達人！打字員要失業了' };
+    if (chars < 5000) return { emoji: '⚡', message: '語音輸入高手！鍵盤已經在哭了' };
+    if (chars < 10000) return { emoji: '🔥', message: '超級用戶！你的聲音價值連城' };
+    if (chars < 50000) return { emoji: '👑', message: '傳說級玩家！語音輸入之神' };
+    return { emoji: '🏆', message: '史詩成就！你拯救了無數鍵盤的生命' };
+  };
+
+  const { emoji, message } = getFunMessage(stats.totalChars);
+
+  if (stats.totalRecords === 0) {
+    return null; // 沒有記錄時不顯示
+  }
+
+  return (
+    <div className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 p-[2px] rounded-xl mb-4">
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <span className="text-3xl">{emoji}</span>
+            <div>
+              <div className="flex items-baseline space-x-2">
+                <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400">
+                  {stats.totalChars.toLocaleString()}
+                </span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">個字</span>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">{message}</p>
+            </div>
+          </div>
+          <div className="text-right text-sm text-gray-500 dark:text-gray-400">
+            <div>{stats.totalRecords} 次辨識</div>
+            {stats.totalDuration > 0 && (
+              <div>累計 {Math.round(stats.totalDuration / 60)} 分鐘</div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // 历史记录内容组件
 const HistoryContent = ({ onCopy, t }) => {
   const [transcriptions, setTranscriptions] = React.useState([]);
@@ -173,6 +233,9 @@ const HistoryContent = ({ onCopy, t }) => {
       {/* 内容区域 */}
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-4xl mx-auto">
+          {/* 統計橫幅 */}
+          {!loading && <StatsBanner transcriptions={transcriptions} t={t} />}
+
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
