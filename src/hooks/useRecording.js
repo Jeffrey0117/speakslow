@@ -369,14 +369,36 @@ export const useRecording = () => {
           try {
             audioBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
           } catch (decodeErr) {
-            // 如果解碼失敗，嘗試用不同的方式
             console.error('音頻解碼失敗，嘗試備用方案:', decodeErr);
-            audioContext.close();
 
-            // 備用方案：直接發送原始 webm 給後端處理
-            // FunASR 後端可能能處理 webm 格式
-            resolve(audioBlob);
-            return;
+            // 備用方案：嘗試用 callback 方式解碼（某些瀏覽器的兼容性更好）
+            try {
+              audioBuffer = await new Promise((res, rej) => {
+                // 重新讀取 blob
+                const reader2 = new FileReader();
+                reader2.onload = () => {
+                  const newContext = new (window.AudioContext || window.webkitAudioContext)();
+                  newContext.decodeAudioData(
+                    reader2.result,
+                    (buffer) => {
+                      res(buffer);
+                      newContext.close();
+                    },
+                    (err) => {
+                      rej(err);
+                      newContext.close();
+                    }
+                  );
+                };
+                reader2.onerror = () => rej(new Error('讀取失敗'));
+                reader2.readAsArrayBuffer(audioBlob);
+              });
+            } catch (fallbackErr) {
+              console.error('備用解碼也失敗:', fallbackErr);
+              audioContext.close();
+              reject(new Error('無法解碼音頻數據，請重新錄音。如果問題持續，請嘗試重啟應用程式。'));
+              return;
+            }
           }
 
           // 转换为WAV格式（目標 16kHz 單聲道）
