@@ -72,37 +72,51 @@ const StatsBanner = ({ transcriptions, t }) => {
     return { totalChars, totalRecords, totalDuration };
   }, [transcriptions]);
 
-  // 根據字數給出幽默評語
-  const getFunMessage = (chars, records) => {
-    if (chars === 0) return { emoji: '🤫', message: '別害羞，說點什麼吧～' };
-    if (chars < 100) return { emoji: '👋', message: '才剛認識你，期待聽更多！' };
-    if (chars < 500) return { emoji: '🗣️', message: '話匣子慢慢打開了～' };
-    if (chars < 1000) return { emoji: '💬', message: '看來你蠻有話說的嘛！' };
-    if (chars < 2000) return { emoji: '📢', message: '你說的比寫的多，手指感謝你' };
-    if (chars < 5000) return { emoji: '🎙️', message: '話很多欸！但我喜歡聽' };
-    if (chars < 10000) return { emoji: '📚', message: '這些字夠寫一篇論文了' };
-    if (chars < 30000) return { emoji: '🎓', message: '你是不是哲學大師？思想真多' };
-    if (chars < 50000) return { emoji: '✍️', message: '可以出書了，書名就叫《我說的》' };
-    if (chars < 100000) return { emoji: '🏛️', message: '你的語錄比孔子還多' };
-    return { emoji: '🌟', message: '傳說中的話癆本癆，致敬！' };
+  // 根據字數給出幽默評語和顏色等級
+  const getLevelInfo = (chars) => {
+    // 顏色：灰 -> 綠 -> 藍 -> 紫 -> 橙 -> 金
+    if (chars === 0) return { emoji: '🤫', message: '別害羞，說點什麼吧～', color: 'gray', borderClass: 'border-gray-300 dark:border-gray-600' };
+    if (chars < 100) return { emoji: '👋', message: '才剛認識你，期待聽更多！', color: 'gray', borderClass: 'border-gray-300 dark:border-gray-600' };
+    if (chars < 500) return { emoji: '🗣️', message: '話匣子慢慢打開了～', color: 'green', borderClass: 'border-green-400 dark:border-green-500' };
+    if (chars < 1000) return { emoji: '💬', message: '看來你蠻有話說的嘛！', color: 'green', borderClass: 'border-green-400 dark:border-green-500' };
+    if (chars < 2000) return { emoji: '📢', message: '你說的比寫的多，手指感謝你', color: 'blue', borderClass: 'border-blue-400 dark:border-blue-500' };
+    if (chars < 5000) return { emoji: '🎙️', message: '話很多欸！但我喜歡聽', color: 'blue', borderClass: 'border-blue-400 dark:border-blue-500' };
+    if (chars < 10000) return { emoji: '📚', message: '這些字夠寫一篇論文了', color: 'purple', borderClass: 'border-purple-400 dark:border-purple-500' };
+    if (chars < 30000) return { emoji: '🎓', message: '你是不是哲學大師？思想真多', color: 'purple', borderClass: 'border-purple-400 dark:border-purple-500' };
+    if (chars < 50000) return { emoji: '✍️', message: '可以出書了，書名就叫《我說的》', color: 'orange', borderClass: 'border-orange-400 dark:border-orange-500' };
+    if (chars < 100000) return { emoji: '🏛️', message: '你的語錄比孔子還多', color: 'orange', borderClass: 'border-orange-400 dark:border-orange-500' };
+    return { emoji: '🌟', message: '傳說中的話癆本癆，致敬！', color: 'amber', borderClass: 'border-amber-400 dark:border-amber-500' };
   };
 
-  const { emoji, message } = getFunMessage(stats.totalChars, stats.totalRecords);
+  // 根據顏色獲取數字的顏色樣式
+  const getNumberColorClass = (color) => {
+    const colorMap = {
+      gray: 'text-gray-600 dark:text-gray-400',
+      green: 'text-green-600 dark:text-green-400',
+      blue: 'text-blue-600 dark:text-blue-400',
+      purple: 'text-purple-600 dark:text-purple-400',
+      orange: 'text-orange-600 dark:text-orange-400',
+      amber: 'text-amber-600 dark:text-amber-400'
+    };
+    return colorMap[color] || colorMap.gray;
+  };
+
+  const { emoji, message, color, borderClass } = getLevelInfo(stats.totalChars);
 
   if (stats.totalRecords === 0) {
     return null; // 沒有記錄時不顯示
   }
 
   return (
-    <div className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 p-[2px] rounded-xl mb-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-4">
+    <div className={`border-2 ${borderClass} rounded-xl mb-4 bg-white dark:bg-gray-800`}>
+      <div className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <span className="text-3xl">{emoji}</span>
             <div>
               <div className="flex items-baseline space-x-1 flex-wrap">
                 <span className="text-sm text-gray-600 dark:text-gray-400">已經幫你辨識了</span>
-                <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400">
+                <span className={`text-2xl font-bold ${getNumberColorClass(color)}`}>
                   {stats.totalChars.toLocaleString()}
                 </span>
                 <span className="text-sm text-gray-600 dark:text-gray-400">個字</span>
