@@ -249,28 +249,48 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
+  // 錄音完成後動作設定
+  const [pasteAfterTranscription, setPasteAfterTranscription] = useState(true);
+  const [autoEnterAfterPaste, setAutoEnterAfterPaste] = useState(false);
+
   // 點擊錄音流程：等待使用者點擊目標位置
   const [waitingForTarget, setWaitingForTarget] = useState(false);
 
   // i18n
   const { t, language, convert } = useTranslation();
 
-  // 加载通知设置
+  // 加载通知设置和貼上相關設定
   useEffect(() => {
-    const loadNotificationSetting = async () => {
+    const loadSettings = async () => {
       if (window.electronAPI) {
         const enabled = await window.electronAPI.getSetting('enable_notifications', true);
         setNotificationsEnabled(enabled !== false);
+
+        // 載入貼上相關設定
+        const paste = await window.electronAPI.getSetting('paste_after_transcription', true);
+        setPasteAfterTranscription(paste !== false);
+
+        const autoEnter = await window.electronAPI.getSetting('auto_enter_after_paste', false);
+        setAutoEnterAfterPaste(autoEnter === true);
       }
     };
-    loadNotificationSetting();
+    loadSettings();
 
-    // 监听设置变化
-    const handleSettingsChange = () => {
-      loadNotificationSetting();
-    };
-    window.addEventListener('settings-changed', handleSettingsChange);
-    return () => window.removeEventListener('settings-changed', handleSettingsChange);
+    // 监听设置变化（跨視窗同步）
+    if (window.electronAPI?.onSettingChanged) {
+      const unsubscribe = window.electronAPI.onSettingChanged((data) => {
+        if (data.key === 'enable_notifications') {
+          setNotificationsEnabled(data.value !== false);
+        } else if (data.key === 'paste_after_transcription') {
+          setPasteAfterTranscription(data.value !== false);
+        } else if (data.key === 'auto_enter_after_paste') {
+          setAutoEnterAfterPaste(data.value === true);
+        }
+      });
+      return () => {
+        if (unsubscribe) unsubscribe();
+      };
+    }
   }, []);
 
   // 条件性显示通知的辅助函数
@@ -363,7 +383,7 @@ export default function App() {
   const lastPasteRef = useRef({ text: '', timestamp: 0 });
   const PASTE_DEBOUNCE_TIME = 1000; // 1秒内相同文本不重复粘贴
 
-  // 安全粘贴函数
+  // 安全粘贴函数（根據設定決定是否貼上和送出 Enter）
   const safePaste = useCallback(async (text) => {
     const now = Date.now();
     const lastPaste = lastPasteRef.current;
@@ -377,10 +397,9 @@ export default function App() {
     lastPasteRef.current = { text, timestamp: now };
 
     try {
-      // 先用 navigator.clipboard 直接在前端寫入（最可靠）
+      // 先用 navigator.clipboard 直接在前端寫入（不管設定如何都寫入剪貼簿）
       try {
         await navigator.clipboard.writeText(text);
-        // 等待一下確保剪貼簿寫入完成
         await new Promise(resolve => setTimeout(resolve, 50));
       } catch (clipErr) {
         // 備用：用 Electron 寫入剪貼簿
@@ -390,12 +409,16 @@ export default function App() {
         }
       }
 
-      // 再透過 Electron API 嘗試自動貼上
-      // 注意：不再呼叫 restoreForegroundWindow，因為：
-      // 1. 如果使用者用熱鍵停止錄音，焦點本來就在正確的位置
-      // 2. 如果使用者用滑鼠點擊了新的輸入位置，不應該搶回舊焦點
-      if (window.electronAPI) {
+      // 根據設定決定是否自動貼上
+      if (pasteAfterTranscription && window.electronAPI) {
         await window.electronAPI.pasteText(text);
+
+        // 如果啟用完全信任模式，貼上後自動發送 Enter
+        if (autoEnterAfterPaste) {
+          // 稍微等待貼上完成
+          await new Promise(resolve => setTimeout(resolve, 100));
+          await window.electronAPI.sendEnter();
+        }
       }
 
       // 不需要成功通知，文字已經貼上了使用者自然知道
@@ -405,7 +428,7 @@ export default function App() {
         description: t('notifications.pasteFailedDesc')
       });
     }
-  }, [showNotification, t]);
+  }, [showNotification, t, pasteAfterTranscription, autoEnterAfterPaste]);
 
   // 处理录音完成（FunASR识别完成）
   const handleRecordingComplete = useCallback(async (transcriptionResult) => {

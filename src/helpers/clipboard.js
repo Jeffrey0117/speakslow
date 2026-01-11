@@ -573,6 +573,96 @@ self.close
       throw error;
     }
   }
+
+  /**
+   * 發送 Enter 鍵（完全信任模式：貼上後自動送出）
+   * @returns {Promise<{success: boolean}>}
+   */
+  async sendEnter() {
+    try {
+      this.safeLog("⏎ 發送 Enter 鍵（完全信任模式）");
+
+      if (process.platform === "win32") {
+        return await this.sendEnterWindows();
+      } else if (process.platform === "darwin") {
+        return await this.sendEnterMacOS();
+      } else {
+        return await this.sendEnterLinux();
+      }
+    } catch (error) {
+      this.safeLog(`❌ 發送 Enter 失敗: ${error.message}`);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async sendEnterWindows() {
+    return new Promise((resolve) => {
+      const enterProcess = spawn("powershell", [
+        "-Command",
+        'Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait("{ENTER}")',
+      ]);
+
+      enterProcess.on("close", (code) => {
+        if (code === 0) {
+          this.safeLog("✅ Enter 鍵發送成功");
+          resolve({ success: true });
+        } else {
+          this.safeLog(`⚠️ Enter 鍵發送失敗，代碼 ${code}`);
+          resolve({ success: false, error: `Exit code ${code}` });
+        }
+      });
+
+      enterProcess.on("error", (error) => {
+        this.safeLog(`❌ Enter 鍵發送錯誤: ${error.message}`);
+        resolve({ success: false, error: error.message });
+      });
+    });
+  }
+
+  async sendEnterMacOS() {
+    return new Promise((resolve) => {
+      const enterProcess = spawn("osascript", [
+        "-e",
+        'tell application "System Events" to keystroke return',
+      ]);
+
+      enterProcess.on("close", (code) => {
+        if (code === 0) {
+          this.safeLog("✅ Enter 鍵發送成功 (macOS)");
+          resolve({ success: true });
+        } else {
+          this.safeLog(`⚠️ Enter 鍵發送失敗 (macOS)，代碼 ${code}`);
+          resolve({ success: false, error: `Exit code ${code}` });
+        }
+      });
+
+      enterProcess.on("error", (error) => {
+        this.safeLog(`❌ Enter 鍵發送錯誤 (macOS): ${error.message}`);
+        resolve({ success: false, error: error.message });
+      });
+    });
+  }
+
+  async sendEnterLinux() {
+    return new Promise((resolve) => {
+      const enterProcess = spawn("xdotool", ["key", "Return"]);
+
+      enterProcess.on("close", (code) => {
+        if (code === 0) {
+          this.safeLog("✅ Enter 鍵發送成功 (Linux)");
+          resolve({ success: true });
+        } else {
+          this.safeLog(`⚠️ Enter 鍵發送失敗 (Linux)，代碼 ${code}`);
+          resolve({ success: false, error: `Exit code ${code}` });
+        }
+      });
+
+      enterProcess.on("error", (error) => {
+        this.safeLog(`❌ Enter 鍵發送錯誤 (Linux): ${error.message}`);
+        resolve({ success: false, error: error.message });
+      });
+    });
+  }
 }
 
 module.exports = ClipboardManager;

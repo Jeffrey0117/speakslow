@@ -199,6 +199,11 @@ class IPCHandlers {
       return this.clipboardManager.pasteText(text);
     });
 
+    // 發送 Enter 鍵（完全信任模式）
+    ipcMain.handle("send-enter", async () => {
+      return this.clipboardManager.sendEnter();
+    });
+
     ipcMain.handle("insert-text-directly", async (event, text) => {
       try {
         return await this.clipboardManager.insertTextDirectly(text);

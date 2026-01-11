@@ -19,7 +19,10 @@ const SettingsPage = () => {
     enable_notifications: true,
     enable_streaming_mode: false,
     language: "zh-TW",
-    convert_transcription: true
+    convert_transcription: true,
+    // 錄音完成後動作設定
+    paste_after_transcription: true,  // 自動貼上辨識結果
+    auto_enter_after_paste: false     // 貼上後自動送出（完全信任模式）
   });
   
   const [customModel, setCustomModel] = useState(false);
@@ -62,7 +65,10 @@ const SettingsPage = () => {
           enable_ai_optimization: allSettings.enable_ai_optimization === true, // 默认为false
           enable_notifications: allSettings.enable_notifications !== false, // 默认为true
           language: allSettings.language || "zh-TW", // 默认繁体中文
-          convert_transcription: allSettings.convert_transcription !== false // 默认转换
+          convert_transcription: allSettings.convert_transcription !== false, // 默认转换
+          // 錄音完成後動作設定
+          paste_after_transcription: allSettings.paste_after_transcription !== false, // 默認自動貼上
+          auto_enter_after_paste: allSettings.auto_enter_after_paste === true // 默認不自動送出
         };
         setSettings(prev => ({ ...prev, ...loadedSettings }));
         
@@ -427,6 +433,86 @@ const SettingsPage = () => {
                       aria-hidden="true"
                       className={`${
                         settings.enable_streaming_mode ? 'translate-x-4' : 'translate-x-0'
+                      } inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
+                    />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 錄音完成後動作設定 */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 mb-6">
+            <div className="p-6">
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 chinese-title">
+                  📋 錄音完成後動作
+                </h2>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  設定辨識完成後要自動執行的動作
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {/* 自動貼上開關 */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                      自動貼上辨識結果
+                    </label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      辨識完成後自動貼到游標位置
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={settings.paste_after_transcription}
+                    onClick={() => {
+                      const newValue = !settings.paste_after_transcription;
+                      handleToggleChange('paste_after_transcription', newValue);
+                      // 如果關閉自動貼上，也要關閉自動送出
+                      if (!newValue && settings.auto_enter_after_paste) {
+                        handleToggleChange('auto_enter_after_paste', false);
+                      }
+                    }}
+                    className={`${
+                      settings.paste_after_transcription ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
+                    } relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`${
+                        settings.paste_after_transcription ? 'translate-x-4' : 'translate-x-0'
+                      } inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
+                    />
+                  </button>
+                </div>
+
+                {/* 貼上後自動送出開關（完全信任模式） */}
+                <div className={`flex items-center justify-between ${!settings.paste_after_transcription ? 'opacity-50' : ''}`}>
+                  <div>
+                    <label className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                      貼上後自動送出 (Enter)
+                    </label>
+                    <p className="text-xs text-orange-500 dark:text-orange-400 mt-0.5">
+                      ⚠️ 完全信任模式：貼上後自動按 Enter 送出，適用於即時通訊軟體
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={settings.auto_enter_after_paste}
+                    disabled={!settings.paste_after_transcription}
+                    onClick={() => handleToggleChange('auto_enter_after_paste', !settings.auto_enter_after_paste)}
+                    className={`${
+                      settings.auto_enter_after_paste ? 'bg-orange-500' : 'bg-gray-300 dark:bg-gray-600'
+                    } ${!settings.paste_after_transcription ? 'cursor-not-allowed' : 'cursor-pointer'} relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`${
+                        settings.auto_enter_after_paste ? 'translate-x-4' : 'translate-x-0'
                       } inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
                     />
                   </button>
