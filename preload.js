@@ -59,6 +59,24 @@ contextBridge.exposeInMainWorld("electronAPI", {
   clearAllTranscriptions: () =>
     ipcRenderer.invoke("clear-all-transcriptions"),
 
+  // 字典功能
+  getDictionaryEntries: (limit, offset) =>
+    ipcRenderer.invoke("get-dictionary-entries", limit, offset),
+  addDictionaryEntry: (original, replacement, category) =>
+    ipcRenderer.invoke("add-dictionary-entry", original, replacement, category),
+  updateDictionaryEntry: (id, data) =>
+    ipcRenderer.invoke("update-dictionary-entry", id, data),
+  deleteDictionaryEntry: (id) =>
+    ipcRenderer.invoke("delete-dictionary-entry", id),
+  searchDictionary: (query) =>
+    ipcRenderer.invoke("search-dictionary", query),
+  getDictionaryCategories: () =>
+    ipcRenderer.invoke("get-dictionary-categories"),
+  applyDictionary: (text) =>
+    ipcRenderer.invoke("apply-dictionary", text),
+  toggleDictionaryEntry: (id) =>
+    ipcRenderer.invoke("toggle-dictionary-entry", id),
+
   // 设置管理
   getSettings: () => ipcRenderer.invoke("get-settings"),
   getAllSettings: () => ipcRenderer.invoke("get-all-settings"),

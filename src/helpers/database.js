@@ -58,9 +58,128 @@ class DatabaseManager {
 
     // 创建索引
     this.db.exec(`
-      CREATE INDEX IF NOT EXISTS idx_transcriptions_created_at 
+      CREATE INDEX IF NOT EXISTS idx_transcriptions_created_at
       ON transcriptions(created_at DESC)
     `);
+
+    // 創建字典表
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS dictionary (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        original TEXT NOT NULL,
+        replacement TEXT NOT NULL,
+        category TEXT DEFAULT '',
+        enabled INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // 創建字典索引
+    this.db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_dictionary_original
+      ON dictionary(original)
+    `);
+    this.db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_dictionary_enabled
+      ON dictionary(enabled)
+    `);
+  }
+
+  // ===== 字典功能 =====
+
+  addDictionaryEntry(original, replacement, category = '') {
+    const stmt = this.db.prepare(`
+      INSERT INTO dictionary (original, replacement, category)
+      VALUES (?, ?, ?)
+    `);
+    return stmt.run(original, replacement, category);
+  }
+
+  updateDictionaryEntry(id, data) {
+    const updates = [];
+    const values = [];
+
+    if (data.original !== undefined) {
+      updates.push('original = ?');
+      values.push(data.original);
+    }
+    if (data.replacement !== undefined) {
+      updates.push('replacement = ?');
+      values.push(data.replacement);
+    }
+    if (data.category !== undefined) {
+      updates.push('category = ?');
+      values.push(data.category);
+    }
+    if (data.enabled !== undefined) {
+      updates.push('enabled = ?');
+      values.push(data.enabled ? 1 : 0);
+    }
+
+    if (updates.length === 0) return null;
+
+    values.push(id);
+    const stmt = this.db.prepare(`
+      UPDATE dictionary SET ${updates.join(', ')} WHERE id = ?
+    `);
+    return stmt.run(...values);
+  }
+
+  deleteDictionaryEntry(id) {
+    const stmt = this.db.prepare("DELETE FROM dictionary WHERE id = ?");
+    return stmt.run(id);
+  }
+
+  getDictionaryEntries(limit = 100, offset = 0) {
+    const stmt = this.db.prepare(`
+      SELECT * FROM dictionary
+      ORDER BY created_at DESC
+      LIMIT ? OFFSET ?
+    `);
+    return stmt.all(limit, offset);
+  }
+
+  searchDictionary(query) {
+    const stmt = this.db.prepare(`
+      SELECT * FROM dictionary
+      WHERE original LIKE ? OR replacement LIKE ? OR category LIKE ?
+      ORDER BY created_at DESC
+    `);
+    const searchTerm = `%${query}%`;
+    return stmt.all(searchTerm, searchTerm, searchTerm);
+  }
+
+  getEnabledDictionaryEntries() {
+    const stmt = this.db.prepare(`
+      SELECT * FROM dictionary WHERE enabled = 1 ORDER BY LENGTH(original) DESC
+    `);
+    return stmt.all();
+  }
+
+  getDictionaryCategories() {
+    const stmt = this.db.prepare(`
+      SELECT DISTINCT category FROM dictionary WHERE category != '' ORDER BY category
+    `);
+    return stmt.all().map(row => row.category);
+  }
+
+  applyDictionary(text) {
+    if (!text) return text;
+
+    const entries = this.getEnabledDictionaryEntries();
+    let result = text;
+
+    for (const entry of entries) {
+      // 使用全域替換
+      const regex = new RegExp(this.escapeRegExp(entry.original), 'gi');
+      result = result.replace(regex, entry.replacement);
+    }
+
+    return result;
+  }
+
+  escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
   saveTranscription(data) {

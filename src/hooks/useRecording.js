@@ -220,6 +220,17 @@ export const useRecording = () => {
             raw_text = convertText(raw_text, 'zh-TW');
           }
 
+          // 套用字典替換（校正專有名詞）
+          try {
+            const dictResult = await window.electronAPI.applyDictionary(raw_text);
+            if (dictResult && dictResult !== raw_text) {
+              raw_text = dictResult;
+            }
+          } catch (dictErr) {
+            // 字典替換失敗不影響主流程
+            console.warn('字典替換失敗:', dictErr);
+          }
+
           // 准备转录数据
           const transcriptionData = {
             raw_text: raw_text,

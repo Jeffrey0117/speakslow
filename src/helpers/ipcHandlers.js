@@ -176,6 +176,43 @@ class IPCHandlers {
       return this.databaseManager.clearAllTranscriptions();
     });
 
+    // ===== 字典功能 =====
+    ipcMain.handle("get-dictionary-entries", (event, limit, offset) => {
+      return this.databaseManager.getDictionaryEntries(limit, offset);
+    });
+
+    ipcMain.handle("add-dictionary-entry", (event, original, replacement, category) => {
+      return this.databaseManager.addDictionaryEntry(original, replacement, category);
+    });
+
+    ipcMain.handle("update-dictionary-entry", (event, id, data) => {
+      return this.databaseManager.updateDictionaryEntry(id, data);
+    });
+
+    ipcMain.handle("delete-dictionary-entry", (event, id) => {
+      return this.databaseManager.deleteDictionaryEntry(id);
+    });
+
+    ipcMain.handle("search-dictionary", (event, query) => {
+      return this.databaseManager.searchDictionary(query);
+    });
+
+    ipcMain.handle("get-dictionary-categories", () => {
+      return this.databaseManager.getDictionaryCategories();
+    });
+
+    ipcMain.handle("apply-dictionary", (event, text) => {
+      return this.databaseManager.applyDictionary(text);
+    });
+
+    ipcMain.handle("toggle-dictionary-entry", (event, id) => {
+      const entry = this.databaseManager.db.prepare("SELECT enabled FROM dictionary WHERE id = ?").get(id);
+      if (entry) {
+        return this.databaseManager.updateDictionaryEntry(id, { enabled: !entry.enabled });
+      }
+      return null;
+    });
+
     // 音訊檔案操作
     ipcMain.handle("get-audio-file", async (event, audioPath) => {
       try {

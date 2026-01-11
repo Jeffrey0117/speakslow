@@ -6,6 +6,7 @@ import { Settings, Save, Eye, EyeOff, X, Loader2, TestTube, CheckCircle, XCircle
 import { usePermissions } from "./hooks/usePermissions";
 import PermissionCard from "./components/ui/permission-card";
 import HotkeySettings from "./components/HotkeySettings";
+import DictionaryManager from "./components/DictionaryManager";
 import { useTranslation, LanguageProvider } from "./i18n";
 
 const SettingsPage = () => {
@@ -525,6 +526,13 @@ const SettingsPage = () => {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 mb-6">
             <div className="p-6">
               <HotkeySettings />
+            </div>
+          </div>
+
+          {/* 字典功能部分 */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 mb-6">
+            <div className="p-6">
+              <DictionaryManager t={t} />
             </div>
           </div>
 
