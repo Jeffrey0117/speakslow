@@ -229,11 +229,17 @@ def add_punctuation(text):
 class SherpaServer:
     def __init__(self, model_dir=None):
         self.recognizer = None
+        self.vad = None  # Silero VAD 模型
         self.punc_model = None  # FunASR 標點模型
         self.initialized = False
         self.running = True
         self.transcription_count = 0
         self.total_audio_duration = 0.0
+        self.vad_skipped_duration = 0.0  # 被 VAD 跳過的靜音時長
+
+        # 動態執行緒數：根據 CPU 核心數調整，最多 8 執行緒
+        self.num_threads = min(os.cpu_count() or 4, 8)
+        logger.info(f"動態執行緒數: {self.num_threads} (CPU 核心: {os.cpu_count()})")
 
         # 模型目錄
         self.model_dir = model_dir or self._find_model_dir()
@@ -261,6 +267,92 @@ class SherpaServer:
     def _signal_handler(self, signum, frame):
         logger.info(f"收到信號 {signum}，準備退出...")
         self.running = False
+
+    def _init_vad(self):
+        """初始化 Silero VAD 模型"""
+        try:
+            import sherpa_onnx
+
+            # 查找 VAD 模型
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            vad_model_path = os.path.join(script_dir, "poc-sherpa", "silero_vad.onnx")
+
+            if not os.path.exists(vad_model_path):
+                logger.warning(f"Silero VAD 模型不存在: {vad_model_path}，將跳過 VAD")
+                self.vad = None
+                return
+
+            # 配置 VAD 參數
+            vad_config = sherpa_onnx.VadModelConfig()
+            vad_config.silero_vad.model = vad_model_path
+            vad_config.silero_vad.threshold = 0.5  # 語音檢測閾值
+            vad_config.silero_vad.min_silence_duration = 0.25  # 最小靜音時長（秒）
+            vad_config.silero_vad.min_speech_duration = 0.25  # 最小語音時長（秒）
+            vad_config.silero_vad.max_speech_duration = 15.0  # 最大語音時長（秒）
+            vad_config.silero_vad.window_size = 512  # 窗口大小
+            vad_config.sample_rate = 16000
+            vad_config.num_threads = self.num_threads
+
+            self.vad = sherpa_onnx.VoiceActivityDetector(vad_config, buffer_size_in_seconds=30)
+            logger.info("Silero VAD 初始化成功")
+
+        except Exception as e:
+            logger.warning(f"Silero VAD 初始化失敗: {e}，將跳過 VAD")
+            self.vad = None
+
+    def _extract_speech_segments(self, samples, sample_rate):
+        """使用 VAD 提取語音段，跳過靜音"""
+        if self.vad is None:
+            return samples, 0.0  # 無 VAD，返回原始音頻
+
+        try:
+            # 重置 VAD 狀態
+            self.vad.reset()
+
+            # 餵入音頻數據
+            window_size = 512
+            for i in range(0, len(samples), window_size):
+                chunk = samples[i:i + window_size]
+                if len(chunk) < window_size:
+                    # 補零到窗口大小
+                    chunk = np.pad(chunk, (0, window_size - len(chunk)), 'constant')
+                self.vad.accept_waveform(chunk)
+
+            # 標記輸入結束
+            self.vad.flush()
+
+            # 獲取語音段
+            speech_segments = []
+            while not self.vad.empty():
+                segment = self.vad.front()
+                speech_segments.append(segment)
+                self.vad.pop()
+
+            if not speech_segments:
+                logger.warning("VAD 未檢測到語音段")
+                return samples, 0.0
+
+            # 合併所有語音段
+            speech_samples = []
+            total_speech_samples = 0
+            for seg in speech_segments:
+                speech_samples.extend(seg.samples)
+                total_speech_samples += len(seg.samples)
+
+            speech_samples = np.array(speech_samples, dtype=np.float32)
+
+            # 計算跳過的靜音時長
+            original_duration = len(samples) / sample_rate
+            speech_duration = len(speech_samples) / sample_rate
+            skipped_duration = original_duration - speech_duration
+
+            logger.info(f"VAD: 原始 {original_duration:.2f}s -> 語音 {speech_duration:.2f}s，跳過 {skipped_duration:.2f}s ({len(speech_segments)} 段)")
+
+            return speech_samples, skipped_duration
+
+        except Exception as e:
+            logger.warning(f"VAD 處理失敗: {e}，使用原始音頻")
+            return samples, 0.0
 
     def _init_punctuation_model(self):
         """在背景線程初始化 FunASR 標點模型（ct-punc）"""
@@ -341,19 +433,22 @@ class SherpaServer:
 
             import sherpa_onnx
 
-            # 創建識別器
+            # 創建識別器（使用動態執行緒數）
             self.recognizer = sherpa_onnx.OfflineRecognizer.from_paraformer(
                 paraformer=model_path,
                 tokens=tokens_path,
-                num_threads=4,
+                num_threads=self.num_threads,
                 sample_rate=16000,
                 feature_dim=80,
                 decoding_method="greedy_search",
             )
 
+            # 初始化 Silero VAD
+            self._init_vad()
+
             load_time = time.time() - start_time
             self.initialized = True
-            logger.info(f"sherpa-onnx 初始化完成，耗時: {load_time:.2f} 秒")
+            logger.info(f"sherpa-onnx 初始化完成，耗時: {load_time:.2f} 秒，執行緒: {self.num_threads}")
 
             # 嘗試載入 FunASR 標點模型
             self._init_punctuation_model()
@@ -414,9 +509,29 @@ class SherpaServer:
             samples, sample_rate = self._read_wave_file(audio_path)
             duration = len(samples) / sample_rate
 
-            # 創建流並識別
+            # 使用 VAD 提取語音段（跳過靜音）
+            speech_samples, skipped_duration = self._extract_speech_segments(samples, sample_rate)
+            self.vad_skipped_duration += skipped_duration
+
+            # 如果 VAD 提取後無語音，返回空結果
+            if len(speech_samples) == 0:
+                logger.warning("VAD 提取後無語音內容")
+                return {
+                    "success": True,
+                    "text": "",
+                    "raw_text": "",
+                    "confidence": 0.0,
+                    "duration": duration,
+                    "language": "zh-CN",
+                    "model_type": "sherpa-onnx",
+                    "rtf": 0.0,
+                    "process_time": time.time() - start_time,
+                    "vad_skipped": skipped_duration,
+                }
+
+            # 創建流並識別（使用 VAD 提取的語音段）
             stream = self.recognizer.create_stream()
-            stream.accept_waveform(sample_rate, samples)
+            stream.accept_waveform(sample_rate, speech_samples)
 
             # 執行識別
             self.recognizer.decode_stream(stream)
@@ -443,6 +558,7 @@ class SherpaServer:
                 "model_type": "sherpa-onnx",
                 "rtf": rtf,
                 "process_time": elapsed,
+                "vad_skipped": skipped_duration,  # VAD 跳過的靜音時長
             }
 
         except Exception as e:
@@ -461,10 +577,11 @@ class SherpaServer:
                 "initialized": self.initialized,
                 "version": sherpa_onnx.__version__,
                 "model_dir": self.model_dir,
+                "num_threads": self.num_threads,
                 "models": {
                     "asr": self.recognizer is not None,
-                    "vad": False,  # sherpa-onnx 可以獨立使用 VAD，但這裡暫不啟用
-                    "punc": False,  # sherpa-onnx 不包含標點模型
+                    "vad": self.vad is not None,  # Silero VAD 狀態
+                    "punc": self.punc_model is not None,  # ct-punc 狀態
                 },
             }
         except ImportError:
@@ -483,8 +600,14 @@ class SherpaServer:
             "average_duration": round(
                 self.total_audio_duration / max(1, self.transcription_count), 2
             ),
+            "vad_skipped_duration": round(self.vad_skipped_duration, 2),
+            "vad_efficiency": round(
+                self.vad_skipped_duration / max(0.01, self.total_audio_duration) * 100, 1
+            ) if self.total_audio_duration > 0 else 0,
             "initialized": self.initialized,
             "engine": "sherpa-onnx",
+            "num_threads": self.num_threads,
+            "vad_enabled": self.vad is not None,
         }
 
     def run(self):
