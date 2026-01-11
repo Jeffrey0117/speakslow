@@ -30,7 +30,7 @@ const EnvironmentManager = require("./src/helpers/environment");
 const WindowManager = require("./src/helpers/windowManager");
 const DatabaseManager = require("./src/helpers/database");
 const ClipboardManager = require("./src/helpers/clipboard");
-const FunASRManager = require("./src/helpers/funasrManager");
+const SherpaManager = require("./src/helpers/sherpaManager");
 const TrayManager = require("./src/helpers/tray");
 const HotkeyManager = require("./src/helpers/hotkeyManager");
 const IPCHandlers = require("./src/helpers/ipcHandlers");
@@ -117,7 +117,7 @@ const environmentManager = new EnvironmentManager();
 const windowManager = new WindowManager();
 const databaseManager = new DatabaseManager();
 const clipboardManager = new ClipboardManager(logger); // 传递logger实例
-const funasrManager = new FunASRManager(logger); // 传递logger实例
+const sherpaManager = new SherpaManager(logger); // 传递logger实例
 const trayManager = new TrayManager();
 const hotkeyManager = new HotkeyManager();
 
@@ -136,7 +136,7 @@ async function startApp() {
       environmentManager,
       databaseManager,
       clipboardManager,
-      funasrManager,
+      sherpaManager,
       windowManager,
       hotkeyManager,
       logger,
@@ -174,10 +174,10 @@ async function startApp() {
     logger.info('macOS Dock已显示');
   }
 
-  // 在启动时初始化FunASR管理器（不等待以避免阻塞）
-  logger.info('开始初始化FunASR管理器...');
-  funasrManager.initializeAtStartup().catch((err) => {
-    logger.warn("FunASR在启动时不可用，这不是关键问题", err);
+  // 在启动时初始化 Sherpa 管理器（不等待以避免阻塞）
+  logger.info('开始初始化 Sherpa 管理器...');
+  sherpaManager.initializeAtStartup().catch((err) => {
+    logger.warn("Sherpa 在启动时不可用，这不是关键问题", err);
   });
 
   // 创建主窗口
@@ -245,7 +245,7 @@ module.exports = {
   windowManager,
   databaseManager,
   clipboardManager,
-  funasrManager,
+  sherpaManager,
   trayManager,
   hotkeyManager,
   logger

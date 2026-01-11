@@ -32,12 +32,10 @@ class EnvironmentManager {
     };
   }
 
-  getFunASRConfig() {
+  getSherpaConfig() {
     return {
-      modelDir: process.env.FUNASR_MODEL_DIR || "./models",
-      cacheDir: process.env.FUNASR_CACHE_DIR || "./cache",
-      batchSize: parseInt(process.env.BATCH_SIZE) || 300,
-      hotwords: process.env.HOTWORDS ? process.env.HOTWORDS.split(",") : [],
+      modelDir: process.env.SHERPA_MODEL_DIR || "./models",
+      cacheDir: process.env.SHERPA_CACHE_DIR || "./cache",
     };
   }
 
@@ -178,7 +176,7 @@ class EnvironmentManager {
     return {
       ai: this.getAIConfig(),
       audio: this.getAudioConfig(),
-      funasr: this.getFunASRConfig(),
+      sherpa: this.getSherpaConfig(),
       app: this.getAppConfig(),
       database: this.getDatabaseConfig(),
       proxy: this.getProxyConfig(),

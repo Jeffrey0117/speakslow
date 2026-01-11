@@ -7,7 +7,7 @@ class LogManager {
     // 使用臨時目錄作為初始值，等 Electron 準備好後再更新
     this.logDir = path.join(os.tmpdir(), 'ququ-logs');
     this.logFile = path.join(this.logDir, 'app.log');
-    this.funasrLogFile = path.join(this.logDir, 'funasr.log');
+    this.sherpaLogFile = path.join(this.logDir, 'sherpa.log');
     this._initialized = false;
     this.ensureLogDirectory();
   }
@@ -21,7 +21,7 @@ class LogManager {
         const userDataPath = electron.app.getPath('userData');
         this.logDir = path.join(userDataPath, 'logs');
         this.logFile = path.join(this.logDir, 'app.log');
-        this.funasrLogFile = path.join(this.logDir, 'funasr.log');
+        this.sherpaLogFile = path.join(this.logDir, 'sherpa.log');
         this.ensureLogDirectory();
         this._initialized = true;
       }
@@ -84,24 +84,24 @@ class LogManager {
     this.log('debug', message, data);
   }
 
-  // 记录FunASR相关日志
-  logFunASR(level, message, data = null) {
+  // 记录 Sherpa 相关日志
+  logSherpa(level, message, data = null) {
     const timestamp = new Date().toISOString();
     const logEntry = {
       timestamp,
       level,
       message,
       data,
-      source: 'FunASR'
+      source: 'Sherpa'
     };
 
-    console[level](`[FunASR] ${message}`, data || '');
+    console[level](`[Sherpa] ${message}`, data || '');
 
     try {
       const logLine = JSON.stringify(logEntry) + '\n';
-      fs.appendFileSync(this.funasrLogFile, logLine);
+      fs.appendFileSync(this.sherpaLogFile, logLine);
     } catch (error) {
-      console.error('写入FunASR日志文件失败:', error);
+      console.error('写入 Sherpa 日志文件失败:', error);
     }
   }
 
@@ -130,16 +130,16 @@ class LogManager {
     }
   }
 
-  // 获取FunASR日志
-  getFunASRLogs(lines = 100) {
+  // 获取 Sherpa 日志
+  getSherpaLogs(lines = 100) {
     try {
-      if (!fs.existsSync(this.funasrLogFile)) {
+      if (!fs.existsSync(this.sherpaLogFile)) {
         return [];
       }
 
-      const content = fs.readFileSync(this.funasrLogFile, 'utf8');
+      const content = fs.readFileSync(this.sherpaLogFile, 'utf8');
       const logLines = content.trim().split('\n').filter(line => line.trim());
-      
+
       return logLines
         .slice(-lines)
         .map(line => {
@@ -150,7 +150,7 @@ class LogManager {
           }
         });
     } catch (error) {
-      console.error('读取FunASR日志文件失败:', error);
+      console.error('读取 Sherpa 日志文件失败:', error);
       return [];
     }
   }
@@ -160,7 +160,7 @@ class LogManager {
     try {
       const cutoffTime = Date.now() - (daysToKeep * 24 * 60 * 60 * 1000);
       
-      [this.logFile, this.funasrLogFile].forEach(logFile => {
+      [this.logFile, this.sherpaLogFile].forEach(logFile => {
         if (fs.existsSync(logFile)) {
           const stats = fs.statSync(logFile);
           if (stats.mtime.getTime() < cutoffTime) {
@@ -179,8 +179,8 @@ class LogManager {
     return this.logFile;
   }
 
-  getFunASRLogFilePath() {
-    return this.funasrLogFile;
+  getSherpaLogFilePath() {
+    return this.sherpaLogFile;
   }
 
   // 获取系统信息用于调试

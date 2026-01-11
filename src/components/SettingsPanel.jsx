@@ -82,7 +82,7 @@ const SettingsPanel = ({ onClose }) => {
             </h3>
             <div className="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-lg">
               <p className="text-sm text-gray-700 mb-2">
-                🎤 <strong>聲聲慢 (SpeakSlow)</strong> - 基於 FunASR 和 AI 的中文語音轉文字應用
+                🎤 <strong>聲聲慢 (SpeakSlow)</strong> - 基於 Sherpa-ONNX 和 AI 的中文語音轉文字應用
               </p>
               <p className="text-xs text-gray-600">
                 • 高精度中文语音识别<br/>

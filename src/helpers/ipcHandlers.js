@@ -5,7 +5,7 @@ class IPCHandlers {
     this.environmentManager = managers.environmentManager;
     this.databaseManager = managers.databaseManager;
     this.clipboardManager = managers.clipboardManager;
-    this.funasrManager = managers.funasrManager;
+    this.sherpaManager = managers.sherpaManager;
     this.windowManager = managers.windowManager;
     this.hotkeyManager = managers.hotkeyManager;
     this.logger = managers.logger; // 添加logger引用
@@ -37,54 +37,30 @@ class IPCHandlers {
       return { success: true };
     });
 
-    // Python 和 FunASR 相关
-    ipcMain.handle("check-python", async () => {
-      return await this.funasrManager.checkPythonInstallation();
-    });
-
-    ipcMain.handle("install-python", async (event, progressCallback) => {
-      return await this.funasrManager.installPython((progress) => {
-        event.sender.send("python-install-progress", progress);
-      });
-    });
-
-    ipcMain.handle("check-funasr", async () => {
-      return await this.funasrManager.checkFunASRInstallation();
-    });
-
-    ipcMain.handle("check-funasr-status", async () => {
-      const status = await this.funasrManager.checkStatus();
-      
-      // 添加模型初始化状态信息
+    // Sherpa ASR 相关
+    ipcMain.handle("check-sherpa-status", async () => {
+      const status = await this.sherpaManager.checkStatus();
       return {
         ...status,
-        models_initialized: this.funasrManager.modelsInitialized,
-        server_ready: this.funasrManager.serverReady,
-        is_initializing: this.funasrManager.initializationPromise !== null
+        server_ready: this.sherpaManager.serverReady
       };
     });
 
-    ipcMain.handle("install-funasr", async (event) => {
-      return await this.funasrManager.installFunASR((progress) => {
-        event.sender.send("funasr-install-progress", progress);
-      });
-    });
-
-    ipcMain.handle("funasr-status", async () => {
-      return await this.funasrManager.checkStatus();
+    ipcMain.handle("sherpa-status", async () => {
+      return await this.sherpaManager.checkStatus();
     });
 
     // 模型文件管理
     ipcMain.handle("check-model-files", async () => {
-      return await this.funasrManager.checkModelFiles();
+      return await this.sherpaManager.checkModelFiles();
     });
 
     ipcMain.handle("get-download-progress", async () => {
-      return await this.funasrManager.getDownloadProgress();
+      return await this.sherpaManager.getDownloadProgress();
     });
 
     ipcMain.handle("download-models", async (event) => {
-      return await this.funasrManager.downloadModels((progress) => {
+      return await this.sherpaManager.downloadModels((progress) => {
         event.sender.send("model-download-progress", progress);
       });
     });
@@ -100,25 +76,25 @@ class IPCHandlers {
 
     // 音频转录相关
     ipcMain.handle("transcribe-audio", async (event, audioData, options) => {
-      return await this.funasrManager.transcribeAudio(audioData, options);
+      return await this.sherpaManager.transcribeAudio(audioData, options);
     });
 
-    // 串流辨識 API
-    ipcMain.handle("streaming-start", async () => {
-      return await this.funasrManager.streamingStart();
-    });
+    // 串流辨識 API (Sherpa 暫不支持，先註釋掉)
+    // ipcMain.handle("streaming-start", async () => {
+    //   return await this.sherpaManager.streamingStart();
+    // });
 
-    ipcMain.handle("streaming-feed", async (event, audioChunk, isFinal) => {
-      return await this.funasrManager.streamingFeed(audioChunk, isFinal);
-    });
+    // ipcMain.handle("streaming-feed", async (event, audioChunk, isFinal) => {
+    //   return await this.sherpaManager.streamingFeed(audioChunk, isFinal);
+    // });
 
-    ipcMain.handle("streaming-end", async () => {
-      return await this.funasrManager.streamingEnd();
-    });
+    // ipcMain.handle("streaming-end", async () => {
+    //   return await this.sherpaManager.streamingEnd();
+    // });
 
-    ipcMain.handle("preload-streaming-model", async () => {
-      return await this.funasrManager.preloadStreamingModel();
-    });
+    // ipcMain.handle("preload-streaming-model", async () => {
+    //   return await this.sherpaManager.preloadStreamingModel();
+    // });
 
     // 数据库相关
     ipcMain.handle("save-transcription", (event, data) => {
@@ -905,54 +881,40 @@ class IPCHandlers {
     // 模型管理 - 更新为实际功能
     ipcMain.handle("download-model", async (event, modelName) => {
       // 使用统一的模型下载功能
-      return await this.funasrManager.downloadModels((progress) => {
+      return await this.sherpaManager.downloadModels((progress) => {
         event.sender.send("model-download-progress", progress);
       });
     });
 
     ipcMain.handle("get-available-models", () => {
-      // 返回FunASR支持的模型列表
+      // 返回 Sherpa 支持的模型列表
       return {
         models: [
           {
-            name: "paraformer-large",
-            displayName: "Paraformer Large (ASR)",
+            name: "sherpa-onnx-paraformer-zh",
+            displayName: "Sherpa Paraformer (中文)",
             type: "asr",
-            size: "840MB",
-            description: "大型中文语音识别模型"
-          },
-          {
-            name: "fsmn-vad",
-            displayName: "FSMN VAD",
-            type: "vad",
-            size: "1.6MB",
-            description: "语音活动检测模型"
-          },
-          {
-            name: "ct-transformer-punc",
-            displayName: "CT Transformer (标点)",
-            type: "punc",
-            size: "278MB",
-            description: "标点符号恢复模型"
+            size: "約 220MB",
+            description: "Sherpa-ONNX 中文語音識別模型"
           }
         ]
       };
     });
 
     ipcMain.handle("get-current-model", async () => {
-      const status = await this.funasrManager.checkStatus();
+      const status = await this.sherpaManager.checkStatus();
       return {
-        model: "paraformer-large",
+        model: "sherpa-onnx-paraformer-zh",
         status: status.models_downloaded ? "ready" : "not_downloaded",
         details: status
       };
     });
 
     ipcMain.handle("switch-model", (event, modelName) => {
-      // FunASR目前使用固定模型组合，暂不支持切换
+      // Sherpa 目前使用固定模型，暂不支持切换
       return {
         success: false,
-        error: "FunASR使用固定模型组合，暂不支持切换单个模型"
+        error: "Sherpa 目前使用固定模型，暂不支持切换"
       };
     });
 
@@ -1013,12 +975,12 @@ class IPCHandlers {
       }
     });
 
-    ipcMain.handle("get-funasr-logs", (event, lines = 100) => {
+    ipcMain.handle("get-sherpa-logs", (event, lines = 100) => {
       try {
-        if (this.logger && this.logger.getFunASRLogs) {
+        if (this.logger && this.logger.getSherpaLogs) {
           return {
             success: true,
-            logs: this.logger.getFunASRLogs(lines)
+            logs: this.logger.getSherpaLogs(lines)
           };
         }
         return {
@@ -1026,7 +988,7 @@ class IPCHandlers {
           error: "日志管理器不可用"
         };
       } catch (error) {
-        this.logger.error("获取FunASR日志失败:", error);
+        this.logger.error("获取Sherpa日志失败:", error);
         return {
           success: false,
           error: error.message
@@ -1040,7 +1002,7 @@ class IPCHandlers {
           return {
             success: true,
             appLogPath: this.logger.getLogFilePath(),
-            funasrLogPath: this.logger.getFunASRLogFilePath()
+            sherpaLogPath: this.logger.getSherpaLogFilePath ? this.logger.getSherpaLogFilePath() : null
           };
         }
         return {
@@ -1059,8 +1021,8 @@ class IPCHandlers {
     ipcMain.handle("open-log-file", (event, logType = 'app') => {
       try {
         if (this.logger) {
-          const logPath = logType === 'funasr'
-            ? this.logger.getFunASRLogFilePath()
+          const logPath = logType === 'sherpa'
+            ? (this.logger.getSherpaLogFilePath ? this.logger.getSherpaLogFilePath() : this.logger.getLogFilePath())
             : this.logger.getLogFilePath();
           
           require("electron").shell.showItemInFolder(logPath);
@@ -1092,16 +1054,13 @@ class IPCHandlers {
           environment: {
             NODE_ENV: process.env.NODE_ENV,
             PATH: process.env.PATH,
-            PYTHON_PATH: process.env.PYTHON_PATH,
             AI_API_KEY: '通过控制面板设置',
             AI_BASE_URL: '通过控制面板设置',
             AI_MODEL: '通过控制面板设置'
           },
-          funasrStatus: {
-            isInitialized: this.funasrManager.isInitialized,
-            modelsInitialized: this.funasrManager.modelsInitialized,
-            serverReady: this.funasrManager.serverReady,
-            pythonCmd: this.funasrManager.pythonCmd
+          sherpaStatus: {
+            isInitialized: this.sherpaManager.isInitialized,
+            serverReady: this.sherpaManager.serverReady
           }
         };
 
@@ -1122,22 +1081,20 @@ class IPCHandlers {
       }
     });
 
-    ipcMain.handle("test-python-environment", async () => {
+    ipcMain.handle("test-sherpa-environment", async () => {
       try {
-        this.logger && this.logger.info && this.logger.info('开始测试Python环境');
-        
-        const pythonCmd = await this.funasrManager.findPythonExecutable();
-        const funasrStatus = await this.funasrManager.checkFunASRInstallation();
-        
+        this.logger && this.logger.info && this.logger.info('开始测试Sherpa环境');
+
+        const sherpaStatus = await this.sherpaManager.checkStatus();
+
         const testResult = {
           success: true,
-          pythonCmd,
-          funasrStatus,
+          sherpaStatus,
           timestamp: new Date().toISOString()
         };
 
-        this.logger && this.logger.info && this.logger.info('Python环境测试完成', testResult);
-        
+        this.logger && this.logger.info && this.logger.info('Sherpa环境测试完成', testResult);
+
         return testResult;
       } catch (error) {
         const errorResult = {
@@ -1146,22 +1103,22 @@ class IPCHandlers {
           timestamp: new Date().toISOString()
         };
 
-        this.logger && this.logger.error && this.logger.error('Python环境测试失败', errorResult);
-        
+        this.logger && this.logger.error && this.logger.error('Sherpa环境测试失败', errorResult);
+
         return errorResult;
       }
     });
 
-    ipcMain.handle("restart-funasr-server", async () => {
+    ipcMain.handle("restart-sherpa-server", async () => {
       try {
-        this.logger && this.logger.info && this.logger.info('手动重启FunASR服务器');
-        
+        this.logger && this.logger.info && this.logger.info('手动重启Sherpa服务器');
+
         // 使用新的restartServer方法
-        const result = await this.funasrManager.restartServer();
-        
+        const result = await this.sherpaManager.restartServer();
+
         return result;
       } catch (error) {
-        this.logger && this.logger.error && this.logger.error('重启FunASR服务器失败', error);
+        this.logger && this.logger.error && this.logger.error('重启Sherpa服务器失败', error);
         return {
           success: false,
           error: error.message

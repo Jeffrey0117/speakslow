@@ -59,7 +59,7 @@ export default {
     loadFailed: '載入設定失敗',
 
     about: '關於聲聲慢',
-    aboutDesc: '基於 FunASR 和 AI 的繁體中文語音轉文字應用',
+    aboutDesc: '基於 Sherpa-ONNX 和 AI 的繁體中文語音轉文字應用',
     features: {
       recognition: '高精度中文語音辨識',
       ai: 'AI智慧文字優化',

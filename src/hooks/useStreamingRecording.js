@@ -100,12 +100,12 @@ export const useStreamingRecording = () => {
       setPartialText('');
       setFullText('');
 
-      // 檢查 FunASR 是否就緒
+      // 檢查 Sherpa 是否就緒
       if (!modelStatus.isReady) {
         if (modelStatus.isLoading) {
-          throw new Error('FunASR 服務器正在啟動中，請稍候...');
+          throw new Error('語音識別服務正在啟動中，請稍候...');
         } else {
-          throw new Error('FunASR 服務器未就緒，請檢查配置');
+          throw new Error('語音識別服務未就緒，請檢查配置');
         }
       }
 

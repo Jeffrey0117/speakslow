@@ -74,14 +74,14 @@ export const useRecording = () => {
     try {
       setError(null);
 
-      // 检查FunASR是否就绪
+      // 检查 Sherpa 是否就绪
       if (!modelStatus.isReady) {
         if (modelStatus.isLoading) {
-          throw new Error('FunASR服务器正在启动中，请稍候...');
+          throw new Error('語音識別服務正在啟動中，請稍候...');
         } else if (modelStatus.error) {
-          throw new Error('FunASR服务器未就绪，请检查配置');
+          throw new Error('語音識別服務未就緒，請檢查配置');
         } else {
-          throw new Error('正在准备FunASR服务器，请稍候...');
+          throw new Error('正在準備語音識別服務，請稍候...');
         }
       }
 

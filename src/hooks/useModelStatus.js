@@ -8,7 +8,7 @@ const isControlPanelOrSettings = () => {
 
 /**
  * 模型状态监控Hook
- * 监控FunASR模型的下载、加载状态
+ * 监控 Sherpa ASR 模型的下载、加载状态
  */
 export const useModelStatus = () => {
   const [modelStatus, setModelStatus] = useState({
@@ -37,11 +37,11 @@ export const useModelStatus = () => {
     }
   }, []);
 
-  // 检查FunASR服务器状态
+  // 检查 Sherpa 服务器状态
   const checkServerStatus = useCallback(async () => {
     try {
       if (window.electronAPI) {
-        const status = await window.electronAPI.checkFunASRStatus();
+        const status = await window.electronAPI.checkSherpaStatus();
         return status;
       }
       return { success: false };
@@ -177,19 +177,19 @@ export const useModelStatus = () => {
           isLoading: true
         }));
         
-        // 下载完成后重启FunASR服务器以加载模型
+        // 下载完成后重启 Sherpa 服务器以加载模型
         try {
-          console.log('模型下载完成，重启FunASR服务器...');
-          await window.electronAPI.restartFunasrServer();
-          console.log('FunASR服务器重启完成');
-          
+          console.log('模型下载完成，重启 Sherpa 服务器...');
+          await window.electronAPI.restartSherpaServer();
+          console.log('Sherpa 服务器重启完成');
+
           // 重启后等待一段时间再检查状态
           setTimeout(() => {
             checkModelStatus();
           }, 3000); // 增加等待时间到3秒
-          
+
         } catch (restartError) {
-          console.error('重启FunASR服务器失败:', restartError);
+          console.error('重启 Sherpa 服务器失败:', restartError);
           setModelStatus(prev => ({
             ...prev,
             isLoading: false,

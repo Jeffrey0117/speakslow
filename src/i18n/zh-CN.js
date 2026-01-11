@@ -59,7 +59,7 @@ export default {
     loadFailed: '加载设置失败',
 
     about: '关于声声慢',
-    aboutDesc: '基于 FunASR 和 AI 的简体中文语音转文字应用',
+    aboutDesc: '基于 Sherpa-ONNX 和 AI 的简体中文语音转文字应用',
     features: {
       recognition: '高精度中文语音识别',
       ai: 'AI智能文本优化',

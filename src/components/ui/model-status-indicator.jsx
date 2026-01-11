@@ -3,7 +3,7 @@ import { CheckCircle, AlertCircle, Loader2, Download, Clock } from 'lucide-react
 
 /**
  * 模型状态指示器组件
- * 显示FunASR模型的下载、加载状态
+ * 显示 Sherpa ASR 模型的下载、加载状态
  */
 export const ModelStatusIndicator = ({ modelStatus, className = "", onDownload = null }) => {
   const getStatusIcon = () => {

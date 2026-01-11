@@ -16,17 +16,16 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return () => ipcRenderer.removeListener("toggle-dictation", callback);
   },
 
-  // FunASR语音识别
+  // Sherpa 语音识别
   transcribeAudio: (audioData) => ipcRenderer.invoke("transcribe-audio", audioData),
-  checkFunASRStatus: () => ipcRenderer.invoke("check-funasr-status"),
-  installFunASR: () => ipcRenderer.invoke("install-funasr"),
-  restartFunasrServer: () => ipcRenderer.invoke("restart-funasr-server"),
+  checkSherpaStatus: () => ipcRenderer.invoke("check-sherpa-status"),
+  restartSherpaServer: () => ipcRenderer.invoke("restart-sherpa-server"),
 
-  // 串流辨識 API
-  streamingStart: () => ipcRenderer.invoke("streaming-start"),
-  streamingFeed: (audioChunk, isFinal) => ipcRenderer.invoke("streaming-feed", audioChunk, isFinal),
-  streamingEnd: () => ipcRenderer.invoke("streaming-end"),
-  preloadStreamingModel: () => ipcRenderer.invoke("preload-streaming-model"),
+  // 串流辨識 API（暫不支持）
+  // streamingStart: () => ipcRenderer.invoke("streaming-start"),
+  // streamingFeed: (audioChunk, isFinal) => ipcRenderer.invoke("streaming-feed", audioChunk, isFinal),
+  // streamingEnd: () => ipcRenderer.invoke("streaming-end"),
+  // preloadStreamingModel: () => ipcRenderer.invoke("preload-streaming-model"),
 
   // 模型文件管理
   checkModelFiles: () => ipcRenderer.invoke("check-model-files"),

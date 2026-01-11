@@ -502,7 +502,7 @@ html, body {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
-/* FunASR准备状态动画 */
+/* Sherpa 准备状态动画 */
 @keyframes preparing-wave {
   0%, 100% {
     transform: scaleY(0.3);
@@ -514,7 +514,7 @@ html, body {
   }
 }
 
-/* FunASR加载状态动画 */
+/* Sherpa 加载状态动画 */
 @keyframes loading-dots {
   0%, 20% {
     transform: scaleY(0.4);
@@ -628,7 +628,7 @@ html, body {
 .bounce-dot:nth-child(2) { animation-delay: -0.16s; }
 .bounce-dot:nth-child(3) { animation-delay: 0s; }
 
-/* FunASR错误状态动画 */
+/* Sherpa 错误状态动画 */
 @keyframes error-pulse {
   0%, 100% {
     transform: scale(1);
@@ -649,7 +649,7 @@ html, body {
     animation: none;
   }
   
-  /* 为新的FunASR状态动画添加减少动画支持 */
+  /* 为新的 Sherpa 状态动画添加减少动画支持 */
   *[style*="preparing-wave"],
   *[style*="loading-dots"],
   *[style*="error-pulse"] {

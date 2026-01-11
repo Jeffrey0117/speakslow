@@ -38,7 +38,7 @@ const SoundWaveIcon = React.memo(({ size = 16, isActive = false }) => {
   );
 });
 
-// 加载指示器组件（FunASR启动中）- 使用 React.memo 優化
+// 加载指示器组件（Sherpa 启动中）- 使用 React.memo 優化
 const LoadingIndicator = React.memo(({ size = 20 }) => {
   return (
     <div className="flex items-center justify-center gap-0.5">
@@ -430,11 +430,11 @@ export default function App() {
     }
   }, [showNotification, t, pasteAfterTranscription, autoEnterAfterPaste]);
 
-  // 处理录音完成（FunASR识别完成）
+  // 处理录音完成（Sherpa 识别完成）
   const handleRecordingComplete = useCallback(async (transcriptionResult) => {
     const text = transcriptionResult?.text;
     if (text) {
-      // 立即显示FunASR识别的原始文本
+      // 立即显示 Sherpa 识别的原始文本
       setOriginalText(text);
       setShowTextArea(true);
 
