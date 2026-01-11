@@ -1,4 +1,6 @@
-const { ipcMain } = require("electron");
+const { ipcMain, app } = require("electron");
+const path = require("path");
+const fs = require("fs");
 
 class IPCHandlers {
   constructor(managers) {
@@ -86,7 +88,46 @@ class IPCHandlers {
 
     // 音频转录相关
     ipcMain.handle("transcribe-audio", async (event, audioData, options) => {
-      return await this.sherpaManager.transcribeAudio(audioData, options);
+      // 儲存音訊檔案
+      let audioPath = null;
+      try {
+        const userDataPath = this.environmentManager?.userDataPath ||
+          (process.env.ELECTRON_USER_DATA || require('electron').app.getPath('userData'));
+        const audioDir = path.join(userDataPath, 'audio');
+
+        // 確保音訊目錄存在
+        if (!fs.existsSync(audioDir)) {
+          fs.mkdirSync(audioDir, { recursive: true });
+        }
+
+        // 生成唯一檔名
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const fileName = `recording_${timestamp}.wav`;
+        audioPath = path.join(audioDir, fileName);
+
+        // 將 Uint8Array 轉為 Buffer 並儲存
+        const buffer = Buffer.from(audioData);
+        fs.writeFileSync(audioPath, buffer);
+
+        if (this.logger) {
+          this.logger.info('音訊檔案已儲存:', audioPath);
+        }
+      } catch (err) {
+        if (this.logger) {
+          this.logger.error('儲存音訊檔案失敗:', err);
+        }
+        // 儲存失敗不影響轉錄流程
+      }
+
+      // 執行轉錄
+      const result = await this.sherpaManager.transcribeAudio(audioData, options);
+
+      // 將音訊路徑附加到結果
+      if (result && audioPath) {
+        result.audio_path = audioPath;
+      }
+
+      return result;
     });
 
     // 串流辨識 API (Sherpa 暫不支持，先註釋掉)
@@ -133,6 +174,37 @@ class IPCHandlers {
 
     ipcMain.handle("clear-all-transcriptions", () => {
       return this.databaseManager.clearAllTranscriptions();
+    });
+
+    // 音訊檔案操作
+    ipcMain.handle("get-audio-file", async (event, audioPath) => {
+      try {
+        if (!audioPath || !fs.existsSync(audioPath)) {
+          return { success: false, error: '音訊檔案不存在' };
+        }
+        const buffer = fs.readFileSync(audioPath);
+        return { success: true, data: buffer.toString('base64'), mimeType: 'audio/wav' };
+      } catch (err) {
+        return { success: false, error: err.message };
+      }
+    });
+
+    ipcMain.handle("save-audio-file", async (event, audioPath, savePath) => {
+      try {
+        if (!audioPath || !fs.existsSync(audioPath)) {
+          return { success: false, error: '來源音訊檔案不存在' };
+        }
+        fs.copyFileSync(audioPath, savePath);
+        return { success: true, path: savePath };
+      } catch (err) {
+        return { success: false, error: err.message };
+      }
+    });
+
+    ipcMain.handle("show-save-dialog", async (event, options) => {
+      const { dialog } = require('electron');
+      const result = await dialog.showSaveDialog(options);
+      return result;
     });
 
     // 设置相关

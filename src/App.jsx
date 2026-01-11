@@ -10,8 +10,9 @@ import { useTextProcessing } from "./hooks/useTextProcessing";
 import { useModelStatus } from "./hooks/useModelStatus";
 import { usePermissions } from "./hooks/usePermissions";
 import { useTranslation } from "./i18n";
-import { Mic, MicOff, Settings, History, Copy, Download } from "lucide-react";
+import { Mic, MicOff, Settings, History, Copy, Download, X } from "lucide-react";
 import SettingsPanel from "./components/SettingsPanel";
+import HistorySidebar from "./components/HistorySidebar";
 import { ModelDownloadProgress } from "./components/ui/model-status-indicator";
 
 // 动态导入设置页面组件
@@ -247,6 +248,7 @@ export default function App() {
   const [processedText, setProcessedText] = useState("");
   const [showTextArea, setShowTextArea] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showHistorySidebar, setShowHistorySidebar] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   // 錄音完成後動作設定
@@ -667,11 +669,9 @@ export default function App() {
     }
   };
 
-  // 处理打开历史记录
+  // 处理打开历史记录（改為側邊欄）
   const handleOpenHistory = () => {
-    if (window.electronAPI) {
-      window.electronAPI.openHistoryWindow();
-    }
+    setShowHistorySidebar(true);
   };
 
 
@@ -864,7 +864,7 @@ export default function App() {
   const micProps = getMicButtonProps();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 pb-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 pb-4 rounded-3xl overflow-hidden">
       {/* 主界面 */}
       <div className="max-w-2xl mx-auto min-h-screen flex flex-col">
         {/* 标题栏 */}
@@ -877,21 +877,29 @@ export default function App() {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 chinese-title">
             {t('appName')}
           </h1>
-          <div className="flex items-center space-x-3 non-draggable">
+          <div className="flex items-center space-x-2 non-draggable">
             <Tooltip content={t('app.history')} position="bottom">
               <button
                 onClick={handleOpenHistory}
-                className="p-3 hover:bg-white/70 dark:hover:bg-gray-700/70 rounded-xl transition-colors shadow-sm"
+                className="p-2.5 hover:bg-white/70 dark:hover:bg-gray-700/70 rounded-xl transition-colors"
               >
-                <History className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+                <History className="w-5 h-5 text-gray-600 dark:text-gray-400" />
               </button>
             </Tooltip>
             <Tooltip content={t('app.settings')} position="bottom">
               <button
                 onClick={handleOpenSettings}
-                className="p-3 hover:bg-white/70 dark:hover:bg-gray-700/70 rounded-xl transition-colors shadow-sm"
+                className="p-2.5 hover:bg-white/70 dark:hover:bg-gray-700/70 rounded-xl transition-colors"
               >
-                <Settings className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+                <Settings className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              </button>
+            </Tooltip>
+            <Tooltip content={t('app.close') || '關閉'} position="bottom">
+              <button
+                onClick={handleClose}
+                className="p-2.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-xl transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500 dark:text-gray-400 hover:text-red-500" />
               </button>
             </Tooltip>
           </div>
@@ -1003,6 +1011,13 @@ export default function App() {
       {showSettings && (
         <SettingsPanel onClose={() => setShowSettings(false)} />
       )}
+
+      {/* 歷史記錄側邊欄 */}
+      <HistorySidebar
+        isOpen={showHistorySidebar}
+        onClose={() => setShowHistorySidebar(false)}
+        t={t}
+      />
 
     </div>
   );

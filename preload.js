@@ -127,6 +127,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
   importSettings: () => ipcRenderer.invoke("import-settings"),
   exportSettings: () => ipcRenderer.invoke("export-settings"),
 
+  // 音訊檔案操作
+  getAudioFile: (audioPath) => ipcRenderer.invoke("get-audio-file", audioPath),
+  saveAudioFile: (audioPath, savePath) => ipcRenderer.invoke("save-audio-file", audioPath, savePath),
+  showSaveDialog: (options) => ipcRenderer.invoke("show-save-dialog", options),
+
   // 系统信息
   getSystemInfo: () => ipcRenderer.invoke("get-system-info"),
   checkPermissions: () => ipcRenderer.invoke("check-permissions"),

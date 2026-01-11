@@ -34,10 +34,18 @@ class DatabaseManager {
         language TEXT DEFAULT 'zh-CN',
         duration REAL,
         file_size INTEGER,
+        audio_path TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // 確保 audio_path 欄位存在（為舊資料庫升級）
+    try {
+      this.db.exec(`ALTER TABLE transcriptions ADD COLUMN audio_path TEXT`);
+    } catch (e) {
+      // 欄位已存在，忽略錯誤
+    }
 
     // 创建设置表
     this.db.exec(`
@@ -70,8 +78,8 @@ class DatabaseManager {
     const stmt = this.db.prepare(`
       INSERT INTO transcriptions (
         text, raw_text, processed_text, confidence,
-        language, duration, file_size
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        language, duration, file_size, audio_path
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     return stmt.run(
@@ -81,7 +89,8 @@ class DatabaseManager {
       data.confidence || 0,
       data.language || 'zh-CN',
       data.duration || 0,
-      data.file_size || 0
+      data.file_size || 0,
+      data.audio_path || null
     );
   }
 

@@ -228,6 +228,7 @@ export const useRecording = () => {
             language: targetLang,
             duration: transcriptionResult.duration || 0,
             file_size: uint8Array.length,
+            audio_path: transcriptionResult.audio_path || null, // 音訊檔案路徑
           };
 
           // 立即显示初步结果（已转换）
