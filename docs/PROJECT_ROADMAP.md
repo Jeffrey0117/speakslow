@@ -85,7 +85,7 @@
 
 ---
 
-### 2. 字典功能
+### 2. 字典功能 ✅ 已完成
 
 #### 2.1 功能概述
 
@@ -94,58 +94,48 @@
 - 常用詞彙替換
 - 語音辨識後處理
 
-#### 2.2 技術規格
+#### 2.2 實作狀態
 
-```javascript
-// 字典資料結構
-interface DictionaryEntry {
-  id: string;
-  original: string;      // 原始詞彙（可能的錯誤辨識）
-  replacement: string;   // 替換詞彙
-  category?: string;     // 分類（人名、地名、術語等）
-  enabled: boolean;      // 是否啟用
-  createdAt: Date;
-  updatedAt: Date;
-}
+| 項目 | 狀態 | 說明 |
+|------|------|------|
+| 資料庫 dictionary 表 | ✅ 完成 | `src/helpers/database.js` |
+| IPC handlers | ✅ 完成 | `src/helpers/ipcHandlers.js` |
+| Preload API | ✅ 完成 | `preload.js` |
+| DictionaryManager 組件 | ✅ 完成 | `src/components/DictionaryManager.jsx` |
+| 設定頁面整合 | ✅ 完成 | `src/settings.jsx` |
+| 辨識流程整合 | ✅ 完成 | `src/hooks/useRecording.js` |
 
-// 範例
-{
-  original: "聲聲慢",
-  replacement: "聲聲慢",  // 確保正確
-  category: "品牌名稱"
-}
-```
-
-#### 2.3 資料庫設計
+#### 2.3 資料庫設計（已實作）
 
 ```sql
 CREATE TABLE dictionary (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   original TEXT NOT NULL,
   replacement TEXT NOT NULL,
-  category TEXT,
+  category TEXT DEFAULT '',
   enabled INTEGER DEFAULT 1,
-  priority INTEGER DEFAULT 0,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_dictionary_original ON dictionary(original);
-CREATE INDEX idx_dictionary_category ON dictionary(category);
+CREATE INDEX idx_dictionary_enabled ON dictionary(enabled);
 ```
 
-#### 2.4 處理流程
+#### 2.4 處理流程（已實作）
 
 ```
 語音辨識結果
     │
     ▼
+簡繁轉換（如啟用）
+    │
+    ▼
 ┌─────────────────┐
-│  字典後處理模組  │
+│  字典後處理模組  │  ← 目前方式：事後替換
 ├─────────────────┤
 │ 1. 載入啟用字典 │
-│ 2. 依優先級排序 │
-│ 3. 執行替換     │
+│ 2. 長詞優先排序 │
+│ 3. 正則表達式替換│
 │ 4. 回傳結果     │
 └─────────────────┘
     │
@@ -153,12 +143,108 @@ CREATE INDEX idx_dictionary_category ON dictionary(category);
 處理後文字 → AI 優化（可選）
 ```
 
-#### 2.5 UI 設計
+#### 2.5 UI 功能（已實作）
 
-- 設定頁面新增「字典管理」分頁
-- 支援新增、編輯、刪除、匯入、匯出
-- 批次啟用/停用
-- 搜尋過濾功能
+- ✅ 設定頁面「字典管理」區塊
+- ✅ 新增、編輯、刪除
+- ✅ 啟用/停用切換
+- ✅ 搜尋過濾
+- ✅ 分類篩選
+- ⏳ 批次匯入/匯出（待開發）
+
+---
+
+### 2.5 熱詞功能（Hotwords）🆕
+
+#### 2.5.1 功能概述
+
+**問題**：目前的「字典功能」是**事後替換**，無法影響 ASR 模型的辨識行為。
+
+**解決方案**：使用 Sherpa-ONNX 的 **Hotwords（熱詞/上下文偏置）** 功能，在辨識時就提高特定詞彙的權重。
+
+#### 2.5.2 技術限制
+
+| 模型類型 | 支援熱詞 | 目前使用 |
+|---------|---------|---------|
+| **Transducer** (zipformer, conformer) | ✅ 支援 | ❌ 未用 |
+| **Paraformer** | ❌ 不支援 | ✅ 正在用 |
+| **Whisper** | ❌ 不支援 | - |
+| **SenseVoice** | ❌ 不支援 | - |
+
+#### 2.5.3 建議方案：雙模型策略
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     模型選擇                                 │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ○ 高準確模式 (Paraformer)           推薦：純中文場景        │
+│    ├── 純中文辨識                                           │
+│    ├── 最高準確度                                           │
+│    ├── 字典「事後替換」                                      │
+│    └── 不支援熱詞                                           │
+│                                                             │
+│  ● 智慧模式 (Zipformer Bilingual)    推薦：中英混合場景      │
+│    ├── 中英混合辨識 ✨                                       │
+│    ├── 熱詞提示（辨識時偏向）✨                              │
+│    ├── 串流即時顯示 ✨                                       │
+│    └── 準確度略低 (~5-10%)                                  │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 2.5.4 模型比較
+
+| 特性 | Paraformer (目前) | Zipformer Bilingual |
+|------|-------------------|---------------------|
+| **模型大小** | ~223MB | ~190MB (int8) |
+| **熱詞支援** | ❌ 不支援 | ✅ 支援 |
+| **中英混合** | ❌ 純中文 | ✅ 中英混合 |
+| **串流辨識** | ❌ 離線 | ✅ 串流 |
+| **準確度** | 業界頂尖 | 略低 ~5-10% |
+| **速度** | RTF ~0.08 | RTF ~0.12 |
+
+#### 2.5.5 熱詞檔案格式
+
+```
+# hotwords.txt
+# 格式：詞彙[:權重]
+# 預設權重 1.5，可自訂
+
+前端:2.0
+後端:2.0
+API:1.5
+郭台銘:3.0
+流星街:2.5
+JavaScript
+TypeScript
+React
+```
+
+#### 2.5.6 實作計畫
+
+1. **Phase 1：下載雙模型**
+   - 下載 `sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20`
+   - 保留現有 Paraformer 模型
+
+2. **Phase 2：修改 sherpaManager.js**
+   - 支援模型切換
+   - 新增熱詞檔案生成方法
+   - 修改辨識參數
+
+3. **Phase 3：新增設定選項**
+   - 模型選擇（高準確/智慧模式）
+   - 熱詞功能開關
+   - 從字典自動生成熱詞
+
+4. **Phase 4：串流辨識整合**
+   - 利用 Zipformer 的串流能力
+   - 實現邊說邊顯示
+
+#### 2.5.7 參考資料
+
+- [Sherpa-ONNX Hotwords Documentation](https://k2-fsa.github.io/sherpa/onnx/hotwords/index.html)
+- [Zipformer Transducer Models](https://k2-fsa.github.io/sherpa/onnx/pretrained_models/online-transducer/zipformer-transducer-models.html)
 
 ---
 
@@ -393,6 +479,63 @@ interface OptimizeOptions {
 
 ---
 
+## ASR 模型優化狀態 🆕
+
+### 目前配置
+
+| 項目 | 狀態 | 說明 |
+|------|------|------|
+| ASR 引擎 | Sherpa-ONNX | 從 FunASR 遷移完成 |
+| 主要模型 | `sherpa-onnx-paraformer-zh-2023-09-14` | 純中文，離線辨識 |
+| 模型大小 | ~223MB (int8 量化) | `model.int8.onnx` |
+| 標點恢復 | FunASR ct-punc + 規則式備援 | 背景載入 |
+| 熱詞支援 | ❌ 不支援 | Paraformer 限制 |
+| 串流辨識 | ❌ 未啟用 | 目前使用離線模式 |
+
+### 已完成的優化
+
+| 優化項 | 變更 | 效果 |
+|--------|------|------|
+| 模型量化 | fp32 → int8 | 模型體積減少 ~75% |
+| 執行緒數 | num_threads=4 | 平衡速度與 CPU 佔用 |
+| 標點模型 | ct-punc v2.0.4 | 專業中文標點恢復 |
+| 規則式備援 | `add_punctuation()` | 當 ct-punc 載入中時使用 |
+
+### 待優化項目
+
+| 項目 | 優先級 | 說明 |
+|------|--------|------|
+| **雙模型支援** | 高 | 新增 Zipformer Bilingual |
+| **熱詞功能** | 高 | 需要 Transducer 模型 |
+| **串流辨識** | 中 | 利用 Zipformer 串流能力 |
+| **chunk_size 調整** | 低 | 可嘗試更小的 chunk 提升速度 |
+| **ncpu 動態調整** | 低 | 根據系統負載自動調整 |
+
+### sherpa_server.py 配置
+
+```python
+# 目前配置 (sherpa_server.py:345-352)
+self.recognizer = sherpa_onnx.OfflineRecognizer.from_paraformer(
+    paraformer=model_path,      # model.int8.onnx
+    tokens=tokens_path,         # tokens.txt
+    num_threads=4,              # 執行緒數
+    sample_rate=16000,          # 採樣率
+    feature_dim=80,             # 特徵維度
+    decoding_method="greedy_search",  # 解碼方式
+)
+```
+
+### FunASR 時期的優化（已棄用）
+
+之前使用 FunASR 時有做過的優化：
+- chunk_size: `[0,10,5]` → `[0,6,3]`（延遲 600ms → 360ms）
+- encoder_chunk_look_back: `4` → `2`
+- decoder_chunk_look_back: `1` → `0`
+
+**注意**：這些參數是 FunASR 專用，Sherpa-ONNX 使用不同的配置方式。
+
+---
+
 ## AI 文字優化服務研究
 
 ### 價格對比總結
@@ -481,21 +624,28 @@ ASR:
 
 ## 開發優先序
 
-### Phase 1：短期（1-2 週）
+### Phase 1：短期 ✅
 
 1. ✅ UI 改進（關閉按鈕、圓角、側邊欄）
-2. 🔄 字典功能實作
+2. ✅ 字典功能實作（事後替換）
 3. 🔄 DeepSeek AI 整合
+
+### Phase 1.5：熱詞與雙模型 🆕
+
+4. 🔜 下載 Zipformer Bilingual 模型
+5. 🔜 實作雙模型切換
+6. 🔜 熱詞功能整合（需 Zipformer）
+7. 🔜 中英混合辨識測試
 
 ### Phase 2：中期
 
-4. 串流辨識恢復
-5. AprilVoice 網頁版基礎架構
+8. 串流辨識恢復（利用 Zipformer 串流能力）
+9. AprilVoice 網頁版基礎架構
 
 ### Phase 3：長期
 
-6. 手機 App 開發
-7. 語音識別資料整理文檔
+10. 手機 App 開發
+11. 語音識別資料整理文檔
 
 ---
 
@@ -503,6 +653,8 @@ ASR:
 
 | 日期 | 版本 | 更新內容 |
 |------|------|----------|
+| 2025-01-12 | 1.2 | 新增熱詞功能規格、ASR 模型優化狀態、雙模型策略 |
+| 2025-01-12 | 1.1 | 字典功能完成，更新實作狀態 |
 | 2025-01-12 | 1.0 | 初版建立 |
 
 ---
