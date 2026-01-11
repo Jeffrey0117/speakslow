@@ -13,18 +13,16 @@ export const useRecording = () => {
   const [error, setError] = useState(null);
   const [audioData, setAudioData] = useState(null);
 
-  const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
   const streamRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const processorRef = useRef(null);
+  const sourceRef = useRef(null);
+
+  // PCM 音頻數據緩衝區（直接錄製 PCM，不需要解碼 webm）
+  const pcmBufferRef = useRef([]);
 
   // 添加防重复处理机制
   const processingRef = useRef({ isProcessingAudio: false, lastProcessTime: 0 });
-
-  // 預熱的 AudioContext 用於減少錄音啟動延遲
-  const prewarmedAudioContextRef = useRef(null);
-
-  // 錄音用的 AudioContext（保持活躍以減少轉換延遲）
-  const recordingAudioContextRef = useRef(null);
 
   // 麥克風權限狀態快取
   const micPermissionRef = useRef('unknown');
@@ -32,54 +30,46 @@ export const useRecording = () => {
   // 使用模型状态Hook
   const modelStatus = useModelStatus();
 
-  // 預熱 AudioContext 以減少首次錄音延遲
+  // 預查詢麥克風權限狀態
   useEffect(() => {
-    const prewarmAudio = async () => {
-      try {
-        // 創建並預熱 AudioContext
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)({
-          sampleRate: 16000
-        });
-
-        // 必須在用戶交互後 resume（暫時保持 suspended 狀態）
-        prewarmedAudioContextRef.current = audioContext;
-
-        // 預查詢麥克風權限狀態
-        if (navigator.permissions) {
-          try {
-            const result = await navigator.permissions.query({ name: 'microphone' });
+    const checkMicPermission = async () => {
+      if (navigator.permissions) {
+        try {
+          const result = await navigator.permissions.query({ name: 'microphone' });
+          micPermissionRef.current = result.state;
+          result.onchange = () => {
             micPermissionRef.current = result.state;
-
-            // 監聽權限變化
-            result.onchange = () => {
-              micPermissionRef.current = result.state;
-            };
-          } catch (e) {
-            // 某些瀏覽器不支援 permissions API
-          }
+          };
+        } catch (e) {
+          // 某些瀏覽器不支援 permissions API
         }
-      } catch (e) {
-        // 預熱失敗不影響功能
       }
     };
-
-    prewarmAudio();
-
-    return () => {
-      // 清理預熱的 AudioContext
-      if (prewarmedAudioContextRef.current) {
-        prewarmedAudioContextRef.current.close().catch(() => {});
-        prewarmedAudioContextRef.current = null;
-      }
-      // 清理錄音用的 AudioContext
-      if (recordingAudioContextRef.current) {
-        recordingAudioContextRef.current.close().catch(() => {});
-        recordingAudioContextRef.current = null;
-      }
-    };
+    checkMicPermission();
   }, []);
 
-  // 开始录音
+  // 清理資源
+  const cleanup = useCallback(() => {
+    if (processorRef.current) {
+      processorRef.current.disconnect();
+      processorRef.current = null;
+    }
+    if (sourceRef.current) {
+      sourceRef.current.disconnect();
+      sourceRef.current = null;
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close().catch(() => {});
+      audioContextRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    pcmBufferRef.current = [];
+  }, []);
+
+  // 开始录音（使用 ScriptProcessor 直接錄製 PCM，避免 webm 解碼問題）
   const startRecording = useCallback(async () => {
     try {
       setError(null);
@@ -101,12 +91,11 @@ export const useRecording = () => {
       }
 
       // ⚡ 立即設定錄音狀態，讓 UI 馬上反應
-      // 如果麥克風權限已授權，可以安全地先顯示錄音中
       if (micPermissionRef.current === 'granted') {
         setIsRecording(true);
       }
 
-      // 请求麦克风权限（這是最慢的步驟）
+      // 请求麦克风权限
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           sampleRate: 16000,
@@ -117,92 +106,103 @@ export const useRecording = () => {
         }
       });
 
-      // 如果之前沒有權限，現在有了，更新狀態
+      // 更新狀態
       if (micPermissionRef.current !== 'granted') {
         micPermissionRef.current = 'granted';
         setIsRecording(true);
       }
 
       streamRef.current = stream;
-      audioChunksRef.current = [];
+      pcmBufferRef.current = [];
 
-      // 创建MediaRecorder
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm;codecs=opus'
-      });
+      // 創建 AudioContext（使用預設採樣率，讓瀏覽器自動處理）
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      audioContextRef.current = audioContext;
 
-      mediaRecorderRef.current = mediaRecorder;
-
-      // 預先創建 AudioContext 以減少停止錄音後的轉換延遲
-      if (!recordingAudioContextRef.current || recordingAudioContextRef.current.state === 'closed') {
-        recordingAudioContextRef.current = new (window.AudioContext || window.webkitAudioContext)({
-          sampleRate: 16000
-        });
+      // 確保 AudioContext 是活躍的
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
       }
 
-      // 设置事件处理器
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
+      // 創建音源節點
+      const source = audioContext.createMediaStreamSource(stream);
+      sourceRef.current = source;
+
+      // 創建 ScriptProcessor 來獲取原始 PCM 數據
+      const bufferSize = 4096;
+      const processor = audioContext.createScriptProcessor(bufferSize, 1, 1);
+      processorRef.current = processor;
+
+      processor.onaudioprocess = (e) => {
+        const inputData = e.inputBuffer.getChannelData(0);
+        // 複製數據到緩衝區
+        pcmBufferRef.current.push(new Float32Array(inputData));
       };
 
-      mediaRecorder.onstop = async () => {
-        setIsRecording(false);
-        setIsProcessing(true);
-
-        try {
-          // 创建音频Blob
-          const audioBlob = new Blob(audioChunksRef.current, {
-            type: 'audio/webm;codecs=opus'
-          });
-
-          setAudioData(audioBlob);
-
-          // 处理音频
-          await processAudio(audioBlob);
-        } catch (err) {
-          setError(`音频处理失败: ${err.message}`);
-        } finally {
-          setIsProcessing(false);
-        }
-      };
-
-      mediaRecorder.onerror = (event) => {
-        setError(`录音错误: ${event.error?.message || '未知错误'}`);
-        setIsRecording(false);
-        setIsProcessing(false);
-      };
-
-      // 开始录音
-      mediaRecorder.start(1000); // 每秒收集一次数据
+      source.connect(processor);
+      processor.connect(audioContext.destination);
 
     } catch (err) {
       setError(`无法开始录音: ${err.message}`);
       setIsRecording(false);
+      cleanup();
     }
-  }, [modelStatus.isReady, modelStatus.isLoading, modelStatus.error]);
+  }, [modelStatus.isReady, modelStatus.isLoading, modelStatus.error, cleanup]);
 
   // 停止录音
-  const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
+  const stopRecording = useCallback(async () => {
+    if (!isRecording) return;
 
-      // 停止所有音频轨道
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-        streamRef.current = null;
-      }
-    }
-  }, [isRecording]);
+    setIsRecording(false);
+    setIsProcessing(true);
 
-  // 处理音频
-  const processAudio = useCallback(async (audioBlob) => {
-    processingRef.current.isProcessingAudio = true;
-    
     try {
-      const wavBlob = await convertToWav(audioBlob);
+      // 檢查是否有錄音數據
+      if (pcmBufferRef.current.length === 0) {
+        throw new Error('錄音數據為空，請重新錄音');
+      }
 
+      // 獲取原始採樣率
+      const sourceSampleRate = audioContextRef.current?.sampleRate || 48000;
+
+      // 合併所有 PCM 數據
+      const totalLength = pcmBufferRef.current.reduce((sum, arr) => sum + arr.length, 0);
+
+      if (totalLength < 1600) { // 小於 0.1 秒的錄音
+        throw new Error('錄音時間太短，請說話後再停止錄音');
+      }
+
+      const mergedBuffer = new Float32Array(totalLength);
+      let offset = 0;
+      for (const chunk of pcmBufferRef.current) {
+        mergedBuffer.set(chunk, offset);
+        offset += chunk.length;
+      }
+
+      // 清理資源
+      cleanup();
+
+      // 直接轉換為 WAV（重採樣到 16kHz）
+      const wavBuffer = pcmToWav(mergedBuffer, sourceSampleRate, 16000);
+      const wavBlob = new Blob([wavBuffer], { type: 'audio/wav' });
+
+      setAudioData(wavBlob);
+
+      // 處理音頻
+      await processAudio(wavBlob);
+    } catch (err) {
+      setError(`音频处理失败: ${err.message}`);
+      cleanup();
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [isRecording, cleanup]);
+
+  // 处理音频（接收已經是 WAV 格式的 blob）
+  const processAudio = useCallback(async (wavBlob) => {
+    processingRef.current.isProcessingAudio = true;
+
+    try {
       if (window.electronAPI) {
         const arrayBuffer = await wavBlob.arrayBuffer();
         const uint8Array = new Uint8Array(arrayBuffer);
@@ -334,103 +334,13 @@ export const useRecording = () => {
     }
   }, []);
 
-  // 转换音频格式为WAV（使用預先創建的 AudioContext 以減少延遲）
-  const convertToWav = useCallback(async (audioBlob) => {
-    return new Promise((resolve, reject) => {
-      // 檢查音頻數據是否有效
-      if (!audioBlob || audioBlob.size === 0) {
-        reject(new Error('錄音數據為空，請重新錄音'));
-        return;
-      }
-
-      // 如果錄音太短（小於 1KB），可能是無效錄音
-      if (audioBlob.size < 1000) {
-        reject(new Error('錄音時間太短，請說話後再停止錄音'));
-        return;
-      }
-
-      const reader = new FileReader();
-
-      reader.onload = async () => {
-        try {
-          const arrayBuffer = reader.result;
-
-          // 創建新的 AudioContext（不使用預熱的，避免 sampleRate 衝突）
-          // 使用預設 sampleRate 讓瀏覽器自動處理
-          const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
-          // 確保 AudioContext 是活躍的
-          if (audioContext.state === 'suspended') {
-            await audioContext.resume();
-          }
-
-          // 解码音频数据（需要複製 arrayBuffer，因為 decodeAudioData 會消耗它）
-          let audioBuffer;
-          try {
-            audioBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
-          } catch (decodeErr) {
-            console.error('音頻解碼失敗，嘗試備用方案:', decodeErr);
-
-            // 備用方案：嘗試用 callback 方式解碼（某些瀏覽器的兼容性更好）
-            try {
-              audioBuffer = await new Promise((res, rej) => {
-                // 重新讀取 blob
-                const reader2 = new FileReader();
-                reader2.onload = () => {
-                  const newContext = new (window.AudioContext || window.webkitAudioContext)();
-                  newContext.decodeAudioData(
-                    reader2.result,
-                    (buffer) => {
-                      res(buffer);
-                      newContext.close();
-                    },
-                    (err) => {
-                      rej(err);
-                      newContext.close();
-                    }
-                  );
-                };
-                reader2.onerror = () => rej(new Error('讀取失敗'));
-                reader2.readAsArrayBuffer(audioBlob);
-              });
-            } catch (fallbackErr) {
-              console.error('備用解碼也失敗:', fallbackErr);
-              audioContext.close();
-              reject(new Error('無法解碼音頻數據，請重新錄音。如果問題持續，請嘗試重啟應用程式。'));
-              return;
-            }
-          }
-
-          // 转换为WAV格式（目標 16kHz 單聲道）
-          const wavBuffer = audioBufferToWav(audioBuffer, 16000);
-          const wavBlob = new Blob([wavBuffer], { type: 'audio/wav' });
-
-          audioContext.close();
-          resolve(wavBlob);
-        } catch (err) {
-          reject(new Error(`音频格式转换失败: ${err.message}`));
-        }
-      };
-
-      reader.onerror = () => {
-        reject(new Error('读取音频文件失败'));
-      };
-
-      reader.readAsArrayBuffer(audioBlob);
-    });
-  }, []);
-
-  // AudioBuffer转WAV格式（支持重採樣到目標採樣率）
-  const audioBufferToWav = (audioBuffer, targetSampleRate = 16000) => {
-    const sourceSampleRate = audioBuffer.sampleRate;
-    const sourceLength = audioBuffer.length;
+  // PCM 數據直接轉 WAV（帶重採樣）- 不需要 decodeAudioData
+  const pcmToWav = (pcmData, sourceSampleRate, targetSampleRate) => {
+    const sourceLength = pcmData.length;
 
     // 計算重採樣後的長度
     const resampleRatio = targetSampleRate / sourceSampleRate;
     const targetLength = Math.round(sourceLength * resampleRatio);
-
-    // 只使用第一個聲道（單聲道）
-    const sourceData = audioBuffer.getChannelData(0);
 
     // 線性插值重採樣
     const resampledData = new Float32Array(targetLength);
@@ -439,11 +349,11 @@ export const useRecording = () => {
       const index0 = Math.floor(sourceIndex);
       const index1 = Math.min(index0 + 1, sourceLength - 1);
       const fraction = sourceIndex - index0;
-      resampledData[i] = sourceData[index0] * (1 - fraction) + sourceData[index1] * fraction;
+      resampledData[i] = pcmData[index0] * (1 - fraction) + pcmData[index1] * fraction;
     }
 
     const bytesPerSample = 2;
-    const numberOfChannels = 1; // 強制單聲道
+    const numberOfChannels = 1;
     const blockAlign = numberOfChannels * bytesPerSample;
     const byteRate = targetSampleRate * blockAlign;
     const dataSize = targetLength * blockAlign;
@@ -452,7 +362,7 @@ export const useRecording = () => {
     const buffer = new ArrayBuffer(bufferSize);
     const view = new DataView(buffer);
 
-    // WAV文件头
+    // WAV 文件頭
     const writeString = (offset, string) => {
       for (let i = 0; i < string.length; i++) {
         view.setUint8(offset + i, string.charCodeAt(i));
@@ -473,7 +383,7 @@ export const useRecording = () => {
     writeString(36, 'data');
     view.setUint32(40, dataSize, true);
 
-    // 音频数据（使用重採樣後的數據）
+    // 音頻數據
     let offset = 44;
     for (let i = 0; i < targetLength; i++) {
       const sample = Math.max(-1, Math.min(1, resampledData[i]));
@@ -486,20 +396,11 @@ export const useRecording = () => {
 
   // 取消录音
   const cancelRecording = useCallback(() => {
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
-    }
-
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-
+    cleanup();
     setIsRecording(false);
     setIsProcessing(false);
     setError(null);
-    audioChunksRef.current = [];
-  }, []);
+  }, [cleanup]);
 
   // 获取录音权限状态
   const checkPermissions = useCallback(async () => {
