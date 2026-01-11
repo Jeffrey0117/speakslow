@@ -179,22 +179,32 @@ const HistoryContent = ({ onCopy, t }) => {
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffTime = Math.abs(now - date);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays === 1) {
-      return `${date.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}`;
-    } else if (diffDays === 2) {
-      return `${date.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}`;
-    } else if (diffDays <= 7) {
-      return `${diffDays - 1}d`;
+    // 計算是否同一天
+    const isToday = date.toDateString() === now.toDateString();
+
+    // 計算昨天
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const isYesterday = date.toDateString() === yesterday.toDateString();
+
+    // 計算天數差距
+    const diffTime = now - date;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    const timeStr = date.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+
+    if (isToday) {
+      return timeStr;
+    } else if (isYesterday) {
+      return `昨天 ${timeStr}`;
+    } else if (diffDays < 7) {
+      return `${diffDays}天前`;
     } else {
       return date.toLocaleDateString('zh-TW', {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
+        month: 'numeric',
+        day: 'numeric'
+      }) + ' ' + timeStr;
     }
   };
 
