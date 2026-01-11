@@ -1425,3 +1425,664 @@ audioWorker.onmessage = (e) => {
 | TC-6.5 | 快取清理 | 正確清理過期資料 |
 | TC-6.6 | 100 條歷史列表滾動 | 60fps 無卡頓 |
 | TC-6.7 | 性能模式開啟 | 動畫減少，響應更快 |
+
+---
+
+## Feature 7: 音檔儲存與下載 (Audio Storage & Download)
+
+### 7.1 功能概述
+
+**目標**: 將每次錄音的音檔保存到本地，並在歷史記錄頁面提供播放和下載功能。
+
+**使用情境**:
+- 使用者完成錄音後，音檔自動儲存到本地
+- 在歷史記錄頁面可以重新播放該錄音
+- 可以下載音檔到指定位置 (WAV 或 MP3 格式)
+- 支援批次匯出多個音檔
+
+### 7.2 技術規格
+
+#### 7.2.1 資料庫結構變更
+
+```sql
+-- 修改 transcriptions 表，新增音檔路徑欄位
+ALTER TABLE transcriptions ADD COLUMN audio_path TEXT;
+ALTER TABLE transcriptions ADD COLUMN audio_format TEXT DEFAULT 'wav';
+ALTER TABLE transcriptions ADD COLUMN audio_size INTEGER;
+```
+
+#### 7.2.2 音檔儲存路徑
+
+```
+{userData}/
+├── transcriptions.db
+└── audio/
+    ├── 2025/
+    │   ├── 01/
+    │   │   ├── rec_20250111_143025_a1b2c3.wav
+    │   │   ├── rec_20250111_143530_d4e5f6.wav
+    │   │   └── ...
+    │   └── 02/
+    │       └── ...
+    └── ...
+```
+
+**命名規則**: `rec_{YYYYMMDD}_{HHMMSS}_{randomId}.wav`
+
+#### 7.2.3 音檔管理類
+
+```javascript
+// helpers/audioStorage.js
+
+const path = require('path');
+const fs = require('fs');
+
+class AudioStorageManager {
+  constructor(userDataPath) {
+    this.basePath = path.join(userDataPath, 'audio');
+    this.ensureDirectory();
+  }
+
+  /**
+   * 確保音檔目錄存在
+   */
+  ensureDirectory() {
+    if (!fs.existsSync(this.basePath)) {
+      fs.mkdirSync(this.basePath, { recursive: true });
+    }
+  }
+
+  /**
+   * 生成音檔儲存路徑
+   * @returns {string} 完整檔案路徑
+   */
+  generatePath() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const randomId = Math.random().toString(36).substring(2, 8);
+
+    const dirPath = path.join(this.basePath, String(year), month);
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+
+    const filename = `rec_${year}${month}${day}_${hours}${minutes}${seconds}_${randomId}.wav`;
+    return path.join(dirPath, filename);
+  }
+
+  /**
+   * 儲存音檔
+   * @param {Buffer|Uint8Array} audioData - WAV 音檔數據
+   * @returns {Promise<{path: string, size: number}>}
+   */
+  async saveAudio(audioData) {
+    const filePath = this.generatePath();
+    const buffer = Buffer.from(audioData);
+
+    await fs.promises.writeFile(filePath, buffer);
+
+    return {
+      path: filePath,
+      size: buffer.length,
+      format: 'wav'
+    };
+  }
+
+  /**
+   * 讀取音檔
+   * @param {string} filePath - 音檔路徑
+   * @returns {Promise<Buffer>}
+   */
+  async readAudio(filePath) {
+    if (!fs.existsSync(filePath)) {
+      throw new Error('音檔不存在');
+    }
+    return await fs.promises.readFile(filePath);
+  }
+
+  /**
+   * 刪除音檔
+   * @param {string} filePath - 音檔路徑
+   */
+  async deleteAudio(filePath) {
+    if (fs.existsSync(filePath)) {
+      await fs.promises.unlink(filePath);
+    }
+  }
+
+  /**
+   * 計算音檔總佔用空間
+   * @returns {Promise<number>} 總大小 (bytes)
+   */
+  async getTotalSize() {
+    let totalSize = 0;
+    const walk = async (dir) => {
+      const files = await fs.promises.readdir(dir, { withFileTypes: true });
+      for (const file of files) {
+        const filePath = path.join(dir, file.name);
+        if (file.isDirectory()) {
+          await walk(filePath);
+        } else if (file.name.endsWith('.wav')) {
+          const stats = await fs.promises.stat(filePath);
+          totalSize += stats.size;
+        }
+      }
+    };
+    await walk(this.basePath);
+    return totalSize;
+  }
+
+  /**
+   * 清理舊音檔 (超過指定天數)
+   * @param {number} daysToKeep - 保留天數
+   * @returns {Promise<{deleted: number, freedSpace: number}>}
+   */
+  async cleanOldAudio(daysToKeep = 30) {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
+
+    let deleted = 0;
+    let freedSpace = 0;
+
+    // 實現清理邏輯...
+
+    return { deleted, freedSpace };
+  }
+}
+
+module.exports = AudioStorageManager;
+```
+
+#### 7.2.4 IPC 通道定義
+
+| 通道名稱 | 方向 | 參數 | 回傳 |
+|----------|------|------|------|
+| `save-audio` | Renderer → Main | `{ audioData: Uint8Array, transcriptionId?: number }` | `{ success: boolean, path: string, size: number }` |
+| `get-audio` | Renderer → Main | `{ transcriptionId: number }` | `{ success: boolean, audioData: ArrayBuffer }` |
+| `delete-audio` | Renderer → Main | `{ transcriptionId: number }` | `{ success: boolean }` |
+| `download-audio` | Renderer → Main | `{ transcriptionId: number, savePath: string, format: 'wav' \| 'mp3' }` | `{ success: boolean, path: string }` |
+| `get-audio-stats` | Renderer → Main | 無 | `{ totalSize: number, fileCount: number }` |
+| `clean-old-audio` | Renderer → Main | `{ daysToKeep: number }` | `{ deleted: number, freedSpace: number }` |
+| `export-audio-batch` | Renderer → Main | `{ transcriptionIds: number[], format: 'wav' \| 'mp3', outputDir: string }` | `{ success: boolean, exportedCount: number }` |
+
+#### 7.2.5 錄音流程修改
+
+```javascript
+// hooks/useRecording.js 修改
+
+const stopRecording = async () => {
+  // ... 現有的停止錄音邏輯 ...
+
+  // 1. 取得 WAV 音檔數據
+  const wavData = convertToWav(audioChunks);
+
+  // 2. 送去辨識
+  const transcriptionResult = await window.electronAPI.transcribeAudio(wavData);
+
+  // 3. 儲存音檔 (如果啟用)
+  let audioInfo = null;
+  if (settings.saveAudioEnabled) {
+    audioInfo = await window.electronAPI.saveAudio({ audioData: wavData });
+  }
+
+  // 4. 儲存轉錄記錄 (包含音檔路徑)
+  await window.electronAPI.saveTranscription({
+    text: transcriptionResult.text,
+    raw_text: transcriptionResult.raw_text,
+    audio_path: audioInfo?.path || null,
+    audio_size: audioInfo?.size || null,
+    audio_format: 'wav',
+    // ... 其他欄位
+  });
+};
+```
+
+### 7.3 UI 規格
+
+#### 7.3.1 歷史記錄 - 音檔播放器
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  辨識記錄                                     2025/01/11 14:30 │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  今天天氣很好，我想去公園走走。                               │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  ▶   advancement ████████░░░░░░░░░░  0:03 / 0:08     │   │
+│  │     [播放] [暫停]                         [下載 ▼]   │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  🎤 音檔大小: 128 KB                                        │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 7.3.2 下載選單
+
+```
+┌─────────────────────┐
+│  下載音檔           │
+├─────────────────────┤
+│  📁 下載為 WAV      │
+│  🎵 下載為 MP3      │
+│  ─────────────────  │
+│  📂 開啟所在資料夾   │
+└─────────────────────┘
+```
+
+#### 7.3.3 設定頁面 - 音檔管理
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  音檔儲存設定                                                │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ☑ 儲存錄音音檔                                             │
+│    └ 每次錄音後自動保存音檔到本地                            │
+│                                                             │
+│  自動清理:                                                  │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │ ◉ 保留 30 天                                        │   │
+│  │ ○ 保留 7 天                                         │   │
+│  │ ○ 保留 90 天                                        │   │
+│  │ ○ 永不刪除                                          │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  儲存空間:                                                  │
+│  ├ 已使用: 256 MB (123 個檔案)                              │
+│  └ [清理舊檔案] [開啟音檔資料夾]                             │
+│                                                             │
+│  匯出格式:                                                  │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │ ◉ WAV (無損，檔案較大)                               │   │
+│  │ ○ MP3 (有損壓縮，檔案較小)                           │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 7.4 設定選項
+
+| 設定項 | 類型 | 預設值 | 說明 |
+|--------|------|--------|------|
+| `saveAudioEnabled` | boolean | `true` | 是否儲存錄音音檔 |
+| `audioRetentionDays` | number | `30` | 音檔保留天數 (0 = 永不刪除) |
+| `defaultExportFormat` | enum | `'wav'` | 預設匯出格式: `'wav'` 或 `'mp3'` |
+| `autoCleanAudio` | boolean | `true` | 是否自動清理過期音檔 |
+
+### 7.5 錯誤處理
+
+| 錯誤情境 | 處理方式 |
+|----------|----------|
+| 磁碟空間不足 | 提示使用者清理空間，可選擇不儲存音檔 |
+| 音檔寫入失敗 | 記錄錯誤，不影響轉錄功能 |
+| 音檔讀取失敗 | 顯示「音檔不可用」，提供重新錄音選項 |
+| 格式轉換失敗 | 降級為原始格式下載 |
+
+### 7.6 測試案例
+
+| 測試 ID | 測試項目 | 預期結果 |
+|---------|----------|----------|
+| TC-7.1 | 錄音後自動儲存 | 音檔出現在正確路徑 |
+| TC-7.2 | 歷史記錄播放音檔 | 正確播放對應錄音 |
+| TC-7.3 | 下載為 WAV | 檔案正確儲存 |
+| TC-7.4 | 下載為 MP3 | 格式轉換正確 |
+| TC-7.5 | 刪除記錄同時刪除音檔 | 音檔一併清除 |
+| TC-7.6 | 自動清理 30 天前音檔 | 舊檔案被刪除 |
+| TC-7.7 | 關閉音檔儲存 | 不生成音檔，不影響辨識 |
+| TC-7.8 | 批次匯出 | 多個音檔正確匯出 |
+
+---
+
+## Feature 8: 自訂詞典/熱詞 (Custom Dictionary / Hotwords)
+
+### 8.1 功能概述
+
+**目標**: 讓使用者預設常用但 ASR 可能辨識錯誤的詞彙，提升特定詞彙的辨識準確率。
+
+**使用情境**:
+- 使用者經常說「蛐蛐」但被辨識為「曲曲」或「驅驅」
+- 使用者需要辨識專業術語如「Kubernetes」「GraphQL」
+- 使用者需要辨識人名、公司名等專有名詞
+
+### 8.2 技術規格
+
+#### 8.2.1 FunASR 熱詞支援
+
+FunASR 原生支援熱詞 (hotword) 功能，可在辨識時傳入熱詞列表提升辨識率。
+
+```python
+# funasr_server.py 修改
+
+def transcribe(self, audio_data, hotwords=None):
+    """
+    執行語音辨識
+    @param audio_data: 音訊數據
+    @param hotwords: 熱詞列表 ["詞彙1", "詞彙2", ...]
+    """
+    result = self.asr_model.generate(
+        input=audio_data,
+        hotword=hotwords,  # 傳入熱詞
+        batch_size_s=300,
+    )
+    return result
+```
+
+#### 8.2.2 資料庫結構
+
+```sql
+-- 新增詞典表
+CREATE TABLE IF NOT EXISTS dictionary (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  word TEXT NOT NULL UNIQUE,        -- 詞彙
+  phonetic TEXT,                    -- 注音/拼音 (可選)
+  category TEXT DEFAULT 'general',  -- 分類: general, name, tech, company
+  weight INTEGER DEFAULT 1,         -- 權重 1-10
+  enabled BOOLEAN DEFAULT 1,        -- 是否啟用
+  use_count INTEGER DEFAULT 0,      -- 使用次數統計
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 建立索引
+CREATE INDEX IF NOT EXISTS idx_dictionary_category ON dictionary(category);
+CREATE INDEX IF NOT EXISTS idx_dictionary_enabled ON dictionary(enabled);
+```
+
+#### 8.2.3 詞典管理類
+
+```javascript
+// helpers/dictionaryManager.js
+
+class DictionaryManager {
+  constructor(db) {
+    this.db = db;
+  }
+
+  /**
+   * 新增詞彙
+   */
+  addWord(word, options = {}) {
+    const { phonetic, category = 'general', weight = 1 } = options;
+
+    const stmt = this.db.prepare(`
+      INSERT OR REPLACE INTO dictionary (word, phonetic, category, weight, updated_at)
+      VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+    `);
+
+    return stmt.run(word, phonetic, category, weight);
+  }
+
+  /**
+   * 批次新增詞彙
+   */
+  addWords(words) {
+    const stmt = this.db.prepare(`
+      INSERT OR IGNORE INTO dictionary (word, category) VALUES (?, 'general')
+    `);
+
+    const insertMany = this.db.transaction((words) => {
+      for (const word of words) {
+        stmt.run(word);
+      }
+    });
+
+    insertMany(words);
+  }
+
+  /**
+   * 刪除詞彙
+   */
+  removeWord(id) {
+    const stmt = this.db.prepare('DELETE FROM dictionary WHERE id = ?');
+    return stmt.run(id);
+  }
+
+  /**
+   * 取得所有啟用的詞彙 (用於傳給 FunASR)
+   */
+  getEnabledWords() {
+    const stmt = this.db.prepare(`
+      SELECT word, weight FROM dictionary
+      WHERE enabled = 1
+      ORDER BY weight DESC, use_count DESC
+    `);
+    return stmt.all();
+  }
+
+  /**
+   * 取得所有詞彙 (含停用的)
+   */
+  getAllWords() {
+    const stmt = this.db.prepare(`
+      SELECT * FROM dictionary ORDER BY category, word
+    `);
+    return stmt.all();
+  }
+
+  /**
+   * 依分類取得詞彙
+   */
+  getWordsByCategory(category) {
+    const stmt = this.db.prepare(`
+      SELECT * FROM dictionary WHERE category = ? ORDER BY word
+    `);
+    return stmt.all(category);
+  }
+
+  /**
+   * 切換啟用狀態
+   */
+  toggleEnabled(id) {
+    const stmt = this.db.prepare(`
+      UPDATE dictionary SET enabled = NOT enabled, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `);
+    return stmt.run(id);
+  }
+
+  /**
+   * 更新使用次數 (辨識結果中出現該詞時呼叫)
+   */
+  incrementUseCount(word) {
+    const stmt = this.db.prepare(`
+      UPDATE dictionary SET use_count = use_count + 1, updated_at = CURRENT_TIMESTAMP
+      WHERE word = ?
+    `);
+    return stmt.run(word);
+  }
+
+  /**
+   * 匯入詞彙 (從文字檔)
+   */
+  importFromText(text) {
+    const words = text.split(/[\n,，]/).map(w => w.trim()).filter(w => w);
+    this.addWords(words);
+    return words.length;
+  }
+
+  /**
+   * 匯出詞彙
+   */
+  exportToText() {
+    const words = this.getAllWords();
+    return words.map(w => w.word).join('\n');
+  }
+}
+
+module.exports = DictionaryManager;
+```
+
+#### 8.2.4 IPC 通道定義
+
+| 通道名稱 | 方向 | 參數 | 回傳 |
+|----------|------|------|------|
+| `dictionary-add` | Renderer → Main | `{ word: string, phonetic?: string, category?: string, weight?: number }` | `{ success: boolean, id: number }` |
+| `dictionary-add-batch` | Renderer → Main | `{ words: string[] }` | `{ success: boolean, added: number }` |
+| `dictionary-remove` | Renderer → Main | `{ id: number }` | `{ success: boolean }` |
+| `dictionary-get-all` | Renderer → Main | 無 | `{ words: DictionaryWord[] }` |
+| `dictionary-get-by-category` | Renderer → Main | `{ category: string }` | `{ words: DictionaryWord[] }` |
+| `dictionary-toggle` | Renderer → Main | `{ id: number }` | `{ success: boolean, enabled: boolean }` |
+| `dictionary-import` | Renderer → Main | `{ text: string }` | `{ success: boolean, imported: number }` |
+| `dictionary-export` | Renderer → Main | 無 | `{ text: string }` |
+| `dictionary-get-enabled` | Renderer → Main | 無 | `{ words: string[] }` |
+
+#### 8.2.5 辨識流程整合
+
+```javascript
+// hooks/useRecording.js 修改
+
+const performTranscription = async (audioData) => {
+  // 1. 取得啟用的熱詞列表
+  const { words } = await window.electronAPI.dictionaryGetEnabled();
+  const hotwords = words.map(w => w.word);
+
+  // 2. 執行辨識 (帶熱詞)
+  const result = await window.electronAPI.transcribeAudio(audioData, {
+    hotwords: hotwords
+  });
+
+  // 3. 更新詞彙使用統計
+  for (const word of hotwords) {
+    if (result.text.includes(word)) {
+      await window.electronAPI.dictionaryIncrementUseCount(word);
+    }
+  }
+
+  return result;
+};
+```
+
+### 8.3 UI 規格
+
+#### 8.3.1 詞典管理頁面
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  自訂詞典                                        [匯入] [匯出]│
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │ 🔍 搜尋詞彙...                                       │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  分類: [全部 ▼]                                             │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │ ☑ 蛐蛐          一般      權重: ████░ 4    [✕]     │   │
+│  │ ☑ Kubernetes    技術      權重: █████ 5    [✕]     │   │
+│  │ ☑ GraphQL       技術      權重: ████░ 4    [✕]     │   │
+│  │ ☐ 小明          人名      權重: ███░░ 3    [✕]     │   │
+│  │ ☑ 台積電        公司      權重: █████ 5    [✕]     │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  新增詞彙:                                                  │
+│  ┌──────────────────────────────┐ ┌────────┐ ┌────────┐   │
+│  │ 輸入詞彙                      │ │ 一般 ▼ │ │ [新增] │   │
+│  └──────────────────────────────┘ └────────┘ └────────┘   │
+│                                                             │
+│  💡 提示: 可輸入多個詞彙，用逗號或換行分隔                   │
+│                                                             │
+│  統計: 共 15 個詞彙 (12 個啟用)                             │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 8.3.2 快速新增 (主介面)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  辨識結果                                                    │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  今天我去了曲曲公司開會。                                    │
+│                      ↑                                      │
+│              [加入詞典: 蛐蛐]                                │
+│                                                             │
+│  💡 選取文字後可快速加入詞典                                 │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 8.3.3 匯入對話框
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  匯入詞彙                                           [✕]     │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  請貼上詞彙列表 (每行一個或用逗號分隔):                      │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │ 蛐蛐                                                │   │
+│  │ Kubernetes                                          │   │
+│  │ Docker, React, Vue                                  │   │
+│  │ 台積電                                              │   │
+│  │                                                     │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  或 [選擇檔案] 匯入 .txt 檔案                               │
+│                                                             │
+│                               [取消]  [匯入 (4 個詞彙)]     │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 8.4 設定選項
+
+| 設定項 | 類型 | 預設值 | 說明 |
+|--------|------|--------|------|
+| `enableDictionary` | boolean | `true` | 是否啟用自訂詞典 |
+| `maxHotwords` | number | `50` | 單次辨識最大熱詞數量 |
+| `autoAddFrequentWords` | boolean | `false` | 自動將常用詞加入詞典 (未來功能) |
+
+### 8.5 預設詞庫
+
+可提供預設的常用詞庫讓使用者選擇啟用：
+
+| 詞庫名稱 | 說明 | 詞彙數量 |
+|----------|------|----------|
+| 台灣地名 | 台灣縣市、地區名稱 | ~50 |
+| 科技術語 | 程式、軟體相關術語 | ~100 |
+| 網路用語 | PTT、網路流行語 | ~50 |
+| 商業公司 | 台灣知名公司名稱 | ~50 |
+
+### 8.6 錯誤處理
+
+| 錯誤情境 | 處理方式 |
+|----------|----------|
+| 詞彙重複 | 跳過或更新現有詞彙 |
+| 詞彙過長 (>50字) | 拒絕新增，提示長度限制 |
+| 熱詞數量超過限制 | 只使用權重最高的 N 個 |
+| 匯入檔案格式錯誤 | 顯示錯誤，提供格式說明 |
+
+### 8.7 測試案例
+
+| 測試 ID | 測試項目 | 預期結果 |
+|---------|----------|----------|
+| TC-8.1 | 新增單一詞彙 | 詞彙出現在列表中 |
+| TC-8.2 | 批次新增詞彙 | 所有詞彙正確新增 |
+| TC-8.3 | 刪除詞彙 | 詞彙從列表移除 |
+| TC-8.4 | 切換啟用狀態 | 狀態正確切換 |
+| TC-8.5 | 辨識時使用熱詞 | 熱詞辨識準確率提升 |
+| TC-8.6 | 匯入文字檔 | 詞彙正確匯入 |
+| TC-8.7 | 匯出詞彙 | 產生正確的文字檔 |
+| TC-8.8 | 搜尋詞彙 | 正確過濾顯示 |
+| TC-8.9 | 依分類篩選 | 正確顯示該分類詞彙 |
+| TC-8.10 | 使用次數統計 | 辨識後正確更新計數 |
+
+---
+
+## 變更記錄
+
+| 版本 | 日期 | 變更內容 |
+|------|------|----------|
+| 1.0 | 2025-01-10 | 初版規格 (Feature 1-3) |
+| 1.1 | 2025-01-10 | 新增 Feature 4-6: 填充詞過濾、自定義快捷鍵、性能優化 |
+| 1.2 | 2025-01-11 | 新增 Feature 7-8: 音檔儲存與下載、自訂詞典/熱詞 |

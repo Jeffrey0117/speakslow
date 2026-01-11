@@ -51,7 +51,11 @@ class FunASRManager {
 
   getFunASRServerPath() {
     // 获取FunASR服务器脚本路径
-    if (process.env.NODE_ENV === "development") {
+    // 判断是否为开发环境：NODE_ENV=development 或者未打包状态
+    const isDevelopment = process.env.NODE_ENV === "development" ||
+                          !require('electron').app?.isPackaged;
+
+    if (isDevelopment) {
       return path.join(__dirname, "..", "..", "funasr_server.py");
     } else {
       return path.join(
@@ -64,7 +68,11 @@ class FunASRManager {
 
   getEmbeddedPythonPath() {
     // 获取嵌入式Python路径
-    if (process.env.NODE_ENV === "development") {
+    // 判断是否为开发环境：NODE_ENV=development 或者未打包状态
+    const isDevelopment = process.env.NODE_ENV === "development" ||
+                          !require('electron').app?.isPackaged;
+
+    if (isDevelopment) {
       return path.join(__dirname, "..", "..", "python", "bin", "python3.11");
     } else {
       return path.join(
@@ -433,7 +441,11 @@ class FunASRManager {
     /**
      * 获取下载脚本路径
      */
-    if (process.env.NODE_ENV === "development") {
+    // 判断是否为开发环境：NODE_ENV=development 或者未打包状态
+    const isDevelopment = process.env.NODE_ENV === "development" ||
+                          !require('electron').app?.isPackaged;
+
+    if (isDevelopment) {
       return path.join(__dirname, "..", "..", "download_models.py");
     } else {
       return path.join(
@@ -862,8 +874,12 @@ class FunASRManager {
       }
     }
 
-    // 如果嵌入式Python不可用，在开发模式下回退到系统Python
-    if (process.env.NODE_ENV === "development") {
+    // 如果嵌入式Python不可用，回退到系统Python
+    // 判断是否为开发环境：NODE_ENV=development 或者未打包状态（app.isPackaged === false）
+    const isDevelopment = process.env.NODE_ENV === "development" ||
+                          !require('electron').app?.isPackaged;
+
+    if (isDevelopment) {
       this.logger.warn && this.logger.warn('开发模式：回退到系统Python');
       return await this.findPythonExecutableWithFallback();
     }

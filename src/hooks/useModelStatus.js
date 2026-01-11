@@ -118,16 +118,17 @@ export const useModelStatus = () => {
           stage: 'loading'
         }));
       } else {
-        // 模型已下载但服务器未就绪
+        // 模型已下载但服务器未就绪 - 显示为 loading 状态而非 error
+        // 因为服务器可能正在启动中
         setModelStatus(prev => ({
           ...prev,
-          isLoading: false,
+          isLoading: true,
           isReady: false,
           modelsDownloaded: true,
           missingModels: [],
-          error: serverStatus.error || '服务器未就绪',
-          progress: 0,
-          stage: 'error'
+          error: null,
+          progress: 30,
+          stage: 'loading'
         }));
       }
       

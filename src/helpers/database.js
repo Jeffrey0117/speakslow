@@ -131,21 +131,21 @@ class DatabaseManager {
       WHERE created_at >= date('now', '-7 days')
     `);
 
-    // 計算總字數和總時長
+    // 計算總字數和總時長（優先使用 processed_text，其次 text，最後 raw_text）
     const charsStmt = this.db.prepare(`
       SELECT
-        COALESCE(SUM(LENGTH(COALESCE(processed_text, text, ''))), 0) as totalChars,
+        COALESCE(SUM(LENGTH(COALESCE(processed_text, text, raw_text, ''))), 0) as totalChars,
         COALESCE(SUM(duration), 0) as totalDuration
       FROM transcriptions
     `);
     const charsResult = charsStmt.get();
 
     return {
-      total: totalStmt.get().total,
-      today: todayStmt.get().today,
-      week: weekStmt.get().week,
-      totalChars: charsResult.totalChars,
-      totalDuration: charsResult.totalDuration
+      total: Number(totalStmt.get().total) || 0,
+      today: Number(todayStmt.get().today) || 0,
+      week: Number(weekStmt.get().week) || 0,
+      totalChars: Number(charsResult.totalChars) || 0,
+      totalDuration: Number(charsResult.totalDuration) || 0
     };
   }
 

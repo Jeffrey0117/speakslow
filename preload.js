@@ -49,8 +49,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   restoreForegroundWindow: () => ipcRenderer.invoke("restore-foreground-window"),
 
   // 数据库操作
-  saveTranscription: (text, processedText) =>
-    ipcRenderer.invoke("save-transcription", text, processedText),
+  saveTranscription: (data) =>
+    ipcRenderer.invoke("save-transcription", data),
   getTranscriptions: (limit, offset) =>
     ipcRenderer.invoke("get-transcriptions", limit, offset),
   getTranscriptionStats: () =>
