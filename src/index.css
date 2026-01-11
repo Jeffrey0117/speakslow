@@ -63,7 +63,7 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', system-ui, -apple-system, sans-serif;
+    font-family: 'GenWan', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', system-ui, -apple-system, sans-serif;
     font-size: 16px;
     line-height: 1.6;
   }
@@ -72,14 +72,20 @@
 /* 全局样式 */
 * {
   box-sizing: border-box;
+  font-family: inherit;
+}
+
+/* 確保所有元素使用 GenWan 字體 */
+*, *::before, *::after {
+  font-family: 'GenWan', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', system-ui, -apple-system, sans-serif;
 }
 
 html, body {
   margin: 0;
   padding: 0;
   height: 100%;
-  font-family: var(--font-family-sans);
-  line-height: var(--line-height-normal);
+  font-family: 'GenWan', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -91,7 +97,7 @@ html, body {
 
 /* 中文文本优化 - 基于WCAG 2.1标准 */
 .chinese-text {
-  font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', system-ui, -apple-system, sans-serif;
+  font-family: 'GenWan', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', system-ui, -apple-system, sans-serif;
   line-height: 1.8;
   letter-spacing: 0.05em;
   word-break: break-word;
@@ -116,7 +122,7 @@ html, body {
 
 /* 中文内容文本优化 */
 .chinese-content {
-  font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', system-ui, -apple-system, sans-serif;
+  font-family: 'GenWan', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', system-ui, -apple-system, sans-serif;
   line-height: 2;
   letter-spacing: 0.08em;
   font-size: 16px;
@@ -125,7 +131,7 @@ html, body {
 
 /* 状态文本优化 */
 .status-text {
-  font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', system-ui, -apple-system, sans-serif;
+  font-family: 'GenWan', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', system-ui, -apple-system, sans-serif;
   line-height: 1.6;
   letter-spacing: 0.05em;
   font-weight: 500;
