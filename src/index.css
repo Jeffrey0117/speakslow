@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* GenWan 源雲明體 - 品牌字型 */
+@font-face {
+  font-family: 'GenWan';
+  src: url('./fonts/GenWanMin2TC-M.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -90,12 +99,19 @@ html, body {
   font-weight: 400;
 }
 
-/* 中文标题优化 */
+/* 中文標題優化 - 使用源雲明體 */
 .chinese-title {
-  font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', system-ui, -apple-system, sans-serif;
+  font-family: 'GenWan', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', system-ui, -apple-system, sans-serif;
   line-height: 1.4;
   letter-spacing: 0.1em;
-  font-weight: 600;
+  font-weight: 500;
+}
+
+/* 品牌名稱專用樣式 - 聲聲慢 */
+.brand-title {
+  font-family: 'GenWan', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', serif;
+  font-weight: 500;
+  letter-spacing: 0.15em;
 }
 
 /* 中文内容文本优化 */

@@ -48,7 +48,7 @@ class ErrorBoundary extends React.Component {
             </div>
             
             <p className="text-gray-600 mb-4">
-              蛐蛐遇到了一个意外错误。请尝试重启应用。
+              聲聲慢遇到了一個意外錯誤。請嘗試重啟應用。
             </p>
             
             {process.env.NODE_ENV === 'development' && (

@@ -597,7 +597,7 @@ export default function App() {
       setWaitingForTarget(false);
       // 前景視窗已由主進程在熱鍵觸發時儲存
       startRecording();
-      // 顯示 QuQu 視窗
+      // 顯示聲聲慢視窗
       if (window.electronAPI) {
         window.electronAPI.showWindow();
       }

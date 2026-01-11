@@ -1,7 +1,7 @@
 // 繁體中文翻譯
 export default {
   // 應用名稱
-  appName: '蛐蛐',
+  appName: '聲聲慢',
 
   // 設定頁面
   settings: {
@@ -58,8 +58,8 @@ export default {
     saveFailed: '儲存設定失敗',
     loadFailed: '載入設定失敗',
 
-    about: '關於蛐蛐',
-    aboutDesc: '基於FunASR和AI的中文語音轉文字應用',
+    about: '關於聲聲慢',
+    aboutDesc: '基於 FunASR 和 AI 的繁體中文語音轉文字應用',
     features: {
       recognition: '高精度中文語音辨識',
       ai: 'AI智慧文字優化',

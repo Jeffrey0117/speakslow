@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-console.log('🧹 清理蛐蛐项目...');
+console.log('🧹 清理聲聲慢專案...');
 
 // 需要清理的目录和文件
 const cleanupTargets = [

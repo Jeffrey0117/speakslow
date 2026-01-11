@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
 /**
- * 蛐蛐文本插入功能测试脚本
- * 用于测试新的 accessibility 和文本插入功能
+ * 聲聲慢文字插入功能測試腳本
+ * 用於測試新的 accessibility 和文字插入功能
  */
 
 const { spawn } = require('child_process');
 
-console.log('🧪 蛐蛐文本插入功能测试');
+console.log('🧪 聲聲慢文字插入功能測試');
 console.log('================================');
 
 // 测试 osascript 是否可用
@@ -122,7 +122,7 @@ function testTextInsertion() {
     console.log('   将在 3 秒后插入测试文本...');
     
     setTimeout(() => {
-      const testText = '蛐蛐文本插入测试 - ' + new Date().toLocaleString();
+      const testText = '聲聲慢文字插入測試 - ' + new Date().toLocaleString();
       
       const script = `
         ObjC.import("Cocoa");

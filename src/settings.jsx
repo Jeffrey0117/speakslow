@@ -800,7 +800,7 @@ const SettingsPage = () => {
               </h2>
               <div className="bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20 p-3 rounded-lg">
                 <p className="text-xs text-gray-700 dark:text-gray-300 mb-1">
-                  🎤 <strong>{t('appName')} (QuQu)</strong> - {t('settings.aboutDesc')}
+                  🎤 <strong>{t('appName')} (SpeakSlow)</strong> - {t('settings.aboutDesc')}
                 </p>
                 <p className="text-xs text-gray-600 dark:text-gray-400">
                   • {t('settings.features.recognition')}<br/>

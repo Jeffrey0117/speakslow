@@ -91,7 +91,7 @@ class WindowManager {
       width: 1000,
       height: 700,
       show: false,
-      title: "转录历史 - 蛐蛐",
+      title: "轉錄歷史 - 聲聲慢",
       alwaysOnTop: true,
       webPreferences: {
         nodeIntegration: false,
@@ -127,7 +127,7 @@ class WindowManager {
       width: 700,
       height: 600,
       show: false,
-      title: "设置 - 蛐蛐",
+      title: "設定 - 聲聲慢",
       alwaysOnTop: true,
       webPreferences: {
         nodeIntegration: false,

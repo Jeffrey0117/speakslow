@@ -1,0 +1,25 @@
+{
+  "framework": "pytorch",
+  "task" : "auto-speech-recognition",
+  "model" : {
+    "type" : "generic-asr",
+    "am_model_name" : "model.pb",
+    "model_config" : {
+      "type": "pytorch",
+      "code_base": "funasr",
+      "mode": "paraformer",
+      "lang": "zh-cn",
+      "batch_size": 1,
+      "am_model_config": "config.yaml",
+      "asr_model_config": "decoding.yaml",
+      "mvn_file": "am.mvn",
+      "model": "damo/speech_paraformer-large-vad-punc_asr_nat-zh-cn-16k-common-vocab8404-pytorch",
+      "vad_model": "damo/speech_fsmn_vad_zh-cn-16k-common-pytorch",
+      "punc_model": "damo/punc_ct-transformer_zh-cn-common-vocab272727-pytorch",
+      "lm_model": "damo/speech_transformer_lm_zh-cn-common-vocab8404-pytorch"
+    }
+  },
+  "pipeline": {
+    "type":"asr-inference"
+  }
+}

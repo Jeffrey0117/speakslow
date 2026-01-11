@@ -1,7 +1,7 @@
 // 简体中文翻译
 export default {
   // 应用名称
-  appName: '蛐蛐',
+  appName: '声声慢',
 
   // 设置页面
   settings: {
@@ -58,8 +58,8 @@ export default {
     saveFailed: '保存设置失败',
     loadFailed: '加载设置失败',
 
-    about: '关于蛐蛐',
-    aboutDesc: '基于FunASR和AI的中文语音转文字应用',
+    about: '关于声声慢',
+    aboutDesc: '基于 FunASR 和 AI 的简体中文语音转文字应用',
     features: {
       recognition: '高精度中文语音识别',
       ai: 'AI智能文本优化',
