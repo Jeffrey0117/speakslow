@@ -42,7 +42,7 @@ logger.info(f"Sherpa-ONNX 服務器日誌文件: {log_file_path}")
 def add_punctuation(text):
     """
     基於規則的簡易中文標點恢復
-    在 AI 優化之前提供基本的標點符號
+    使用連接詞分句 + 語氣詞 + 句末標點
     """
     if not text or not text.strip():
         return text
@@ -50,52 +50,173 @@ def add_punctuation(text):
     import re
     text = text.strip()
 
-    # 問句關鍵詞
+    # 問句結尾詞（在句末時表示疑問）
+    question_endings = ['嗎', '吗', '呢', '麼', '么']
+
+    # 疑問詞（出現在文中表示疑問句）
     question_words = [
-        '嗎', '呢', '吧', '啊', '麼', '么',
         '什麼', '什么', '怎麼', '怎么', '為什麼', '为什么',
         '哪裡', '哪里', '哪個', '哪个', '誰', '谁',
-        '幾', '几', '多少', '是否', '能否', '可否',
+        '幾個', '几个', '多少', '是否', '能否', '可否',
         '有沒有', '有没有', '是不是', '會不會', '会不会',
+        '怎樣', '怎样', '如何', '為何', '为何',
     ]
 
-    # 句子結束詞（通常後面要加句號）
-    statement_endings = [
-        '了', '的', '過', '过', '著', '着',
-        '好', '行', '對', '对', '是', '要',
+    # === 在這些詞【後面】加逗號 ===
+    # 語氣詞（後面加逗號）
+    particles_after = [
+        '嘛', '啦', '呀', '囉', '咯', '噢', '唷',
+        '哎', '欸', '啊', '喔', '哦', '嗯', '呃',
     ]
 
-    # 逗號暫停詞
-    pause_words = [
+    # 疑問短語（後面加逗號或問號）
+    question_phrases_after = [
+        '不是嗎', '不是吗', '對不對', '对不对', '是不是',
+        '好不好', '行不行', '可不可以', '對吧', '对吧',
+        '是吧', '好嗎', '好吗',
+    ]
+
+    # === 在這些詞【前面】加逗號 ===
+    # 注意：只放「幾乎一定是連接詞」的詞，避免誤判
+    # 重要：長詞必須放在短詞前面，否則短詞會先匹配導致長詞被拆開
+    sentence_starters = [
+        # 「可」開頭的轉折（「可每當」「可每次」移到結構性斷句處理，避免衝突）
+        '可現在', '可现在', '可他', '可她', '可我', '可你',
+        '可這', '可这', '可那', '可誰', '可谁', '可當', '可当',
+        # 長詞優先（這些很安全）
+        '換句話說', '换句话说', '例如說', '例如说', '比如說', '比如说',
+        '沒想到', '没想到', '想不到', '不是嗎', '不是吗',
+        '要不是', '此時此刻', '此时此刻',
+        # 轉折/連接（常用且安全的）
         '然後', '然后', '接著', '接着', '之後', '之后',
-        '所以', '因此', '但是', '不過', '不过', '可是',
+        '所以', '但是', '不過', '不过', '可是',
         '而且', '並且', '并且', '或者', '還是', '还是',
-        '如果', '假如', '雖然', '虽然', '即使', '就是',
-        '那麼', '那么', '這樣', '这样', '那樣', '那样',
+        '雖然', '虽然', '即使',
         '首先', '其次', '最後', '最后', '另外', '此外',
-        '總之', '总之', '換句話說', '换句话说',
+        '總之', '总之', '反正', '難怪', '难怪',
+        '其實', '其实', '原來', '原来', '後來', '后来',
+        '不然', '否則', '否则',
+        '於是', '于是',
+        '畢竟', '毕竟', '終於', '终于',
+        '當然', '当然', '幸好', '幸虧', '幸亏',
+        '竟是', '竟然', '居然',
+        # 轉折代詞（這些很安全）
+        '而他', '而她', '而我', '而你', '而它',
+        '但他', '但她', '但我', '但你', '但它',
+        # 強調詞
+        '至少', '起碼', '起码',
+        # 主詞+副詞（新句子開頭的強信號）
+        # X就
+        '我就', '你就', '他就', '她就', '它就',
+        '我們就', '我们就', '你們就', '你们就', '他們就', '他们就',
+        # X也
+        '我也', '你也', '他也', '她也', '它也',
+        '我們也', '我们也', '你們也', '你们也', '他們也', '他们也',
+        # X又
+        '我又', '你又', '他又', '她又', '它又',
+        # X才
+        '我才', '你才', '他才', '她才', '它才',
+        # X都
+        '我都', '你都', '他都', '她都', '它都',
+        # X會/要/能/可
+        '我會', '我会', '你會', '你会', '他會', '他会', '她會', '她会',
+        '我要', '你要', '他要', '她要',
+        '我能', '你能', '他能', '她能',
+        '我可', '你可', '他可', '她可',
+        # X便/正/在
+        '我便', '你便', '他便', '她便',
+        '我正', '你正', '他正', '她正',
+        # 這就/那就
+        '這就', '这就', '那就',
+        # 讓步/對比
+        '卻', '却', '反而', '偏偏',
+        # 時間/條件開頭
+        '自從', '自从', '直到', '等到', '過了', '过了',
+        # 「每次」「每當」容易跟「可每當」衝突，用結構性斷句處理
+        '當他', '當她', '當我', '當你', '當它', '当他', '当她', '当我', '当你', '当它',
+        # 條件/假設
+        '不需要', '不管',
+        # 補充說明
+        '也沒有', '也没有',
     ]
 
-    # 檢查是否為問句
-    is_question = any(word in text for word in question_words)
+    # 檢查整段是否為問句
+    is_question = any(text.endswith(w) for w in question_endings) or \
+                  any(w in text for w in question_words)
 
-    # 如果文本很短（可能是單句）
-    if len(text) < 30:
-        if is_question:
-            return text + '？'
-        else:
-            return text + '。'
+    # 注意：移除了短句 early return，因為短句也可能需要斷句
+    # 例如「她笑了笑他也跟著笑」只有 9 字但需要斷成「她笑了笑，他也跟著笑」
 
-    # 較長文本：嘗試加入逗號和句號
     result = text
 
-    # 在暫停詞後加逗號
-    for word in pause_words:
-        # 只在詞後面沒有標點時添加
-        pattern = f'({word})([^，。？！、])'
+    # 0. 保護複合詞（避免被錯誤斷開）
+    # 用特殊標記暫時替換（保護詞不會被內部拆開）
+    protected_words = [
+        '自然而然', '理所當然', '理所当然', '順其自然', '顺其自然',
+        '因此', '為此', '为此',  # 「因此」單獨出現才斷，不是「也沒有因此」
+    ]
+    for i, word in enumerate(protected_words):
+        result = result.replace(word, f'__PROTECTED_{i}__')
+
+    # 1. 在語氣詞後面加逗號
+    for word in particles_after:
+        # 語氣詞後面如果還有字，就加逗號
+        pattern = f'({word})([^，。？！、；：])'
         result = re.sub(pattern, r'\1，\2', result)
 
-    # 最後加上句末標點
+    # 2. 在疑問短語後面加逗號
+    for phrase in question_phrases_after:
+        pattern = f'({phrase})([^，。？！、；：])'
+        result = re.sub(pattern, r'\1，\2', result)
+
+    # 3. 在句子連接詞前加逗號
+    for word in sentence_starters:
+        pattern = f'([^，。？！、；：])({word})'
+        result = re.sub(pattern, r'\1，\2', result)
+
+    # 4. 結構性斷句（「當...的時候」「如果...的話」等）
+    # 處理順序很重要：長模式先處理，處理後保護，避免短模式拆開
+
+    # 4.1 先處理最長的「可每當...的時候」並保護
+    long_patterns = [
+        (r'([^，。？！、；：])(可每當[^，。？！、；：]{1,15}的時候)', '可每當', '__KEMEIDANG__'),
+        (r'([^，。？！、；：])(可每当[^，。？！、；：]{1,15}的时候)', '可每当', '__KEMEIDANG2__'),
+        (r'([^，。？！、；：])(可每次)', '可每次', '__KEMEICI__'),
+        (r'([^，。？！、；：])(每當[^，。？！、；：]{1,15}的時候)', '每當', '__MEIDANG__'),
+        (r'([^，。？！、；：])(每当[^，。？！、；：]{1,15}的时候)', '每当', '__MEIDANG2__'),
+    ]
+    for pattern, word, placeholder in long_patterns:
+        result = re.sub(pattern, r'\1，\2', result)
+        result = result.replace(word, placeholder)
+
+    # 4.2 處理短模式
+    short_patterns = [
+        r'([^，。？！、；：])(每次)',
+        r'([^，。？！、；：])(每回)',
+        r'([^，。？！、；：])(當[^，。？！、；：]{1,15}的時候)',
+        r'([^，。？！、；：])(当[^，。？！、；：]{1,15}的时候)',
+        r'([^，。？！、；：])(如果[^，。？！、；：]{1,15}的話)',
+        r'([^，。？！、；：])(如果[^，。？！、；：]{1,15}的话)',
+    ]
+    for pattern in short_patterns:
+        result = re.sub(pattern, r'\1，\2', result)
+
+    # 4.3 還原保護的詞
+    for pattern, word, placeholder in long_patterns:
+        result = result.replace(placeholder, word)
+
+    # 還原被保護的詞
+    for i, word in enumerate(protected_words):
+        result = result.replace(f'__PROTECTED_{i}__', word)
+
+    # 清理連續的逗號
+    result = re.sub(r'，+', '，', result)
+
+    # 移除開頭的逗號
+    if result.startswith('，'):
+        result = result[1:]
+
+    # 加上句末標點
     if result and result[-1] not in '，。？！、；：':
         if is_question:
             result += '？'
@@ -108,6 +229,7 @@ def add_punctuation(text):
 class SherpaServer:
     def __init__(self, model_dir=None):
         self.recognizer = None
+        self.punc_model = None  # FunASR 標點模型
         self.initialized = False
         self.running = True
         self.transcription_count = 0
@@ -139,6 +261,55 @@ class SherpaServer:
     def _signal_handler(self, signum, frame):
         logger.info(f"收到信號 {signum}，準備退出...")
         self.running = False
+
+    def _init_punctuation_model(self):
+        """在背景線程初始化 FunASR 標點模型（ct-punc）"""
+        import threading
+
+        def load_punc_model():
+            try:
+                import time
+                start_time = time.time()
+                logger.info("正在載入 FunASR ct-punc 標點模型（背景）...")
+
+                from funasr import AutoModel
+                self.punc_model = AutoModel(model="ct-punc", model_revision="v2.0.4")
+
+                load_time = time.time() - start_time
+                logger.info(f"FunASR ct-punc 載入完成，耗時: {load_time:.2f} 秒")
+
+            except ImportError as e:
+                logger.warning(f"FunASR 未安裝，將使用規則式標點: {e}")
+                self.punc_model = None
+            except Exception as e:
+                logger.warning(f"ct-punc 模型載入失敗，將使用規則式標點: {e}")
+                self.punc_model = None
+
+        # 在背景線程載入，不阻塞主服務
+        thread = threading.Thread(target=load_punc_model, daemon=True)
+        thread.start()
+
+    def _add_punctuation(self, text):
+        """使用 ct-punc 模型或規則式添加標點"""
+        if not text or not text.strip():
+            return text
+
+        text = text.strip()
+
+        # 優先使用 FunASR ct-punc 模型
+        if self.punc_model is not None:
+            try:
+                result = self.punc_model.generate(input=text)
+                if result and len(result) > 0:
+                    # result 格式: [{'text': '帶標點的文字', ...}]
+                    punctuated = result[0].get('text', text)
+                    logger.debug(f"ct-punc 標點結果: {punctuated}")
+                    return punctuated
+            except Exception as e:
+                logger.warning(f"ct-punc 處理失敗，使用規則式: {e}")
+
+        # 備用：規則式標點
+        return add_punctuation(text)
 
     def initialize(self):
         """初始化 sherpa-onnx 識別器"""
@@ -183,6 +354,9 @@ class SherpaServer:
             load_time = time.time() - start_time
             self.initialized = True
             logger.info(f"sherpa-onnx 初始化完成，耗時: {load_time:.2f} 秒")
+
+            # 嘗試載入 FunASR 標點模型
+            self._init_punctuation_model()
 
             return {
                 "success": True,
@@ -254,8 +428,8 @@ class SherpaServer:
             self.transcription_count += 1
             self.total_audio_duration += duration
 
-            # 加入基本標點
-            text_with_punc = add_punctuation(text)
+            # 加入標點（優先使用 ct-punc 模型）
+            text_with_punc = self._add_punctuation(text)
 
             logger.info(f"轉錄完成: {text_with_punc[:100]}... (RTF: {rtf:.3f})")
 

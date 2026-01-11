@@ -39,7 +39,9 @@ class IPCHandlers {
 
     // Sherpa ASR 相关
     ipcMain.handle("check-sherpa-status", async () => {
+      console.log("[IPC] check-sherpa-status 被調用, serverReady:", this.sherpaManager.serverReady);
       const status = await this.sherpaManager.checkStatus();
+      console.log("[IPC] check-sherpa-status 返回:", JSON.stringify(status));
       return {
         ...status,
         server_ready: this.sherpaManager.serverReady
@@ -52,7 +54,15 @@ class IPCHandlers {
 
     // 模型文件管理
     ipcMain.handle("check-model-files", async () => {
-      return await this.sherpaManager.checkModelFiles();
+      console.log("[IPC] check-model-files 被調用");
+      const result = await this.sherpaManager.checkModelFiles();
+      // 同時返回服務器狀態，避免前端需要額外調用
+      const serverStatus = {
+        server_ready: this.sherpaManager.serverReady,
+        models_initialized: this.sherpaManager.modelsInitialized
+      };
+      console.log("[IPC] check-model-files 返回:", JSON.stringify({...result, ...serverStatus}));
+      return { ...result, ...serverStatus };
     });
 
     ipcMain.handle("get-download-progress", async () => {

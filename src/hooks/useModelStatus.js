@@ -39,20 +39,25 @@ export const useModelStatus = () => {
 
   // 检查 Sherpa 服务器状态
   const checkServerStatus = useCallback(async () => {
+    console.log('[useModelStatus] checkServerStatus 開始');
     try {
       if (window.electronAPI) {
+        console.log('[useModelStatus] 調用 checkSherpaStatus...');
         const status = await window.electronAPI.checkSherpaStatus();
+        console.log('[useModelStatus] checkSherpaStatus 返回:', status);
         return status;
       }
+      console.log('[useModelStatus] electronAPI 不存在');
       return { success: false };
     } catch (error) {
-      console.error('检查服务器状态失败:', error);
+      console.error('[useModelStatus] 检查服务器状态失败:', error);
       return { success: false };
     }
   }, []);
 
   // 综合检查模型状态
   const checkModelStatus = useCallback(async () => {
+    console.log('[useModelStatus] checkModelStatus 開始');
     try {
       if (!window.electronAPI) {
         setModelStatus(prev => ({
@@ -64,10 +69,18 @@ export const useModelStatus = () => {
         return;
       }
 
-      // 检查模型文件
+      // 检查模型文件（現在也包含服務器狀態）
+      console.log('[useModelStatus] 調用 checkModelFiles...');
       const modelFiles = await checkModelFiles();
-      const serverStatus = await checkServerStatus();
-      
+      console.log('[useModelStatus] checkModelFiles 返回:', modelFiles);
+
+      // 從 checkModelFiles 結果中獲取服務器狀態
+      const serverStatus = {
+        success: modelFiles.server_ready || false,
+        models_initialized: modelFiles.models_initialized || false
+      };
+      console.log('[useModelStatus] serverStatus:', serverStatus);
+
       if (!modelFiles.success) {
         setModelStatus(prev => ({
           ...prev,
@@ -145,7 +158,7 @@ export const useModelStatus = () => {
         stage: 'error'
       }));
     }
-  }, [checkModelFiles, checkServerStatus]);
+  }, [checkModelFiles]);
 
   // 下载模型
   const downloadModels = useCallback(async () => {

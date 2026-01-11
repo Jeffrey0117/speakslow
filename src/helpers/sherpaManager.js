@@ -1005,8 +1005,11 @@ class SherpaManager {
 
   async checkStatus() {
     try {
+      this.logger.info && this.logger.info("checkStatus 被調用", { serverReady: this.serverReady });
+
       if (this.serverReady) {
         const result = await this._sendServerCommand({ action: "status" });
+        this.logger.info && this.logger.info("checkStatus 服務器返回", result);
         // 將 Python 返回的 initialized 映射到前端期望的 models_initialized
         return {
           ...result,
