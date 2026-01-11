@@ -1,10 +1,19 @@
 @import "tailwindcss";
 
-/* GenWan 源雲明體 - 品牌字型 */
+/* GenWan 源雲明體 - 主字體（品牌標題） */
 @font-face {
   font-family: 'GenWan';
   src: url('./fonts/GenWanMin2TC-M.otf') format('opentype');
   font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* jf open 粉圓 - 次字體（內容文字） */
+@font-face {
+  font-family: 'OpenHuninn';
+  src: url('./fonts/jf-openhuninn-2.1.ttf') format('truetype');
+  font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
@@ -63,7 +72,7 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    font-family: 'GenWan', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', system-ui, -apple-system, sans-serif;
+    font-family: 'OpenHuninn', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', system-ui, -apple-system, sans-serif;
     font-size: 16px;
     line-height: 1.6;
   }
@@ -75,16 +84,16 @@
   font-family: inherit;
 }
 
-/* 確保所有元素使用 GenWan 字體 */
+/* 預設使用 jf open 粉圓（次字體）*/
 *, *::before, *::after {
-  font-family: 'GenWan', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', system-ui, -apple-system, sans-serif;
+  font-family: 'OpenHuninn', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', system-ui, -apple-system, sans-serif;
 }
 
 html, body {
   margin: 0;
   padding: 0;
   height: 100%;
-  font-family: 'GenWan', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', system-ui, -apple-system, sans-serif;
+  font-family: 'OpenHuninn', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', system-ui, -apple-system, sans-serif;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -95,9 +104,9 @@ html, body {
   background: transparent;
 }
 
-/* 中文文本优化 - 基于WCAG 2.1标准 */
+/* 中文文本优化 - 使用 jf open 粉圓（次字體） */
 .chinese-text {
-  font-family: 'GenWan', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', system-ui, -apple-system, sans-serif;
+  font-family: 'OpenHuninn', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', system-ui, -apple-system, sans-serif;
   line-height: 1.8;
   letter-spacing: 0.05em;
   word-break: break-word;
@@ -105,7 +114,7 @@ html, body {
   font-weight: 400;
 }
 
-/* 中文標題優化 - 使用源雲明體 */
+/* 中文標題優化 - 使用源雲明體（主字體） */
 .chinese-title {
   font-family: 'GenWan', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', system-ui, -apple-system, sans-serif;
   line-height: 1.4;
@@ -113,25 +122,25 @@ html, body {
   font-weight: 500;
 }
 
-/* 品牌名稱專用樣式 - 聲聲慢 */
+/* 品牌名稱專用樣式 - 聲聲慢（使用源雲明體） */
 .brand-title {
   font-family: 'GenWan', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', serif;
   font-weight: 500;
   letter-spacing: 0.15em;
 }
 
-/* 中文内容文本优化 */
+/* 中文内容文本优化 - 使用 jf open 粉圓（次字體） */
 .chinese-content {
-  font-family: 'GenWan', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', system-ui, -apple-system, sans-serif;
+  font-family: 'OpenHuninn', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', system-ui, -apple-system, sans-serif;
   line-height: 2;
   letter-spacing: 0.08em;
   font-size: 16px;
   font-weight: 400;
 }
 
-/* 状态文本优化 */
+/* 状态文本优化 - 使用 jf open 粉圓（次字體） */
 .status-text {
-  font-family: 'GenWan', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', system-ui, -apple-system, sans-serif;
+  font-family: 'OpenHuninn', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', system-ui, -apple-system, sans-serif;
   line-height: 1.6;
   letter-spacing: 0.05em;
   font-weight: 500;
