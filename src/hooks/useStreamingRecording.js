@@ -307,6 +307,8 @@ export const useStreamingRecording = () => {
       if (window.electronAPI) {
         const endResult = await window.electronAPI.streamingEnd();
 
+        console.log('[串流] streamingEnd 結果:', endResult);
+
         if (endResult.success && endResult.final_text) {
           let finalText = endResult.final_text;
 
@@ -318,9 +320,11 @@ export const useStreamingRecording = () => {
             finalText = convertText(finalText, 'zh-TW');
           }
 
+          console.log('[串流] 最終文字:', finalText);
           setFullText(finalText);
 
           // 觸發完成回調
+          console.log('[串流] 呼叫 onTranscriptionComplete:', !!window.onTranscriptionComplete);
           if (window.onTranscriptionComplete) {
             window.onTranscriptionComplete({
               success: true,

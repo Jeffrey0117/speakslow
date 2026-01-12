@@ -443,6 +443,7 @@ export default function App() {
   // 处理录音完成（Sherpa 识别完成）
   const handleRecordingComplete = useCallback(async (transcriptionResult) => {
     const text = transcriptionResult?.text;
+    console.log('[App] handleRecordingComplete:', text, transcriptionResult);
     if (text) {
       // 立即显示 Sherpa 识别的原始文本
       setOriginalText(text);
@@ -451,9 +452,14 @@ export default function App() {
       // 清空之前的处理结果，等待AI优化
       setProcessedText("");
 
+      // 如果是串流模式，直接貼上（不經過 AI 優化）
+      if (transcriptionResult?.streaming) {
+        await safePaste(text);
+      }
+
       // 不需要成功通知，文字出來就知道成功了
     }
-  }, []);
+  }, [safePaste]);
 
   // 处理AI优化完成
   const handleAIOptimizationComplete = useCallback(async (optimizedResult) => {
