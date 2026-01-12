@@ -325,6 +325,7 @@ export default function App() {
   const {
     isRecording: isRecordingStreaming,
     isProcessing: isProcessingStreaming,
+    isInitializing: isInitializingStreaming,
     error: streamingError,
     partialText,
     fullText,
@@ -808,10 +809,12 @@ export default function App() {
 
   // 确定当前麦克风状态
   const getMicState = () => {
+    // 串流模式初始化中
+    if (streamingMode && isInitializingStreaming) return "initializing";
     if (isRecording) return "recording";
     if (isRecordingProcessing) return "processing";
     if (isOptimizing) return "optimizing";
-    if (isHovered && !isRecording && !isRecordingProcessing && !isOptimizing) return "hover";
+    if (isHovered && !isRecording && !isRecordingProcessing && !isOptimizing && !isInitializingStreaming) return "hover";
     return "idle";
   };
 
@@ -857,6 +860,12 @@ export default function App() {
           className: `${buttonStyle} scale-105 shadow-2xl cursor-pointer`,
           tooltip: t('app.startRecording', { hotkey }),
           disabled: false
+        };
+      case "initializing":
+        return {
+          className: `${buttonStyle} cursor-not-allowed opacity-70`,
+          tooltip: '串流啟動中...',
+          disabled: true
         };
       case "recording":
         return {
@@ -968,7 +977,9 @@ export default function App() {
                 }
               }}
               onMouseLeave={() => setIsHovered(false)}
-              className={`${micProps.className} non-draggable shadow-lg`}
+              className={`${micProps.className} non-draggable shadow-lg ${
+                streamingMode && isRecording ? 'streaming-recording-pulse' : ''
+              }`}
               disabled={micProps.disabled}
             >
               {/* 动态内容基于状态 */}
@@ -980,6 +991,8 @@ export default function App() {
                 <SoundWaveIcon size={20} isActive={false} />
               ) : micState === "hover" ? (
                 <SoundWaveIcon size={20} isActive={false} />
+              ) : micState === "initializing" ? (
+                <LoadingIndicator size={20} />
               ) : micState === "recording" ? (
                 <SoundWaveIcon size={20} isActive={true} />
               ) : micState === "processing" ? (
@@ -1005,6 +1018,8 @@ export default function App() {
               t('app.modelNotReady')
             ) : waitingForTarget ? (
               t('app.waitingForTarget') || '請點擊目標位置後按熱鍵'
+            ) : micState === "initializing" ? (
+              '串流啟動中...'
             ) : micState === "recording" ? (
               streamingMode ? '串流辨識中...' : t('app.recording')
             ) : (micState === "processing" || micState === "optimizing") ? (
@@ -1014,8 +1029,8 @@ export default function App() {
             )}
           </p>
 
-          {/* 處理中/優化中的小進度條 */}
-          {(micState === "processing" || micState === "optimizing") && (
+          {/* 處理中/優化中/初始化中的小進度條 */}
+          {(micState === "processing" || micState === "optimizing" || micState === "initializing") && (
             <ProcessingProgressBar />
           )}
 

@@ -179,6 +179,25 @@ html, body {
   animation: pulse-recording 1.5s ease-in-out infinite;
 }
 
+/* 串流模式錄音指示器 - 黃色外圈 */
+.streaming-recording {
+  box-shadow: 0 0 0 4px rgba(234, 179, 8, 0.6) !important;
+}
+
+/* 串流模式脈動動畫 */
+@keyframes streaming-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgba(234, 179, 8, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(234, 179, 8, 0.3);
+  }
+}
+
+.streaming-recording-pulse {
+  animation: streaming-pulse 1.5s ease-in-out infinite;
+}
+
 /* 波形动画 */
 @keyframes wave {
   0%, 100% {
@@ -663,14 +682,20 @@ html, body {
   .processing-spin {
     animation: none;
   }
-  
+
   /* 为新的 Sherpa 状态动画添加减少动画支持 */
   *[style*="preparing-wave"],
   *[style*="loading-dots"],
   *[style*="error-pulse"] {
     animation: none !important;
   }
-  
+
+  /* 串流模式 - 保持靜態黃色外圈，不動畫 */
+  .streaming-recording-pulse {
+    animation: none;
+    box-shadow: 0 0 0 4px rgba(234, 179, 8, 0.6) !important;
+  }
+
   .btn-hover {
     transition: none;
   }

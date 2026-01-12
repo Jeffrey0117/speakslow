@@ -9,6 +9,7 @@ import { convertText } from '../i18n';
 export const useStreamingRecording = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
   const [error, setError] = useState(null);
 
   // 即時辨識文字
@@ -99,6 +100,7 @@ export const useStreamingRecording = () => {
       setError(null);
       setPartialText('');
       setFullText('');
+      setIsInitializing(true);
 
       // 檢查 Sherpa 是否就緒
       if (!modelStatus.isReady) {
@@ -202,6 +204,7 @@ export const useStreamingRecording = () => {
       }
 
       streamingActiveRef.current = true;
+      setIsInitializing(false);
 
       // 定期發送音頻數據（每 300ms，配合超極速 chunk_size）
       sendIntervalRef.current = setInterval(async () => {
@@ -267,6 +270,7 @@ export const useStreamingRecording = () => {
     } catch (err) {
       setError(`無法開始串流錄音: ${err.message}`);
       setIsRecording(false);
+      setIsInitializing(false);
       cleanup();
     }
   }, [modelStatus.isReady, modelStatus.isLoading, cleanup]);
@@ -368,6 +372,7 @@ export const useStreamingRecording = () => {
   return {
     isRecording,
     isProcessing,
+    isInitializing,
     error,
     partialText,
     fullText,
