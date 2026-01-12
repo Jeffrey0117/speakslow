@@ -557,10 +557,24 @@ class SherpaServer:
             start_time = time.time()
             logger.info(f"正在初始化串流辨識器，模型目錄: {self.streaming_model_dir}")
 
-            # 檢查模型文件
-            encoder_path = os.path.join(self.streaming_model_dir, "encoder-epoch-99-avg-1.onnx")
-            decoder_path = os.path.join(self.streaming_model_dir, "decoder-epoch-99-avg-1.onnx")
-            joiner_path = os.path.join(self.streaming_model_dir, "joiner-epoch-99-avg-1.onnx")
+            # 檢查模型文件 - 優先使用 int8 量化模型（推理速度快 2-3x）
+            encoder_int8 = os.path.join(self.streaming_model_dir, "encoder-epoch-99-avg-1.int8.onnx")
+            decoder_int8 = os.path.join(self.streaming_model_dir, "decoder-epoch-99-avg-1.int8.onnx")
+            joiner_int8 = os.path.join(self.streaming_model_dir, "joiner-epoch-99-avg-1.int8.onnx")
+
+            # 檢查 int8 模型是否存在
+            use_int8 = os.path.exists(encoder_int8) and os.path.exists(decoder_int8) and os.path.exists(joiner_int8)
+
+            if use_int8:
+                encoder_path = encoder_int8
+                decoder_path = decoder_int8
+                joiner_path = joiner_int8
+                logger.info("使用 int8 量化模型（推理速度更快）")
+            else:
+                encoder_path = os.path.join(self.streaming_model_dir, "encoder-epoch-99-avg-1.onnx")
+                decoder_path = os.path.join(self.streaming_model_dir, "decoder-epoch-99-avg-1.onnx")
+                joiner_path = os.path.join(self.streaming_model_dir, "joiner-epoch-99-avg-1.onnx")
+                logger.info("使用 fp32 模型")
             tokens_path = os.path.join(self.streaming_model_dir, "tokens.txt")
             bpe_vocab_path = os.path.join(self.streaming_model_dir, "bpe.vocab")
 
@@ -616,11 +630,11 @@ class SherpaServer:
                 "sample_rate": 16000,
                 "feature_dim": 80,
                 "decoding_method": decoding_method,
-                # endpoint 檢測
+                # 極速 endpoint 檢測設定
                 "enable_endpoint_detection": True,
-                "rule1_min_trailing_silence": 2.4,
-                "rule2_min_trailing_silence": 1.2,
-                "rule3_min_utterance_length": 20,
+                "rule1_min_trailing_silence": 1.2,   # 長靜音後結束 (原 2.4)
+                "rule2_min_trailing_silence": 0.6,   # 短靜音後結束 (原 1.2)
+                "rule3_min_utterance_length": 8,     # 最小句子長度 (原 20)
             }
 
             # 如果有熱詞，加入熱詞相關參數

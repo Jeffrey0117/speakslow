@@ -443,7 +443,6 @@ export default function App() {
   // 处理录音完成（Sherpa 识别完成）
   const handleRecordingComplete = useCallback(async (transcriptionResult) => {
     const text = transcriptionResult?.text;
-    console.log('[App] handleRecordingComplete:', text, transcriptionResult);
     if (text) {
       // 立即显示 Sherpa 识别的原始文本
       setOriginalText(text);
