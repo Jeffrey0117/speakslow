@@ -1193,7 +1193,78 @@ textarea:focus-visible {
 }
 
 /* ================================
-   17. Contact Page
+   17. Video Showcase
+   ================================ */
+.video-showcase {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.video-placeholder {
+  background: linear-gradient(135deg, var(--primary-light) 0%, var(--background) 100%);
+  border: 2px dashed var(--primary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-16) var(--space-8);
+  text-align: center;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+}
+
+.video-placeholder-icon {
+  width: 100px;
+  height: 100px;
+  background: var(--white);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-lg);
+  margin-bottom: var(--space-4);
+}
+
+.video-placeholder-icon svg {
+  color: var(--primary);
+  margin-left: 6px;
+}
+
+.video-placeholder-text {
+  font-family: 'GenWan', serif;
+  font-size: var(--text-2xl);
+  color: var(--primary-dark);
+  font-weight: 500;
+}
+
+.video-placeholder-note {
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+}
+
+/* When video is added */
+.video-container {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+}
+
+.video-container iframe,
+.video-container video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* ================================
+   18. Contact Page
    ================================ */
 .contact-grid {
   display: grid;
