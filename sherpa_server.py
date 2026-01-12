@@ -443,10 +443,10 @@ class SherpaServer:
                 # 限制最大增益，避免放大噪音
                 gain = min(gain, 10.0)
                 samples = samples * gain
-                logger.info(f"音量預處理: 放大 {gain:.1f}x (原始峰值: {max_val:.3f})")
+                logger.debug(f"音量預處理: 放大 {gain:.1f}x (原始峰值: {max_val:.3f})")
             elif max_val > 0.95:  # 音量太大，可能削波
                 samples = samples * (target_peak / max_val)
-                logger.info(f"音量預處理: 降低到 {target_peak:.1f} (原始峰值: {max_val:.3f})")
+                logger.debug(f"音量預處理: 降低到 {target_peak:.1f} (原始峰值: {max_val:.3f})")
 
         # 2. 簡易降噪：移除低於閾值的微小信號（可能是底噪）
         # 這是一個很輕量的處理，不會影響語音
@@ -705,6 +705,9 @@ class SherpaServer:
             # 解碼 Base64 音頻數據
             audio_bytes = base64.b64decode(audio_data)
             samples = np.frombuffer(audio_bytes, dtype=np.int16).astype(np.float32) / 32768.0
+
+            # 音頻預處理：正規化音量、簡易降噪
+            samples = self._preprocess_audio(samples)
 
             # 串流 VAD 檢測
             self.streaming_vad_total += 1
