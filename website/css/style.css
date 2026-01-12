@@ -1193,7 +1193,142 @@ textarea:focus-visible {
 }
 
 /* ================================
-   17. Video Showcase
+   17. Trust Badges & CTA Note
+   ================================ */
+.cta-note {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-top: var(--space-3);
+}
+
+.trust-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+
+.trust-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--white);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+.trust-badge-icon {
+  font-size: var(--text-base);
+}
+
+.trust-badge-text {
+  font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .trust-badges {
+    justify-content: center;
+  }
+}
+
+/* ================================
+   18. Comparison Table
+   ================================ */
+.comparison-table-wrapper {
+  overflow-x: auto;
+  margin: 0 auto;
+  max-width: 900px;
+}
+
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+.comparison-table th,
+.comparison-table td {
+  padding: var(--space-4) var(--space-5);
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.comparison-table th {
+  background: var(--background-alt);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
+.comparison-table th.highlight-col {
+  background: var(--primary);
+  color: var(--white);
+}
+
+.comparison-table td.highlight-col {
+  background: rgba(var(--primary-rgb), 0.05);
+  font-weight: 500;
+}
+
+.comparison-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.comparison-table tbody tr:hover {
+  background: var(--background-alt);
+}
+
+.comparison-table tbody tr:hover td.highlight-col {
+  background: rgba(var(--primary-rgb), 0.1);
+}
+
+.check-yes {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.check-no {
+  color: #ef4444;
+}
+
+.check-partial {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+@media (max-width: 640px) {
+  .comparison-table th,
+  .comparison-table td {
+    padding: var(--space-3);
+    font-size: var(--text-sm);
+  }
+}
+
+/* System Requirements */
+.system-requirements {
+  margin-top: var(--space-6);
+  padding: var(--space-3) var(--space-6);
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-full);
+  display: inline-block;
+}
+
+.system-requirements p {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* ================================
+   19. Video Showcase
    ================================ */
 .video-showcase {
   max-width: 900px;
