@@ -955,18 +955,12 @@ class SherpaServer:
     # ========== 熱詞管理方法 ==========
 
     # 內建熱詞（不顯示給使用者，但會用於辨識）
+    # 注意：模型使用簡體中文詞彙表，熱詞必須用簡體
     _BUILTIN_HOTWORDS = [
-        "聲聲慢",
-        "語音轉錄",
-        "Typeless",
-        "Whisper",
-        "Wispr",
-        "Flow",
-        "VIBE",
-        "Coding",
-        "VoiceInk",
-        "MacWhisper",
-        "SuperWhisper",
+        "声 声 慢",        # 聲聲慢（空格分隔字元）
+        "语 音 转 录",     # 語音轉錄
+        "转 录",           # 轉錄
+        "语 音",           # 語音
     ]
 
     def _get_hotwords_path(self):
