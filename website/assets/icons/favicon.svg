@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#5B8FB9"/>
+      <stop offset="100%" style="stop-color:#3A6B8C"/>
+    </linearGradient>
+  </defs>
+  <circle cx="16" cy="16" r="14" fill="url(#grad)"/>
+  <g fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round">
+    <!-- Sound waves -->
+    <path d="M10 16c0-3 2.5-6 6-6s6 3 6 6" opacity="0.6"/>
+    <path d="M12 18c0-2 1.5-4 4-4s4 2 4 4" opacity="0.8"/>
+    <circle cx="16" cy="20" r="2" fill="#ffffff"/>
+  </g>
+</svg>

@@ -2,11 +2,25 @@ const { BrowserWindow } = require("electron");
 const path = require("path");
 
 class WindowManager {
-  constructor() {
+  constructor(databaseManager = null) {
+    this.databaseManager = databaseManager;
     this.mainWindow = null;
     this.controlPanelWindow = null;
     this.historyWindow = null;
     this.settingsWindow = null;
+    this.isQuitting = false; // 用於判斷是否真正退出
+  }
+
+  // 設置 databaseManager（用於延遲初始化）
+  setDatabaseManager(databaseManager) {
+    this.databaseManager = databaseManager;
+  }
+
+  // 設置主視窗置頂狀態
+  setMainWindowAlwaysOnTop(value) {
+    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+      this.mainWindow.setAlwaysOnTop(value);
+    }
   }
 
   async createMainWindow() {
@@ -15,12 +29,23 @@ class WindowManager {
       return this.mainWindow;
     }
 
+    // 從設定讀取置頂狀態，預設為 true
+    let alwaysOnTop = true;
+    if (this.databaseManager) {
+      try {
+        const savedValue = this.databaseManager.getSetting('window_always_on_top', true);
+        alwaysOnTop = savedValue !== false; // 確保預設為 true
+      } catch (e) {
+        console.warn('讀取置頂設定失敗，使用預設值:', e);
+      }
+    }
+
     this.mainWindow = new BrowserWindow({
       width: 400,
       height: 500,
       frame: false,
       transparent: true,
-      alwaysOnTop: true,
+      alwaysOnTop: alwaysOnTop,
       resizable: false,
       skipTaskbar: true,
       movable: true,
@@ -39,6 +64,38 @@ class WindowManager {
       await this.mainWindow.loadFile(path.join(__dirname, "..", "dist", "index.html"));
     }
 
+    // 監聽縮小事件
+    this.mainWindow.on("minimize", (event) => {
+      if (this.databaseManager) {
+        try {
+          const minimizeToTray = this.databaseManager.getSetting('minimize_to_tray', true);
+          if (minimizeToTray) {
+            event.preventDefault();
+            this.mainWindow.hide();
+          }
+        } catch (e) {
+          console.warn('讀取縮小設定失敗:', e);
+        }
+      }
+    });
+
+    // 監聯關閉事件
+    this.mainWindow.on("close", (event) => {
+      if (this.isQuitting) return; // 真正退出時不攔截
+
+      if (this.databaseManager) {
+        try {
+          const closeToTray = this.databaseManager.getSetting('close_to_tray', true);
+          if (closeToTray) {
+            event.preventDefault();
+            this.mainWindow.hide();
+          }
+        } catch (e) {
+          console.warn('讀取關閉設定失敗:', e);
+        }
+      }
+    });
+
     this.mainWindow.on("closed", () => {
       this.mainWindow = null;
     });
@@ -56,6 +113,7 @@ class WindowManager {
       width: 800,
       height: 600,
       show: false,
+      title: "聲聲慢 - 極速語音轉錄",
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,

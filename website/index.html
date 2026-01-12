@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="聲聲慢是專為聽力障礙者設計的語音轉文字軟體。即時轉錄、離線使用、智慧標點，讓溝通無障礙。">
+  <meta name="keywords" content="語音轉文字, 聽力障礙, 即時轉錄, 無障礙溝通, ASR">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="聲聲慢 - 讓每一次對話都被聽見">
+  <meta property="og:description" content="專為聽力障礙者設計的即時語音轉文字工具">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="zh_TW">
+
+  <title>聲聲慢 - 即時語音轉文字，讓每一次對話都被聽見</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    /* Homepage specific styles */
+    .hero-home {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding-top: 72px;
+      background: linear-gradient(135deg, var(--background) 0%, var(--background-alt) 50%, var(--primary-light) 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-home::before {
+      content: '';
+      position: absolute;
+      top: -30%;
+      right: -10%;
+      width: 60%;
+      height: 120%;
+      background: radial-gradient(circle, rgba(91, 143, 185, 0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .hero-home::after {
+      content: '';
+      position: absolute;
+      bottom: -20%;
+      left: -10%;
+      width: 50%;
+      height: 80%;
+      background: radial-gradient(circle, rgba(249, 168, 38, 0.1) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-12);
+      align-items: center;
+    }
+
+    .hero-visual {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .wave-animation {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: var(--space-12);
+      background: var(--white);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-xl);
+    }
+
+    .wave-bar {
+      width: 8px;
+      background: var(--primary);
+      border-radius: 4px;
+      animation: wave 1.2s ease-in-out infinite;
+    }
+
+    .wave-bar:nth-child(1) { height: 20px; animation-delay: 0s; }
+    .wave-bar:nth-child(2) { height: 35px; animation-delay: 0.1s; }
+    .wave-bar:nth-child(3) { height: 50px; animation-delay: 0.2s; }
+    .wave-bar:nth-child(4) { height: 35px; animation-delay: 0.3s; }
+    .wave-bar:nth-child(5) { height: 20px; animation-delay: 0.4s; }
+    .wave-bar:nth-child(6) { height: 40px; animation-delay: 0.5s; }
+    .wave-bar:nth-child(7) { height: 55px; animation-delay: 0.6s; }
+    .wave-bar:nth-child(8) { height: 30px; animation-delay: 0.7s; }
+
+    @keyframes wave {
+      0%, 100% { transform: scaleY(1); }
+      50% { transform: scaleY(1.8); }
+    }
+
+    .text-output {
+      margin-top: var(--space-6);
+      padding: var(--space-4) var(--space-6);
+      background: var(--white);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md);
+      font-size: 1.125rem;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+    }
+
+    .typing-text {
+      border-right: 2px solid var(--primary);
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      0%, 50% { border-color: var(--primary); }
+      51%, 100% { border-color: transparent; }
+    }
+
+    .hero-title-home {
+      font-family: 'GenWan', 'Noto Serif TC', serif;
+      font-size: 3.5rem;
+      font-weight: 500;
+      margin-bottom: var(--space-4);
+      line-height: 1.2;
+      letter-spacing: 0.1em;
+    }
+
+    .hero-title-home .slow {
+      color: var(--primary-dark);
+    }
+
+    .hero-title-home .fast {
+      color: var(--accent);
+    }
+
+    .hero-subtitle {
+      font-size: var(--text-xl);
+      color: var(--text-secondary);
+      margin-bottom: var(--space-8);
+      line-height: 1.8;
+    }
+
+    .section {
+      padding: var(--space-24) 0;
+      background: var(--surface);
+    }
+
+    @media (max-width: 1024px) {
+      .hero-grid {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+
+      .hero-visual {
+        order: -1;
+      }
+
+      .btn-group {
+        justify-content: center;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .hero-title-home {
+        font-size: 2.5rem;
+      }
+
+      .hero-home {
+        min-height: auto;
+        padding: calc(72px + var(--space-16)) 0 var(--space-16);
+      }
+    }
+
+    /* Story Preview Override */
+    .story-preview {
+      background: var(--dark-bg);
+      color: var(--white);
+      padding: var(--space-24) 0;
+    }
+
+    .story-preview .story-title {
+      color: var(--white);
+    }
+
+    .story-preview .story-title::after {
+      background: var(--accent);
+    }
+
+    .story-quote-block {
+      max-width: 700px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .story-quote-text {
+      font-size: 1.25rem;
+      line-height: 2;
+      margin-bottom: var(--space-6);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .story-quote-highlight {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <!-- Skip Link for Accessibility -->
+  <a href="#main-content" class="skip-link">跳至主要內容</a>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="container">
+      <nav class="nav">
+        <a href="index.html" class="nav-logo">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width="2"/>
+            <path d="M10 16C10 13.5 12 11 16 11C20 11 22 13.5 22 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M12 20C12 18 13.5 16 16 16C18.5 16 20 18 20 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="16" cy="22" r="2" fill="currentColor"/>
+          </svg>
+          聲聲慢
+        </a>
+        <button class="nav-toggle" aria-label="開啟選單" aria-expanded="false">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <div class="nav-menu" aria-hidden="true">
+          <a href="story.html" class="nav-link">品牌故事</a>
+          <a href="features.html" class="nav-link">功能介紹</a>
+          <a href="download.html" class="nav-link">下載</a>
+          <a href="contact.html" class="nav-link">聯繫我們</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main id="main-content">
+    <!-- Hero Section -->
+    <section class="hero-home">
+      <div class="container">
+        <div class="hero-grid">
+          <div class="hero-content">
+            <h1 class="hero-title-home slide-up">
+              <span class="slow">聲聲慢，</span><br>
+              <span class="fast">轉錄快</span>
+            </h1>
+            <p class="hero-subtitle slide-up slide-up-delay-1">
+              我們說話慢慢來，但轉錄飛快<br>
+              專為聽力障礙者設計的即時語音轉文字工具
+            </p>
+            <div class="btn-group slide-up slide-up-delay-2">
+              <a href="download.html" class="btn btn-primary btn-lg">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                免費下載
+              </a>
+              <a href="story.html" class="btn btn-secondary btn-lg">了解更多</a>
+            </div>
+          </div>
+          <div class="hero-visual slide-up slide-up-delay-3">
+            <div>
+              <div class="wave-animation">
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+              </div>
+              <div class="text-output">
+                <span class="typing-text" id="typing-text"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Preview -->
+    <section class="section">
+      <div class="container">
+        <h2 class="story-title scroll-animate">核心功能</h2>
+        <div class="features-grid">
+          <div class="feature-card scroll-animate">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+              </svg>
+            </div>
+            <h3 class="feature-title">即時轉錄</h3>
+            <p class="feature-desc">邊說邊轉，即時顯示語音內容，不錯過任何一句話</p>
+          </div>
+
+          <div class="feature-card scroll-animate">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+            </div>
+            <h3 class="feature-title">離線使用</h3>
+            <p class="feature-desc">完全本地運行，無需網路連線，保護您的隱私安全</p>
+          </div>
+
+          <div class="feature-card scroll-animate">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="4 7 4 4 20 4 20 7"/>
+                <line x1="9" y1="20" x2="15" y2="20"/>
+                <line x1="12" y1="4" x2="12" y2="20"/>
+              </svg>
+            </div>
+            <h3 class="feature-title">智慧標點</h3>
+            <p class="feature-desc">自動添加標點符號，讓轉錄文字更加流暢易讀</p>
+          </div>
+        </div>
+        <div class="text-center mt-4 scroll-animate">
+          <a href="features.html" class="btn btn-secondary">查看全部功能</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Story Preview -->
+    <section class="story-preview">
+      <div class="container">
+        <h2 class="story-title scroll-animate">為什麼是聲聲慢？</h2>
+        <div class="story-quote-block scroll-animate">
+          <p class="story-quote-text">
+            「聲聲慢」這個名字，藏著我們的初心：
+          </p>
+          <p class="story-quote-text">
+            對聽力不好的人說話，要慢 —— 放慢語速，給予耐心。<br>
+            但軟體的轉錄，要快 —— 即時將語音轉為文字，不錯過任何一句話。
+          </p>
+          <p class="story-quote-highlight">
+            慢，是對人的溫柔。快，是對科技的要求。
+          </p>
+          <a href="story.html" class="btn btn-accent btn-lg mt-3">閱讀完整故事</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+      <div class="container">
+        <h2 class="cta-title scroll-animate">開始你的聲聲慢之旅</h2>
+        <p class="cta-desc scroll-animate">免費下載，立即體驗即時語音轉文字的便利</p>
+        <div class="btn-group scroll-animate" style="justify-content: center;">
+          <a href="download.html" class="btn btn-primary btn-lg">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            免費下載
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-brand">
+          <div class="footer-logo">聲聲慢</div>
+          <p class="footer-desc">
+            讓每一次對話都被聽見。<br>
+            專為聽力障礙者打造的即時語音轉文字工具。
+          </p>
+        </div>
+        <div class="footer-section">
+          <h4 class="footer-title">網站導覽</h4>
+          <div class="footer-links">
+            <a href="story.html">品牌故事</a>
+            <a href="features.html">功能介紹</a>
+            <a href="download.html">下載</a>
+            <a href="contact.html">聯繫我們</a>
+          </div>
+        </div>
+        <div class="footer-section">
+          <h4 class="footer-title">聯繫方式</h4>
+          <div class="footer-links">
+            <a href="https://github.com" target="_blank" rel="noopener">GitHub</a>
+            <a href="contact.html">問題回報</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2024 聲聲慢. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/nav.js"></script>
+  <script>
+    // Typing animation
+    const texts = [
+      '讓每一次對話，都值得被聽見',
+      '即時語音轉文字',
+      '聲聲慢，轉錄快',
+      '專為聽力障礙者設計'
+    ];
+    let textIndex = 0;
+    let charIndex = 0;
+    let isDeleting = false;
+    const typingElement = document.getElementById('typing-text');
+
+    function type() {
+      const currentText = texts[textIndex];
+
+      if (isDeleting) {
+        typingElement.textContent = currentText.substring(0, charIndex - 1);
+        charIndex--;
+      } else {
+        typingElement.textContent = currentText.substring(0, charIndex + 1);
+        charIndex++;
+      }
+
+      let typeSpeed = isDeleting ? 50 : 100;
+
+      if (!isDeleting && charIndex === currentText.length) {
+        typeSpeed = 2000; // Pause at end
+        isDeleting = true;
+      } else if (isDeleting && charIndex === 0) {
+        isDeleting = false;
+        textIndex = (textIndex + 1) % texts.length;
+        typeSpeed = 500; // Pause before next text
+      }
+
+      setTimeout(type, typeSpeed);
+    }
+
+    // Start typing animation
+    if (typingElement) {
+      setTimeout(type, 1000);
+    }
+  </script>
+</body>
+</html>

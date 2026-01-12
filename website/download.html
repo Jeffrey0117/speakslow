@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="免費下載聲聲慢 - 專為聽力障礙者設計的即時語音轉文字軟體。支援 Windows 系統，完全離線使用。">
+  <meta name="keywords" content="聲聲慢下載, 語音轉文字軟體, Windows 語音辨識, 免費下載">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="下載 - 聲聲慢">
+  <meta property="og:description" content="免費下載聲聲慢，開始你的即時語音轉文字體驗。">
+  <meta property="og:type" content="website">
+
+  <title>下載 - 聲聲慢 | 免費即時語音轉文字軟體</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    .download-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: var(--space-6);
+      margin-top: var(--space-12);
+    }
+
+    .faq-section {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .faq-item {
+      background: var(--white);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-4);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .faq-question {
+      width: 100%;
+      padding: var(--space-4) var(--space-6);
+      background: none;
+      border: none;
+      text-align: left;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background var(--transition-fast);
+    }
+
+    .faq-question:hover {
+      background: var(--background-alt);
+    }
+
+    .faq-question::after {
+      content: '+';
+      font-size: 1.5rem;
+      font-weight: 400;
+      color: var(--primary);
+      transition: transform var(--transition-fast);
+    }
+
+    .faq-item.active .faq-question::after {
+      transform: rotate(45deg);
+    }
+
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height var(--transition-normal);
+    }
+
+    .faq-item.active .faq-answer {
+      max-height: 500px;
+    }
+
+    .faq-answer-content {
+      padding: 0 var(--space-6) var(--space-6);
+      color: var(--text-secondary);
+      line-height: 1.8;
+    }
+
+    .install-steps {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .install-step {
+      display: flex;
+      gap: var(--space-4);
+      padding: var(--space-4) 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .install-step:last-child {
+      border-bottom: none;
+    }
+
+    .step-number {
+      width: 32px;
+      height: 32px;
+      background: var(--primary);
+      color: var(--white);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .step-content h4 {
+      margin-bottom: var(--space-2);
+    }
+
+    .step-content p {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <!-- Skip Link for Accessibility -->
+  <a href="#main-content" class="skip-link">跳至主要內容</a>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="container">
+      <nav class="nav">
+        <a href="index.html" class="nav-logo">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width="2"/>
+            <path d="M10 16C10 13.5 12 11 16 11C20 11 22 13.5 22 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M12 20C12 18 13.5 16 16 16C18.5 16 20 18 20 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="16" cy="22" r="2" fill="currentColor"/>
+          </svg>
+          聲聲慢
+        </a>
+        <button class="nav-toggle" aria-label="開啟選單" aria-expanded="false">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <div class="nav-menu" aria-hidden="true">
+          <a href="story.html" class="nav-link">品牌故事</a>
+          <a href="features.html" class="nav-link">功能介紹</a>
+          <a href="download.html" class="nav-link active">下載</a>
+          <a href="contact.html" class="nav-link">聯繫我們</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main id="main-content">
+    <!-- Hero Section -->
+    <section class="hero" style="min-height: auto; padding: calc(72px + var(--spacing-xl)) 0 var(--spacing-lg);">
+      <div class="container">
+        <div class="hero-content" style="text-align: center; max-width: 700px; margin: 0 auto;">
+          <h1 class="hero-title slide-up">免費下載</h1>
+          <p class="hero-subtitle slide-up slide-up-delay-1">
+            選擇適合你的版本，開始使用聲聲慢
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Download Options -->
+    <section class="section">
+      <div class="container">
+        <div class="download-grid">
+          <!-- Windows Download -->
+          <div class="download-card scroll-animate">
+            <div class="download-icon">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/>
+              </svg>
+            </div>
+            <h3 class="download-title">Windows 版本</h3>
+            <p class="download-meta">適用於 Windows 10 / 11</p>
+            <a href="#" class="btn btn-primary btn-lg" style="width: 100%;">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              下載 Windows 版
+            </a>
+            <div class="download-requirements">
+              <h4>系統需求</h4>
+              <ul>
+                <li>Windows 10 (64-bit) 或更高版本</li>
+                <li>4 GB RAM 以上</li>
+                <li>500 MB 可用磁碟空間</li>
+                <li>麥克風或音訊輸入裝置</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- macOS Coming Soon -->
+          <div class="download-card coming-soon-card scroll-animate">
+            <div class="download-icon">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+              </svg>
+            </div>
+            <h3 class="download-title">macOS 版本</h3>
+            <p class="download-meta">開發中，敬請期待</p>
+            <button class="btn btn-secondary btn-lg" style="width: 100%;" disabled>
+              即將推出
+            </button>
+            <div class="download-requirements">
+              <h4>預計支援</h4>
+              <ul>
+                <li>macOS 12 Monterey 或更高版本</li>
+                <li>Apple Silicon (M1/M2) 及 Intel 處理器</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Linux Coming Soon -->
+          <div class="download-card coming-soon-card scroll-animate">
+            <div class="download-icon">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.832-.41 1.684-.287 2.489a.424.424 0 00-.11.135c-.26.268-.45.6-.663.839-.199.199-.485.267-.797.4-.313.136-.658.269-.864.68-.09.189-.136.394-.132.602 0 .199.027.4.055.536.058.399.116.728.04.97-.249.68-.28 1.145-.106 1.484.174.334.535.47.94.601.81.2 1.91.135 2.774.6.926.466 1.866.67 2.616.47.526-.116.97-.464 1.208-.946.587-.003 1.23-.269 2.26-.334.699-.058 1.574.267 2.577.2.025.134.063.198.114.333l.003.003c.391.778 1.113 1.132 1.884 1.071.771-.06 1.592-.536 2.257-1.306.631-.765 1.683-1.084 2.378-1.503.348-.199.629-.469.649-.853.023-.4-.2-.811-.714-1.376v-.097l-.003-.003c-.17-.2-.25-.535-.338-.926-.085-.401-.182-.786-.492-1.046h-.003c-.059-.054-.123-.067-.188-.135a.357.357 0 00-.19-.064c.431-1.278.264-2.55-.173-3.694-.533-1.41-1.465-2.638-2.175-3.483-.796-1.005-1.576-1.957-1.56-3.368.026-2.152.236-6.133-3.544-6.139zm.529 3.405h.013c.213 0 .396.062.584.198.19.135.33.332.438.533.105.259.158.459.166.724 0-.02.006-.04.006-.06v.105a.086.086 0 01-.004-.021l-.004-.024a1.807 1.807 0 01-.15.706.953.953 0 01-.213.335.71.71 0 00-.088-.042c-.104-.045-.198-.064-.284-.133a1.312 1.312 0 00-.22-.066c.05-.06.146-.133.183-.198.053-.128.082-.264.088-.402v-.02a1.21 1.21 0 00-.061-.4c-.045-.134-.101-.2-.183-.333-.084-.066-.167-.132-.267-.132h-.016c-.093 0-.176.03-.262.132a.8.8 0 00-.205.334 1.18 1.18 0 00-.09.4v.019c.002.089.008.179.02.267-.193-.067-.438-.135-.607-.202-.01-.065-.016-.132-.016-.2-.004-.15.026-.3.06-.45.114-.4.268-.8.535-1.067.136-.133.33-.2.465-.2zm-1.946.666c.093 0 .193.028.3.088.37.197.64.462.89.815.15.218.3.458.368.723a.754.754 0 01-.06.53c-.04.075-.09.124-.165.127-.076.006-.155-.026-.22-.063-.142-.083-.218-.196-.34-.333-.098-.11-.195-.2-.32-.267h-.004c-.12-.065-.248-.132-.312-.2-.02-.02-.06-.04-.071-.059-.025-.04-.028-.098-.022-.139.003-.096.035-.191.07-.285.04-.103.088-.196.15-.267.06-.085.12-.135.207-.17.04-.02.105-.04.14-.04l.003.006zm1.52.012c.036 0 .075.02.117.04.088.037.15.085.21.17.068.07.112.163.151.266.037.093.068.19.07.285.006.04.003.1-.02.14-.012.02-.052.04-.073.06-.063.067-.19.133-.31.2h-.003c-.126.066-.222.156-.32.266-.12.137-.197.25-.34.333-.064.037-.143.07-.22.063-.074-.003-.124-.052-.165-.127a.754.754 0 01-.06-.53c.068-.265.218-.505.368-.723.25-.353.518-.618.89-.815.106-.06.206-.088.3-.088l-.005.003zm-1.488 2.117a1.01 1.01 0 01.084.006l.003.002c.2.037.418.116.595.222.07.042.146.09.2.144.067.07.13.125.176.205.08.138.12.283.14.428v.055l-.003-.003c-.004-.06.003-.121-.04-.178-.035-.047-.093-.067-.132-.09a1.137 1.137 0 00-.136-.056c-.039-.013-.078-.015-.117-.028-.13-.04-.24-.07-.38-.116-.123-.042-.22-.093-.347-.118-.084-.02-.185-.07-.247-.066-.062-.003-.12-.009-.18-.014l-.003.002c-.063.002-.12-.008-.18-.013a.5.5 0 00-.19.007 2.146 2.146 0 01-.063-.048 1.455 1.455 0 00-.157-.057.52.52 0 01-.098-.035c.094-.103.208-.196.333-.268.147-.085.32-.14.5-.16l.084-.004zm3.847.02l.094.006c.18.02.353.076.5.16.126.073.24.166.334.27-.032.011-.065.024-.098.034a1.504 1.504 0 00-.158.057c-.02.015-.044.033-.063.048a.5.5 0 00-.19-.006c-.06.004-.118.015-.181.013l-.004-.002c-.059.005-.118.01-.18.013-.063-.003-.164.047-.247.066-.128.025-.224.076-.347.118-.14.046-.25.077-.38.117-.038.012-.078.014-.117.027-.046.018-.092.034-.136.056-.039.024-.097.043-.132.09-.043.057-.036.118-.04.178l-.003.003v-.055c.02-.145.06-.29.14-.428.046-.08.109-.135.176-.205.054-.054.13-.102.2-.144.177-.106.396-.185.596-.222.046-.01.095-.01.138-.01zm-3.58 2.283c.023.002.047.007.069.012.109.024.22.062.316.125.098.064.188.144.252.236.066.094.113.2.14.307.03.107.033.217.023.328a.986.986 0 01-.227.554c-.072.08-.16.145-.25.2-.062.036-.13.063-.202.084-.04.012-.082.022-.123.03l-.003-.002-.045.017c-.07.02-.137.033-.204.046a1.95 1.95 0 00-.078-.108c-.06-.073-.122-.143-.19-.206l-.003-.005a1.485 1.485 0 00-.19-.155l-.003-.003a1.093 1.093 0 00-.171-.097c-.022-.011-.046-.02-.067-.031-.037-.017-.074-.035-.117-.048.034-.026.07-.05.102-.075.074-.063.151-.118.22-.184.085-.079.168-.164.232-.262.063-.097.113-.205.14-.318.026-.114.034-.233.02-.35a1.113 1.113 0 00-.066-.258.785.785 0 00-.16-.258l.084-.006zm3.313 0l.085.006a.785.785 0 00-.161.258c-.04.082-.06.167-.066.258-.013.117-.006.236.02.35.028.113.078.221.14.318.065.098.148.183.233.262.068.066.145.121.22.184.03.025.067.05.101.075-.042.013-.08.031-.116.048-.022.011-.046.02-.068.031-.06.029-.117.061-.17.097l-.004.003c-.066.046-.13.098-.19.155l-.003.005c-.067.063-.13.133-.19.206-.028.035-.053.071-.077.108a1.97 1.97 0 01-.205-.046l-.044-.017-.003.002c-.042-.008-.083-.018-.123-.03a.86.86 0 01-.202-.084c-.09-.055-.178-.12-.25-.2a.986.986 0 01-.227-.554c-.01-.11-.007-.22.023-.328.027-.107.074-.213.14-.307.064-.092.154-.172.252-.236.097-.063.207-.1.316-.125.022-.005.046-.01.07-.012zm-3.574 1.078l.024.008c.05.02.1.04.148.067.053.03.102.065.146.104l.003.003c.053.045.1.094.142.147.035.044.066.093.09.145l.002.003c-.035-.003-.07-.005-.105-.007l-.003-.002a1.94 1.94 0 00-.193.003c-.059.002-.118.01-.177.02-.058.01-.117.02-.173.037-.052.014-.103.033-.152.055-.004-.12-.006-.238-.017-.354a4.21 4.21 0 00-.042-.272l.002-.002c.09.013.194.027.305.045zm3.835 0c.111-.018.215-.032.305-.045l.002.002a4.21 4.21 0 00-.042.272c-.011.116-.013.235-.017.354-.049-.022-.1-.04-.152-.055a1.72 1.72 0 00-.173-.036c-.059-.01-.118-.02-.177-.02a1.94 1.94 0 00-.193-.004l-.003.002c-.036.002-.07.004-.105.007l.002-.003c.024-.052.055-.1.09-.145.042-.053.09-.102.142-.147l.003-.003c.044-.04.093-.074.146-.104.048-.028.098-.048.148-.067l.024-.008zm-3.43.457h.018c.078.003.156.013.233.03.078.019.153.047.224.084.07.037.137.083.197.137.062.054.116.117.163.185a.97.97 0 01.147.41l.004.03a.868.868 0 01-.04.358.696.696 0 01-.13.226.5.5 0 01-.248.154 1.174 1.174 0 01-.24.04c-.01 0-.02 0-.03.002-.04.003-.08.002-.12.003-.051.002-.1.01-.148.024-.05.014-.097.036-.14.063-.043.028-.08.063-.11.102a.436.436 0 00-.068.133c-.03-.1-.076-.19-.14-.27a.777.777 0 00-.21-.186.836.836 0 00-.261-.108 1.116 1.116 0 00-.285-.027c-.023.003-.046.003-.069.006a.82.82 0 01-.35-.052.519.519 0 01-.21-.148.63.63 0 01-.114-.214.943.943 0 01-.037-.24v-.013l.002-.03c.008-.083.026-.165.052-.246.06-.19.16-.366.295-.51.063-.067.131-.128.205-.18.073-.054.152-.098.235-.134.084-.035.17-.06.26-.077.09-.016.18-.024.27-.023zm3.024.001c.09-.001.181.007.27.023.089.017.176.042.26.077.083.036.162.08.235.133.074.053.142.114.205.181.135.144.235.32.295.51.026.081.044.163.052.246l.002.03v.013a.943.943 0 01-.037.24.63.63 0 01-.115.214.519.519 0 01-.209.148.82.82 0 01-.35.052c-.023-.003-.046-.003-.069-.006a1.116 1.116 0 00-.285.027.836.836 0 00-.261.108.777.777 0 00-.21.186.767.767 0 00-.14.27.436.436 0 00-.068-.133.445.445 0 00-.11-.102.494.494 0 00-.14-.063c-.049-.014-.098-.022-.149-.024-.04-.001-.08 0-.12-.003-.01-.001-.02-.001-.03-.002a1.174 1.174 0 01-.24-.04.5.5 0 01-.248-.154.696.696 0 01-.13-.226.868.868 0 01-.04-.358l.004-.03a.97.97 0 01.147-.41 1.03 1.03 0 01.36-.322.96.96 0 01.224-.084c.077-.017.155-.027.233-.03h.018z"/>
+              </svg>
+            </div>
+            <h3 class="download-title">Linux 版本</h3>
+            <p class="download-meta">規劃中</p>
+            <button class="btn btn-secondary btn-lg" style="width: 100%;" disabled>
+              規劃中
+            </button>
+            <div class="download-requirements">
+              <h4>預計支援</h4>
+              <ul>
+                <li>Ubuntu 20.04 LTS 或更高版本</li>
+                <li>Fedora / Debian 等主流發行版</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Installation Guide -->
+    <section class="section section-alt">
+      <div class="container">
+        <h2 class="story-title scroll-animate">安裝指南</h2>
+        <div class="install-steps scroll-animate" style="max-width: 700px; margin: var(--spacing-md) auto 0;">
+          <div class="install-step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <h4>下載安裝檔</h4>
+              <p>點擊上方下載按鈕，取得最新版本的安裝程式</p>
+            </div>
+          </div>
+          <div class="install-step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <h4>執行安裝程式</h4>
+              <p>雙擊下載的檔案，按照安裝精靈的指示完成安裝</p>
+            </div>
+          </div>
+          <div class="install-step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+              <h4>首次啟動設定</h4>
+              <p>首次啟動時，軟體會自動下載語音模型（約需幾分鐘）</p>
+            </div>
+          </div>
+          <div class="install-step">
+            <div class="step-number">4</div>
+            <div class="step-content">
+              <h4>開始使用</h4>
+              <p>設定完成後，點擊開始按鈕，即可進行語音轉文字</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section">
+      <div class="container">
+        <h2 class="story-title scroll-animate">常見問題</h2>
+        <div class="faq-section scroll-animate">
+          <div class="faq-item">
+            <button class="faq-question" aria-expanded="false">
+              聲聲慢是免費的嗎？
+            </button>
+            <div class="faq-answer">
+              <div class="faq-answer-content">
+                是的，聲聲慢完全免費使用。我們相信每個人都有被聽見的權利，
+                因此不會對基本功能收取任何費用。
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" aria-expanded="false">
+              需要網路連線嗎？
+            </button>
+            <div class="faq-answer">
+              <div class="faq-answer-content">
+                不需要。聲聲慢採用本地語音辨識技術，所有處理都在你的電腦上完成，
+                不需要網路連線，也不會將你的語音資料上傳到任何伺服器。
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" aria-expanded="false">
+              支援哪些語言？
+            </button>
+            <div class="faq-answer">
+              <div class="faq-answer-content">
+                目前主要支援中文（繁體/簡體）、英文、日文等語言。
+                我們持續在增加更多語言的支援，請關注更新公告。
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" aria-expanded="false">
+              辨識準確度如何？
+            </button>
+            <div class="faq-answer">
+              <div class="faq-answer-content">
+                在安靜環境下，辨識準確度可達 90% 以上。使用降噪功能和熱詞設定，
+                可以進一步提升準確度。實際效果可能因環境噪音、口音等因素而有所不同。
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" aria-expanded="false">
+              如何回報問題或建議？
+            </button>
+            <div class="faq-answer">
+              <div class="faq-answer-content">
+                你可以透過 <a href="contact.html">聯繫我們</a> 頁面提交問題，
+                或直接在 GitHub 上提交 Issue。我們非常重視使用者的回饋。
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+      <div class="container">
+        <h2 class="cta-title scroll-animate">有其他問題嗎？</h2>
+        <p class="cta-desc scroll-animate">歡迎隨時聯繫我們，我們樂意為你解答</p>
+        <div class="btn-group scroll-animate" style="justify-content: center;">
+          <a href="contact.html" class="btn btn-primary btn-lg">聯繫我們</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-brand">
+          <div class="footer-logo">聲聲慢</div>
+          <p class="footer-desc">
+            讓每一次對話都被聽見。<br>
+            專為聽力障礙者打造的即時語音轉文字工具。
+          </p>
+        </div>
+        <div class="footer-section">
+          <h4 class="footer-title">網站導覽</h4>
+          <div class="footer-links">
+            <a href="story.html">品牌故事</a>
+            <a href="features.html">功能介紹</a>
+            <a href="download.html">下載</a>
+            <a href="contact.html">聯繫我們</a>
+          </div>
+        </div>
+        <div class="footer-section">
+          <h4 class="footer-title">聯繫方式</h4>
+          <div class="footer-links">
+            <a href="https://github.com" target="_blank" rel="noopener">GitHub</a>
+            <a href="contact.html">問題回報</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2024 聲聲慢. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/nav.js"></script>
+  <script>
+    // FAQ Accordion
+    document.querySelectorAll('.faq-question').forEach(function(button) {
+      button.addEventListener('click', function() {
+        const item = this.parentElement;
+        const isActive = item.classList.contains('active');
+
+        // Close all other items
+        document.querySelectorAll('.faq-item').forEach(function(faq) {
+          faq.classList.remove('active');
+          faq.querySelector('.faq-question').setAttribute('aria-expanded', 'false');
+        });
+
+        // Toggle current item
+        if (!isActive) {
+          item.classList.add('active');
+          this.setAttribute('aria-expanded', 'true');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
