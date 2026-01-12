@@ -830,10 +830,13 @@ export default function App() {
   // 获取麦克风按钮属性
   const getMicButtonProps = () => {
     const baseClasses =
-      "rounded-full w-16 h-16 flex items-center justify-center relative overflow-hidden border-2 border-white/80 transition-all duration-300 shadow-xl";
+      "rounded-full w-16 h-16 flex items-center justify-center relative overflow-hidden border-2 transition-all duration-300 shadow-xl";
 
-    // 统一的按钮样式，不再根据状态变色
-    const buttonStyle = `${baseClasses} bg-gradient-to-br from-slate-100 to-slate-200 dark:from-gray-700 dark:to-gray-600 hover:from-slate-200 hover:to-slate-300 dark:hover:from-gray-600 dark:hover:to-gray-500 hover:shadow-2xl transform hover:scale-105`;
+    // 串流模式用琥珀色邊框，一般模式用白色邊框
+    const borderColor = streamingMode ? "border-amber-400" : "border-white/80";
+
+    // 统一的按钮样式
+    const buttonStyle = `${baseClasses} ${borderColor} bg-gradient-to-br from-slate-100 to-slate-200 dark:from-gray-700 dark:to-gray-600 hover:from-slate-200 hover:to-slate-300 dark:hover:from-gray-600 dark:hover:to-gray-500 hover:shadow-2xl transform hover:scale-105`;
 
     // 如果模型未就绪，显示禁用状态（统一的灰色）
     if (!modelStatus.isReady) {
@@ -852,13 +855,13 @@ export default function App() {
       case "idle":
         return {
           className: `${buttonStyle} cursor-pointer`,
-          tooltip: t('app.startRecording', { hotkey }),
+          tooltip: streamingMode ? `開始即時辨識 (${hotkey})` : t('app.startRecording', { hotkey }),
           disabled: false
         };
       case "hover":
         return {
           className: `${buttonStyle} scale-105 shadow-2xl cursor-pointer`,
-          tooltip: t('app.startRecording', { hotkey }),
+          tooltip: streamingMode ? `開始即時辨識 (${hotkey})` : t('app.startRecording', { hotkey }),
           disabled: false
         };
       case "initializing":
@@ -888,7 +891,7 @@ export default function App() {
       default:
         return {
           className: `${buttonStyle} cursor-pointer`,
-          tooltip: t('app.clickToRecord', { hotkey }),
+          tooltip: streamingMode ? `開始即時辨識 (${hotkey})` : t('app.clickToRecord', { hotkey }),
           disabled: false
         };
     }
@@ -1024,6 +1027,8 @@ export default function App() {
               streamingMode ? '串流辨識中...' : t('app.recording')
             ) : (micState === "processing" || micState === "optimizing") ? (
               processingMessage || t('app.processing')
+            ) : streamingMode ? (
+              `點擊開始即時辨識 (${hotkey})`
             ) : (
               t('app.clickToRecord', { hotkey })
             )}

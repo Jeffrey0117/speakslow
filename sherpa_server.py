@@ -612,9 +612,6 @@ class SherpaServer:
                 "sample_rate": 16000,
                 "feature_dim": 80,
                 "decoding_method": decoding_method,
-                # beam search 參數 - 提升精準度
-                "num_active_paths": 4,  # 預設是 4，可調高到 8 或更多
-                "blank_penalty": 0.0,   # 可以試 0.5~2.0 減少空白
                 # endpoint 檢測
                 "enable_endpoint_detection": True,
                 "rule1_min_trailing_silence": 2.4,
@@ -816,15 +813,17 @@ class SherpaServer:
             final_result = self.streaming_recognizer.get_result(stream)
             final_text = final_result.strip() if final_result else ""
 
+            # 對最後一段文字加標點（如果有的話）
+            # 注意：text_buffer 在 stream_feed 的 endpoint 檢測時已經加過標點了
+            if final_text:
+                final_text = self._add_punctuation(final_text)
+
             # 合併 buffer 和最終結果
-            full_text = (session["text_buffer"] + final_text).strip()
+            text_with_punc = (session["text_buffer"] + final_text).strip()
 
             # 計算時長
             duration = session["sample_count"] / 16000.0
             elapsed = time.time() - session["start_time"]
-
-            # 加入標點
-            text_with_punc = self._add_punctuation(full_text)
 
             # 清理會話
             del self.streaming_sessions[session_id]
