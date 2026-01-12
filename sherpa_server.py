@@ -759,10 +759,11 @@ class SherpaServer:
             # 檢查是否檢測到端點（句子結束）
             is_endpoint = self.streaming_recognizer.is_endpoint(stream)
             if is_endpoint:
-                # 累積到 buffer
+                # 累積到 buffer，對完成的句子加標點
                 if partial_text:
-                    session["text_buffer"] += partial_text + " "
-                    logger.info(f"[串流] 端點檢測，累積: {partial_text}")
+                    punctuated = self._add_punctuation(partial_text)
+                    session["text_buffer"] += punctuated
+                    logger.info(f"[串流] 端點檢測，加標點: {punctuated}")
                 # 重置 stream 以開始新句子
                 self.streaming_recognizer.reset(stream)
                 partial_text = ""
