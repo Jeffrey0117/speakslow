@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node start-electron.js",
     "dev": "concurrently -k -r \"npm:dev:renderer\" \"npm:dev:main\"",
-    "dev:main": "cross-env NODE_ENV=development node start-electron.js --dev",
+    "dev:main": "cross-env NODE_ENV=development electronmon .",
     "dev:renderer": "cd src && vite",
     "build": "cd src && vite build && cd .. && electron-builder",
     "postinstall": "electron-builder install-app-deps",
@@ -58,6 +58,7 @@
     "cross-env": "^10.0.0",
     "electron": "^31.7.7",
     "electron-builder": "^24.6.4",
+    "electronmon": "^2.0.4",
     "eslint": "^9.25.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
