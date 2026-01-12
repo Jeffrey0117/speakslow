@@ -268,7 +268,7 @@ class SherpaServer:
 
         # 串流 VAD 設定
         self.streaming_vad_enabled = True  # 串流模式啟用 VAD
-        self.streaming_vad_threshold = 0.01  # 能量閾值（RMS）
+        self.streaming_vad_threshold = 0.005  # 能量閾值（RMS），調低以捕捉小聲語音
         self.streaming_vad_skipped = 0  # 跳過的 chunk 數
         self.streaming_vad_total = 0  # 總 chunk 數
 
@@ -574,7 +574,8 @@ class SherpaServer:
             # 準備熱詞參數
             hotwords_file = None
             hotwords_score = self.hotwords_score
-            decoding_method = "greedy_search"
+            # 預設使用 modified_beam_search 提升精準度（比 greedy_search 更準）
+            decoding_method = "modified_beam_search"
 
             # 檢查是否啟用熱詞功能
             if self.hotwords_enabled:
@@ -597,12 +598,11 @@ class SherpaServer:
                         logger.error(f"寫入熱詞檔案失敗: {e}")
                         logger.info("回退到 greedy_search")
                 else:
-                    logger.info("熱詞功能已啟用但無熱詞，使用 greedy_search")
+                    logger.info("熱詞功能已啟用但無熱詞，使用 modified_beam_search")
             else:
-                logger.info("熱詞功能已停用，使用 greedy_search")
+                logger.info(f"熱詞功能已停用，使用 {decoding_method}")
 
             # 創建串流辨識器 (Transducer)
-            # 根據是否有熱詞決定參數
             recognizer_params = {
                 "encoder": encoder_path,
                 "decoder": decoder_path,
@@ -612,6 +612,10 @@ class SherpaServer:
                 "sample_rate": 16000,
                 "feature_dim": 80,
                 "decoding_method": decoding_method,
+                # beam search 參數 - 提升精準度
+                "num_active_paths": 4,  # 預設是 4，可調高到 8 或更多
+                "blank_penalty": 0.0,   # 可以試 0.5~2.0 減少空白
+                # endpoint 檢測
                 "enable_endpoint_detection": True,
                 "rule1_min_trailing_silence": 2.4,
                 "rule2_min_trailing_silence": 1.2,
