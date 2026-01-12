@@ -216,15 +216,35 @@ async function startApp() {
   logger.info('应用启动完成');
 }
 
-// 应用事件处理器
-app.whenReady().then(() => {
-  // 设置用户数据目录环境变量，供Python脚本使用
-  process.env.ELECTRON_USER_DATA = app.getPath('userData');
-  logger.info('设置用户数据目录环境变量', {
-    ELECTRON_USER_DATA: process.env.ELECTRON_USER_DATA
+// 單一實例鎖定 - 防止多開
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  // 已有實例在運行，直接退出
+  logger.info('偵測到另一個實例正在運行，退出');
+  app.quit();
+} else {
+  // 收到第二個實例的請求時，聚焦現有視窗
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    logger.info('收到第二個實例請求，聚焦現有視窗');
+    const mainWindow = windowManager.mainWindow;
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    }
   });
-  startApp();
-});
+
+  // 应用事件处理器
+  app.whenReady().then(() => {
+    // 设置用户数据目录环境变量，供Python脚本使用
+    process.env.ELECTRON_USER_DATA = app.getPath('userData');
+    logger.info('设置用户数据目录环境变量', {
+      ELECTRON_USER_DATA: process.env.ELECTRON_USER_DATA
+    });
+    startApp();
+  });
+}
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
