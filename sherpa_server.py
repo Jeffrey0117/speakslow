@@ -381,6 +381,33 @@ class SherpaServer:
         thread = threading.Thread(target=load_punc_model, daemon=True)
         thread.start()
 
+    def _preprocess_audio(self, samples):
+        """音頻預處理：正規化音量、降噪"""
+        if len(samples) == 0:
+            return samples
+
+        # 1. 音量正規化 (Normalization)
+        # 將音量調整到 -3dB（約 0.7 峰值），避免過小或過大
+        max_val = np.max(np.abs(samples))
+        if max_val > 0:
+            target_peak = 0.7  # -3dB
+            if max_val < 0.1:  # 音量太小，需要放大
+                gain = target_peak / max_val
+                # 限制最大增益，避免放大噪音
+                gain = min(gain, 10.0)
+                samples = samples * gain
+                logger.info(f"音量預處理: 放大 {gain:.1f}x (原始峰值: {max_val:.3f})")
+            elif max_val > 0.95:  # 音量太大，可能削波
+                samples = samples * (target_peak / max_val)
+                logger.info(f"音量預處理: 降低到 {target_peak:.1f} (原始峰值: {max_val:.3f})")
+
+        # 2. 簡易降噪：移除低於閾值的微小信號（可能是底噪）
+        # 這是一個很輕量的處理，不會影響語音
+        noise_threshold = 0.01
+        samples = np.where(np.abs(samples) < noise_threshold, 0, samples)
+
+        return samples.astype(np.float32)
+
     def _add_punctuation(self, text):
         """使用 ct-punc 模型或規則式添加標點"""
         if not text or not text.strip():
@@ -508,6 +535,9 @@ class SherpaServer:
             # 讀取音頻
             samples, sample_rate = self._read_wave_file(audio_path)
             duration = len(samples) / sample_rate
+
+            # 音頻預處理：正規化音量、簡易降噪
+            samples = self._preprocess_audio(samples)
 
             # 使用 VAD 提取語音段（跳過靜音）
             speech_samples, skipped_duration = self._extract_speech_segments(samples, sample_rate)
