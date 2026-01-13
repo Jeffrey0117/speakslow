@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Search, Plus, Trash2, Edit2, Check, X, ToggleLeft, ToggleRight } from "lucide-react";
+import { Search, Plus, Trash2, Edit2, Check, X, ToggleLeft, ToggleRight, Download, Upload } from "lucide-react";
 
 /**
  * 字典管理組件
@@ -146,6 +146,44 @@ const DictionaryManager = ({ t }) => {
     setIsFormOpen(false);
   };
 
+  // 匯出字典
+  const handleExport = async () => {
+    if (!window.electronAPI) return;
+    try {
+      const result = await window.electronAPI.exportDictionary();
+      if (result.success) {
+        alert(`成功匯出 ${result.count} 個項目`);
+      } else if (!result.canceled) {
+        alert("匯出失敗: " + result.error);
+      }
+    } catch (error) {
+      console.error("匯出字典失敗:", error);
+      alert("匯出失敗: " + error.message);
+    }
+  };
+
+  // 匯入字典
+  const handleImport = async (mode = 'merge') => {
+    if (!window.electronAPI) return;
+    try {
+      const result = await window.electronAPI.importDictionary(mode);
+      if (result.success) {
+        let message = `成功匯入 ${result.imported} 個項目`;
+        if (result.skipped > 0) {
+          message += `，跳過 ${result.skipped} 個`;
+        }
+        alert(message);
+        await loadEntries();
+        await loadCategories();
+      } else if (!result.canceled) {
+        alert("匯入失敗: " + result.error);
+      }
+    } catch (error) {
+      console.error("匯入字典失敗:", error);
+      alert("匯入失敗: " + error.message);
+    }
+  };
+
   return (
     <div className="dictionary-manager">
       {/* 標題與說明 */}
@@ -195,6 +233,25 @@ const DictionaryManager = ({ t }) => {
           <Plus className="w-4 h-4" />
           {t?.("settings.dictionary.add") || "新增"}
         </button>
+
+        {/* 匯入/匯出按鈕 */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleImport('merge')}
+            className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm transition-colors"
+            title="匯入時會跳過已存在的項目"
+          >
+            <Upload className="w-4 h-4" />
+            {t?.("settings.dictionary.import") || "匯入"}
+          </button>
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            {t?.("settings.dictionary.export") || "匯出"}
+          </button>
+        </div>
       </div>
 
       {/* 新增/編輯表單 */}

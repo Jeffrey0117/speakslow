@@ -80,6 +80,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.invoke("apply-dictionary", text),
   toggleDictionaryEntry: (id) =>
     ipcRenderer.invoke("toggle-dictionary-entry", id),
+  exportDictionary: () =>
+    ipcRenderer.invoke("export-dictionary"),
+  importDictionary: (mode) =>
+    ipcRenderer.invoke("import-dictionary", mode),
+  clearDictionary: () =>
+    ipcRenderer.invoke("clear-dictionary"),
 
   // 熱詞功能
   getHotwords: () => ipcRenderer.invoke("get-hotwords"),

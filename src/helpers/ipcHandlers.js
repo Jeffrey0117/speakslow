@@ -233,6 +233,106 @@ class IPCHandlers {
       return null;
     });
 
+    // 字典匯出
+    ipcMain.handle("export-dictionary", async () => {
+      try {
+        const { dialog } = require("electron");
+        const fs = require("fs");
+
+        const entries = this.databaseManager.exportDictionary();
+
+        const { filePath, canceled } = await dialog.showSaveDialog({
+          title: "匯出字典",
+          defaultPath: `dictionary_${new Date().toISOString().slice(0, 10)}.json`,
+          filters: [
+            { name: "JSON 檔案", extensions: ["json"] },
+            { name: "CSV 檔案", extensions: ["csv"] }
+          ]
+        });
+
+        if (canceled || !filePath) {
+          return { success: false, canceled: true };
+        }
+
+        if (filePath.endsWith(".csv")) {
+          // CSV 格式
+          const csvHeader = "原始詞彙,替換為,分類,啟用\n";
+          const csvRows = entries.map(e =>
+            `"${e.original}","${e.replacement}","${e.category || ''}",${e.enabled ? '是' : '否'}`
+          ).join("\n");
+          fs.writeFileSync(filePath, csvHeader + csvRows, "utf-8");
+        } else {
+          // JSON 格式
+          fs.writeFileSync(filePath, JSON.stringify(entries, null, 2), "utf-8");
+        }
+
+        return { success: true, count: entries.length, path: filePath };
+      } catch (error) {
+        this.logger.error("匯出字典失敗:", error);
+        return { success: false, error: error.message };
+      }
+    });
+
+    // 字典匯入
+    ipcMain.handle("import-dictionary", async (event, mode) => {
+      try {
+        const { dialog } = require("electron");
+        const fs = require("fs");
+
+        const { filePaths, canceled } = await dialog.showOpenDialog({
+          title: "匯入字典",
+          filters: [
+            { name: "JSON 檔案", extensions: ["json"] },
+            { name: "CSV 檔案", extensions: ["csv"] },
+            { name: "所有檔案", extensions: ["*"] }
+          ],
+          properties: ["openFile"]
+        });
+
+        if (canceled || filePaths.length === 0) {
+          return { success: false, canceled: true };
+        }
+
+        const filePath = filePaths[0];
+        const content = fs.readFileSync(filePath, "utf-8");
+        let entries = [];
+
+        if (filePath.endsWith(".csv")) {
+          // 解析 CSV
+          const lines = content.split("\n").filter(l => l.trim());
+          // 跳過標題行
+          for (let i = 1; i < lines.length; i++) {
+            const match = lines[i].match(/"([^"]*)",?"([^"]*)",?"([^"]*)",?(是|否|1|0|true|false)?/i);
+            if (match) {
+              entries.push({
+                original: match[1],
+                replacement: match[2],
+                category: match[3] || '',
+                enabled: !match[4] || ['是', '1', 'true'].includes(match[4].toLowerCase())
+              });
+            }
+          }
+        } else {
+          // 解析 JSON
+          entries = JSON.parse(content);
+          if (!Array.isArray(entries)) {
+            entries = [entries];
+          }
+        }
+
+        const result = this.databaseManager.importDictionary(entries, mode || 'merge');
+        return { success: true, ...result, path: filePath };
+      } catch (error) {
+        this.logger.error("匯入字典失敗:", error);
+        return { success: false, error: error.message };
+      }
+    });
+
+    // 清空字典
+    ipcMain.handle("clear-dictionary", () => {
+      return this.databaseManager.clearDictionary();
+    });
+
     // ===== 熱詞功能 =====
     ipcMain.handle("get-hotwords", async () => {
       try {
@@ -1337,8 +1437,18 @@ class IPCHandlers {
   // AI文本处理方法
   async processTextWithAI(text, mode = 'optimize') {
     try {
-      // 从数据库设置中获取API密钥
-      const apiKey = await this.databaseManager.getSetting('ai_api_key');
+      // 从数据库设置或環境變數获取API密钥
+      let apiKey = await this.databaseManager.getSetting('ai_api_key');
+      let baseUrl = await this.databaseManager.getSetting('ai_base_url');
+      let model = await this.databaseManager.getSetting('ai_model');
+
+      // 使用環境變數作為預設值（DeepSeek）
+      if (!apiKey && process.env.DEEPSEEK_API_KEY) {
+        apiKey = process.env.DEEPSEEK_API_KEY;
+        baseUrl = baseUrl || 'https://api.deepseek.com';
+        model = model || 'deepseek-chat';
+      }
+
       if (!apiKey) {
         return {
           success: false,
@@ -1430,8 +1540,7 @@ ${text}
 请直接返回优化后的文本，不需要解释过程。`
       };
 
-      const baseUrl = await this.databaseManager.getSetting('ai_base_url') || 'https://api.openai.com/v1';
-      const model = await this.databaseManager.getSetting('ai_model') || 'gpt-3.5-turbo';
+      // baseUrl 和 model 已在函數開頭定義（支援環境變數 fallback）
 
       const requestData = {
         model: model,
@@ -1551,9 +1660,18 @@ ${text}
         apiKey = await this.databaseManager.getSetting('ai_api_key');
         baseUrl = await this.databaseManager.getSetting('ai_base_url') || 'https://api.openai.com/v1';
         model = await this.databaseManager.getSetting('ai_model') || 'gpt-3.5-turbo';
+
+        // 使用環境變數作為預設值（DeepSeek）
+        if (!apiKey && process.env.DEEPSEEK_API_KEY) {
+          apiKey = process.env.DEEPSEEK_API_KEY;
+          baseUrl = 'https://api.deepseek.com';
+          model = 'deepseek-chat';
+          this.logger.info('使用環境變數 DEEPSEEK_API_KEY');
+        }
+
         this.logger.info('使用已保存配置:', { baseUrl, model, apiKeyLength: apiKey?.length || 0 });
       }
-      
+
       if (!apiKey) {
         this.logger.warn('AI测试失败: 未配置API密钥');
         return {

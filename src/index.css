@@ -151,15 +151,25 @@ html, body {
 .text-secondary {
   color: #4b5563; /* 对比度 7.0:1 */
 }
+.dark .text-secondary {
+  color: #9ca3af; /* 深色模式：对比度 7.0:1 on #1f2937 */
+}
 
 /* 提示文本 - 对比度4.5:1 */
 .text-muted {
   color: #6b7280; /* 对比度 4.5:1 */
 }
+.dark .text-muted {
+  color: #6b7280; /* 深色模式：保持相同色值，在深色背景上对比度足够 */
+}
 
 /* 强调文本 - 高对比度 */
 .text-emphasis {
   color: #111827; /* 对比度 15.3:1 */
+  font-weight: 600;
+}
+.dark .text-emphasis {
+  color: #f3f4f6; /* 深色模式：对比度 13.1:1 on #1f2937 */
   font-weight: 600;
 }
 
@@ -229,6 +239,154 @@ html, body {
 
 .processing-spin {
   animation: processing 1s linear infinite;
+}
+
+/* === 錄音按鈕狀態過渡動畫 === */
+
+/* 狀態切換基礎過渡 */
+.mic-button-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 點擊漣漪效果 */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.mic-button-ripple::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, transparent 70%);
+  transform: scale(0);
+  opacity: 0;
+}
+
+.mic-button-ripple:active::after {
+  animation: ripple 0.4s ease-out;
+}
+
+/* 錄音狀態發光效果 */
+@keyframes recording-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 0 0 rgba(239, 68, 68, 0.4),
+      0 4px 15px rgba(0, 0, 0, 0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 0 12px rgba(239, 68, 68, 0),
+      0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.recording-glow {
+  animation: recording-glow 2s ease-in-out infinite;
+}
+
+/* 處理中狀態動畫 */
+@keyframes processing-shimmer {
+  0% {
+    background-position: -100% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.processing-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.processing-shimmer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  background-size: 50% 100%;
+  animation: processing-shimmer 1.5s ease-in-out infinite;
+}
+
+/* 串流模式外圈波紋 */
+@keyframes streaming-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+.streaming-ring::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  border: 2px solid #f59e0b;
+  animation: streaming-ring 1.5s ease-out infinite;
+}
+
+/* 狀態文字淡入淡出 */
+@keyframes status-fade {
+  0% {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.status-text-animate {
+  animation: status-fade 0.2s ease-out;
+}
+
+/* 側邊欄滑動動畫 */
+@keyframes slide-in-right {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-out-right {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.sidebar-enter {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+.sidebar-exit {
+  animation: slide-out-right 0.2s ease-in;
 }
 
 /* 文本淡入动画 */

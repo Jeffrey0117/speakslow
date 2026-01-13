@@ -182,6 +182,76 @@ class DatabaseManager {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
+  // 匯出所有字典項目
+  exportDictionary() {
+    const stmt = this.db.prepare(`
+      SELECT original, replacement, category, enabled FROM dictionary ORDER BY created_at DESC
+    `);
+    return stmt.all();
+  }
+
+  // 批次匯入字典項目
+  importDictionary(entries, mode = 'merge') {
+    if (!Array.isArray(entries) || entries.length === 0) {
+      return { imported: 0, skipped: 0, errors: [] };
+    }
+
+    let imported = 0;
+    let skipped = 0;
+    const errors = [];
+
+    // 如果是覆蓋模式，先清空字典
+    if (mode === 'replace') {
+      this.db.prepare("DELETE FROM dictionary").run();
+    }
+
+    const insertStmt = this.db.prepare(`
+      INSERT INTO dictionary (original, replacement, category, enabled)
+      VALUES (?, ?, ?, ?)
+    `);
+
+    const checkExistsStmt = this.db.prepare(`
+      SELECT id FROM dictionary WHERE original = ?
+    `);
+
+    for (const entry of entries) {
+      try {
+        // 驗證必要欄位
+        if (!entry.original || !entry.replacement) {
+          errors.push(`缺少必要欄位: ${JSON.stringify(entry)}`);
+          skipped++;
+          continue;
+        }
+
+        // 檢查是否已存在
+        const existing = checkExistsStmt.get(entry.original);
+        if (existing && mode === 'merge') {
+          skipped++;
+          continue;
+        }
+
+        // 插入新項目
+        insertStmt.run(
+          entry.original.trim(),
+          entry.replacement.trim(),
+          entry.category?.trim() || '',
+          entry.enabled !== undefined ? (entry.enabled ? 1 : 0) : 1
+        );
+        imported++;
+      } catch (err) {
+        errors.push(`匯入失敗 "${entry.original}": ${err.message}`);
+        skipped++;
+      }
+    }
+
+    return { imported, skipped, errors };
+  }
+
+  // 清空字典
+  clearDictionary() {
+    return this.db.prepare("DELETE FROM dictionary").run();
+  }
+
   saveTranscription(data) {
     // 验证必需的数据
     if (!data || typeof data !== 'object') {

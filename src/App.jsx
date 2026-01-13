@@ -835,7 +835,7 @@ export default function App() {
   // 获取麦克风按钮属性
   const getMicButtonProps = () => {
     const baseClasses =
-      "rounded-full w-16 h-16 flex items-center justify-center relative overflow-hidden border-2 transition-all duration-300 shadow-xl";
+      "rounded-full w-16 h-16 flex items-center justify-center relative overflow-hidden border-2 mic-button-transition shadow-xl mic-button-ripple";
 
     // 串流模式用琥珀色邊框，一般模式用白色邊框
     const borderColor = streamingMode ? "border-amber-400" : "border-white/80";
@@ -871,25 +871,25 @@ export default function App() {
         };
       case "initializing":
         return {
-          className: `${buttonStyle} cursor-not-allowed opacity-70`,
+          className: `${buttonStyle} processing-shimmer cursor-not-allowed opacity-80`,
           tooltip: '串流啟動中...',
           disabled: true
         };
       case "recording":
         return {
-          className: `${buttonStyle} recording-pulse cursor-pointer`,
+          className: `${buttonStyle} recording-pulse recording-glow cursor-pointer ${streamingMode ? 'streaming-ring' : ''}`,
           tooltip: t('app.recording'),
           disabled: false
         };
       case "processing":
         return {
-          className: `${buttonStyle} cursor-not-allowed opacity-70`,
+          className: `${buttonStyle} processing-shimmer cursor-not-allowed opacity-80`,
           tooltip: t('app.processing'),
           disabled: true
         };
       case "optimizing":
         return {
-          className: `${buttonStyle} cursor-not-allowed opacity-70`,
+          className: `${buttonStyle} processing-shimmer cursor-not-allowed opacity-80`,
           tooltip: t('app.optimizing'),
           disabled: true
         };

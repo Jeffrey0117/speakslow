@@ -38,25 +38,25 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+        <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/30 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-md w-full">
             <div className="flex items-center mb-4">
               <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center mr-3">
                 <span className="text-white text-sm">!</span>
               </div>
-              <h2 className="text-lg font-semibold text-gray-900">应用出现错误</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">应用出现错误</h2>
             </div>
-            
-            <p className="text-gray-600 mb-4">
+
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
               聲聲慢遇到了一個意外錯誤。請嘗試重啟應用。
             </p>
-            
+
             {process.env.NODE_ENV === 'development' && (
               <details className="mb-4">
-                <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700">
+                <summary className="cursor-pointer text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
                   查看错误详情
                 </summary>
-                <div className="mt-2 p-3 bg-gray-100 rounded text-xs font-mono text-gray-700 overflow-auto max-h-32">
+                <div className="mt-2 p-3 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono text-gray-700 dark:text-gray-300 overflow-auto max-h-32">
                   <div className="mb-2">
                     <strong>错误:</strong> {this.state.error && this.state.error.toString()}
                   </div>
@@ -69,7 +69,7 @@ class ErrorBoundary extends React.Component {
                 </div>
               </details>
             )}
-            
+
             <div className="flex space-x-3">
               <button
                 onClick={() => window.location.reload()}
@@ -77,7 +77,7 @@ class ErrorBoundary extends React.Component {
               >
                 重新加载
               </button>
-              
+
               {isElectron() && (
                 <button
                   onClick={() => window.electronAPI.closeWindow()}

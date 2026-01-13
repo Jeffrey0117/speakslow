@@ -179,16 +179,16 @@ const HotkeyItem = ({ actionId, actionInfo, currentHotkey, defaultHotkey, onUpda
   const isDefault = currentHotkey === defaultHotkey;
 
   return (
-    <div className="p-4 bg-gray-50 rounded-lg">
+    <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
       <div className="flex items-center justify-between mb-2">
         <div>
-          <h4 className="font-medium text-gray-900">{actionInfo.name}</h4>
-          <p className="text-sm text-gray-500">{actionInfo.description}</p>
+          <h4 className="font-medium text-gray-900 dark:text-gray-100">{actionInfo.name}</h4>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{actionInfo.description}</p>
         </div>
         {!isDefault && (
           <button
             onClick={handleReset}
-            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded transition-colors"
+            className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
             title="重設為預設"
           >
             <RotateCcw className="w-4 h-4" />
@@ -200,7 +200,7 @@ const HotkeyItem = ({ actionId, actionInfo, currentHotkey, defaultHotkey, onUpda
         {isRecording ? (
           <>
             <div
-              className="flex-1 px-4 py-2 bg-blue-50 border-2 border-blue-400 rounded-lg text-center font-mono text-blue-700 animate-pulse"
+              className="flex-1 px-4 py-2 bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-400 dark:border-blue-500 rounded-lg text-center font-mono text-blue-700 dark:text-blue-300 animate-pulse"
               tabIndex={0}
               onKeyDown={handleKeyDown}
               autoFocus
@@ -216,14 +216,14 @@ const HotkeyItem = ({ actionId, actionInfo, currentHotkey, defaultHotkey, onUpda
             </button>
             <button
               onClick={handleCancelRecording}
-              className="px-3 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+              className="px-3 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors"
             >
               取消
             </button>
           </>
         ) : (
           <>
-            <div className="flex-1 px-4 py-2 bg-white border border-gray-300 rounded-lg text-center font-mono text-gray-700">
+            <div className="flex-1 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-center font-mono text-gray-700 dark:text-gray-300">
               {formatHotkey(currentHotkey) || '未設置'}
             </div>
             <button
@@ -237,7 +237,7 @@ const HotkeyItem = ({ actionId, actionInfo, currentHotkey, defaultHotkey, onUpda
       </div>
 
       {error && (
-        <div className="mt-2 flex items-center gap-1 text-sm text-red-600">
+        <div className="mt-2 flex items-center gap-1 text-sm text-red-600 dark:text-red-400">
           <AlertCircle className="w-4 h-4" />
           {error}
         </div>
@@ -297,7 +297,7 @@ const HotkeySettings = () => {
 
   if (loading) {
     return (
-      <div className="p-4 text-center text-gray-500">
+      <div className="p-4 text-center text-gray-500 dark:text-gray-400">
         載入中...
       </div>
     );
@@ -307,19 +307,19 @@ const HotkeySettings = () => {
     <div>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Keyboard className="w-5 h-5 text-blue-600" />
-          <h3 className="text-lg font-semibold text-gray-900">快捷鍵設定</h3>
+          <Keyboard className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">快捷鍵設定</h3>
         </div>
         <button
           onClick={handleResetAll}
-          className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-1"
+          className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-1"
         >
           <RotateCcw className="w-4 h-4" />
           重設全部
         </button>
       </div>
 
-      <p className="text-sm text-gray-600 mb-4">
+      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
         自定義應用程式的快捷鍵。點擊「錄製」後按下想要的快捷鍵組合。
       </p>
 
@@ -337,8 +337,8 @@ const HotkeySettings = () => {
         ))}
       </div>
 
-      <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-        <p className="text-xs text-blue-700">
+      <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+        <p className="text-xs text-blue-700 dark:text-blue-300">
           <strong>提示：</strong>某些快捷鍵可能被系統或其他應用程式佔用，如遇衝突請嘗試其他組合。
         </p>
       </div>

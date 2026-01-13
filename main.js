@@ -2,6 +2,9 @@
 // 這些環境基於 Electron，會繼承 ELECTRON_RUN_AS_NODE=1，導致 Electron API 無法使用
 delete process.env.ELECTRON_RUN_AS_NODE;
 
+// 載入環境變數
+require("dotenv").config();
+
 const { app, globalShortcut, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 const { spawn } = require("child_process");

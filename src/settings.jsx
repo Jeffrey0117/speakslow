@@ -83,7 +83,7 @@ const SettingsPage = () => {
         setSettings(prev => ({ ...prev, ...loadedSettings }));
         
         // 检查是否使用自定义模型
-        const predefinedModels = ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo", "gpt-4o", "gpt-4o-mini", "qwen3-30b-a3b-instruct-2507"];
+        const predefinedModels = ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo", "gpt-4o", "gpt-4o-mini", "qwen3-30b-a3b-instruct-2507", "deepseek-chat", "deepseek-reasoner"];
         setCustomModel(!predefinedModels.includes(loadedSettings.ai_model));
       }
     } catch (error) {
@@ -198,6 +198,17 @@ const SettingsPage = () => {
     }));
     setCustomModel(false);
     toast.info(t('settings.configApplied', { provider: t('settings.openaiConfig') }));
+  };
+
+  // 应用DeepSeek配置
+  const applyDeepSeekConfig = () => {
+    setSettings(prev => ({
+      ...prev,
+      ai_base_url: "https://api.deepseek.com",
+      ai_model: "deepseek-chat"
+    }));
+    setCustomModel(true);
+    toast.info(t('settings.configApplied', { provider: 'DeepSeek' }));
   };
 
   // 测试AI配置
@@ -760,6 +771,13 @@ const SettingsPage = () => {
                       >
                         OpenAI
                       </button>
+                      <button
+                        type="button"
+                        onClick={applyDeepSeekConfig}
+                        className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 rounded hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors"
+                      >
+                        DeepSeek
+                      </button>
                     </div>
                   </div>
 
@@ -784,12 +802,20 @@ const SettingsPage = () => {
                         onChange={(e) => handleInputChange('ai_model', e.target.value)}
                         className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                       >
-                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                        <option value="gpt-4">GPT-4</option>
-                        <option value="gpt-4-turbo">GPT-4 Turbo</option>
-                        <option value="gpt-4o">GPT-4o</option>
-                        <option value="gpt-4o-mini">GPT-4o Mini</option>
-                        <option value="qwen3-30b-a3b-instruct-2507">Qwen3-30B (推荐)</option>
+                        <optgroup label="DeepSeek (推薦)">
+                          <option value="deepseek-chat">DeepSeek Chat (最划算)</option>
+                          <option value="deepseek-reasoner">DeepSeek Reasoner (R1)</option>
+                        </optgroup>
+                        <optgroup label="OpenAI">
+                          <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                          <option value="gpt-4">GPT-4</option>
+                          <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                          <option value="gpt-4o">GPT-4o</option>
+                          <option value="gpt-4o-mini">GPT-4o Mini</option>
+                        </optgroup>
+                        <optgroup label="阿里雲">
+                          <option value="qwen3-30b-a3b-instruct-2507">Qwen3-30B</option>
+                        </optgroup>
                       </select>
                     )}
                     
