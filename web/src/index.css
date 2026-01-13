@@ -1,0 +1,124 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 自訂字體 */
+@font-face {
+  font-family: 'GenWanMin';
+  src: url('/fonts/GenWanMin-SB.ttf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'OpenHuninn';
+  src: url('/fonts/jf-openhuninn-2.1.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 基礎樣式 */
+body {
+  margin: 0;
+  font-family: 'OpenHuninn', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* 標題字體 */
+.font-title {
+  font-family: 'GenWanMin', 'Noto Serif TC', serif;
+}
+
+/* 內容字體 */
+.font-content {
+  font-family: 'OpenHuninn', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+}
+
+/* 錄音按鈕動畫 */
+@keyframes recording-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(239, 68, 68, 0.8);
+  }
+}
+
+.recording-glow {
+  animation: recording-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-recording {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+.recording-pulse {
+  animation: pulse-recording 1.5s ease-in-out infinite;
+}
+
+/* 串流模式波紋 */
+@keyframes streaming-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+.streaming-ring::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border: 3px solid #eab308;
+  border-radius: 50%;
+  animation: streaming-ring 1.5s ease-out infinite;
+}
+
+/* 雙向顯示翻轉 */
+.text-flipped {
+  transform: rotate(180deg);
+}
+
+/* 深色模式背景漸層 */
+.bg-gradient-dark {
+  background: linear-gradient(to bottom right, #111827, #1f2937);
+}
+
+.bg-gradient-light {
+  background: linear-gradient(to bottom right, #f8fafc, #f1f5f9);
+}
+
+/* 自訂滾動條 */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.5);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(156, 163, 175, 0.8);
+}
