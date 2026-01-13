@@ -1,0 +1,67 @@
+# 聲聲慢 Production Docker Compose
+# Use with: docker-compose -f docker-compose.prod.yml up -d
+
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    container_name: speakslow-backend
+    volumes:
+      - ./models:/app/models:ro
+      - ./hotwords.txt:/app/hotwords.txt:ro
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8765
+    restart: always
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8765/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+      args:
+        # Set these for production domain
+        - VITE_API_URL=${API_URL:-http://api.speakslow.app}
+        - VITE_WS_URL=${WS_URL:-wss://api.speakslow.app}
+    container_name: speakslow-frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: always
+    networks:
+      - internal
+      - external
+
+  # Reverse proxy for production
+  nginx:
+    image: nginx:alpine
+    container_name: speakslow-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - frontend
+      - backend
+    restart: always
+    networks:
+      - external
+      - internal
+
+networks:
+  internal:
+    driver: bridge
+  external:
+    driver: bridge

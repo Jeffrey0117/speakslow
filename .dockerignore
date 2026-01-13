@@ -1,0 +1,57 @@
+# Git
+.git
+.gitignore
+
+# Node
+node_modules
+web/node_modules
+
+# Build outputs
+dist
+web/dist
+out
+release
+
+# Development files
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Testing
+coverage
+.nyc_output
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Electron specific (not needed for web)
+src/
+public/
+electron-builder.yml
+
+# Temporary files
+tmp*
+temp*
+*.bak
+
+# Documentation (optional)
+docs/
+
+# POC files
+poc-*/
+
+# Large model files (mount as volume instead)
+# models/
+
+# Claude files
+.claude/
+tmpclaude-*

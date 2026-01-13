@@ -1,0 +1,50 @@
+# 聲聲慢 Docker Compose
+# SpeakSlow - Chinese ASR Web Application
+
+version: '3.8'
+
+services:
+  # Backend - Sherpa-ONNX ASR API
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    container_name: speakslow-backend
+    ports:
+      - "8765:8765"
+    volumes:
+      # Mount models directory (required)
+      - ./models:/app/models:ro
+      # Optional: mount hotwords file
+      - ./hotwords.txt:/app/hotwords.txt:ro
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8765
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8765/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Frontend - React Web App
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:8765
+        - VITE_WS_URL=ws://localhost:8765
+    container_name: speakslow-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+# Optional: Add network for production deployment
+networks:
+  default:
+    name: speakslow-network
