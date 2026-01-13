@@ -336,9 +336,9 @@ class SherpaServer:
             # 配置 VAD 參數
             vad_config = sherpa_onnx.VadModelConfig()
             vad_config.silero_vad.model = vad_model_path
-            vad_config.silero_vad.threshold = 0.5  # 語音檢測閾值
+            vad_config.silero_vad.threshold = 0.4  # 語音檢測閾值（從 0.5 降低，捕捉更多輕聲）
             vad_config.silero_vad.min_silence_duration = 0.25  # 最小靜音時長（秒）
-            vad_config.silero_vad.min_speech_duration = 0.25  # 最小語音時長（秒）
+            vad_config.silero_vad.min_speech_duration = 0.15  # 最小語音時長（從 0.25 降低，保留短詞）
             vad_config.silero_vad.max_speech_duration = 15.0  # 最大語音時長（秒）
             vad_config.silero_vad.window_size = 512  # 窗口大小
             vad_config.sample_rate = 16000
@@ -444,8 +444,8 @@ class SherpaServer:
             target_peak = 0.7  # -3dB
             if max_val < 0.1:  # 音量太小，需要放大
                 gain = target_peak / max_val
-                # 限制最大增益，避免放大噪音
-                gain = min(gain, 10.0)
+                # 限制最大增益，避免放大噪音（從 10x 降到 5x）
+                gain = min(gain, 5.0)
                 samples = samples * gain
                 logger.debug(f"音量預處理: 放大 {gain:.1f}x (原始峰值: {max_val:.3f})")
             elif max_val > 0.95:  # 音量太大，可能削波
@@ -453,8 +453,8 @@ class SherpaServer:
                 logger.debug(f"音量預處理: 降低到 {target_peak:.1f} (原始峰值: {max_val:.3f})")
 
         # 2. 簡易降噪：移除低於閾值的微小信號（可能是底噪）
-        # 這是一個很輕量的處理，不會影響語音
-        noise_threshold = 0.01
+        # 從 0.01 降到 0.005，避免切掉輕聲子音和語尾
+        noise_threshold = 0.005
         samples = np.where(np.abs(samples) < noise_threshold, 0, samples)
 
         return samples.astype(np.float32)
@@ -863,6 +863,15 @@ class SherpaServer:
                 if text_with_punc:
                     # 從繁體轉回簡體再加標點（last_partial_text 已經是繁體）
                     logger.info(f"[stream_end] 使用 last_partial_text 作為最終結果: {text_with_punc[:30]}")
+
+            # 強制確保有句末標點（方案 A：提升標點覆蓋率）
+            if text_with_punc and not text_with_punc.endswith(('。', '？', '！', '，', '；', '：')):
+                # 再跑一次標點，確保有句末標點
+                text_with_punc = self._add_punctuation(text_with_punc)
+                # 如果還是沒有，強制加句號
+                if not text_with_punc.endswith(('。', '？', '！', '，', '；', '：')):
+                    text_with_punc += '。'
+                logger.info(f"[stream_end] 強制加句末標點: {text_with_punc[-10:]}")
 
             # 保存原始文字（用於 debug）
             raw_text = text_with_punc
