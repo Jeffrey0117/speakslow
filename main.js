@@ -37,6 +37,7 @@ const SherpaManager = require("./src/helpers/sherpaManager");
 const TrayManager = require("./src/helpers/tray");
 const HotkeyManager = require("./src/helpers/hotkeyManager");
 const IPCHandlers = require("./src/helpers/ipcHandlers");
+const { TypelessManager } = require("./src/helpers/typelessManager");
 
 // 设置生产环境PATH
 function setupProductionPath() {
@@ -121,6 +122,7 @@ const databaseManager = new DatabaseManager();
 const clipboardManager = new ClipboardManager(logger); // 传递logger实例
 const sherpaManager = new SherpaManager(logger); // 传递logger实例
 const hotkeyManager = new HotkeyManager();
+const typelessManager = new TypelessManager(logger);
 
 // 初始化数据库
 const dataDirectory = environmentManager.ensureDataDirectory();
@@ -144,6 +146,7 @@ async function startApp() {
       sherpaManager,
       windowManager,
       hotkeyManager,
+      typelessManager,
       logger,
     });
   }
@@ -263,6 +266,7 @@ app.on("activate", () => {
 
 app.on("will-quit", () => {
   globalShortcut.unregisterAll();
+  typelessManager.cleanup();
 });
 
 // 导出管理器供其他模块使用
@@ -274,5 +278,6 @@ module.exports = {
   sherpaManager,
   trayManager,
   hotkeyManager,
+  typelessManager,
   logger
 };

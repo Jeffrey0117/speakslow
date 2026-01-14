@@ -10,7 +10,7 @@ import { useTextProcessing } from "./hooks/useTextProcessing";
 import { useModelStatus } from "./hooks/useModelStatus";
 import { usePermissions } from "./hooks/usePermissions";
 import { useTranslation } from "./i18n";
-import { Mic, MicOff, Settings, History, Copy, Download, X, Pin, Minus } from "lucide-react";
+import { Mic, MicOff, Settings, History, Copy, Download, X, Pin, Minus, Sparkles } from "lucide-react";
 import SettingsPanel from "./components/SettingsPanel";
 import HistorySidebar from "./components/HistorySidebar";
 import { ModelDownloadProgress } from "./components/ui/model-status-indicator";
@@ -251,6 +251,7 @@ export default function App() {
   const [showHistorySidebar, setShowHistorySidebar] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(true); // 視窗置頂狀態
+  const [aiOptimizationEnabled, setAiOptimizationEnabled] = useState(false); // AI 優化狀態
 
   // 錄音完成後動作設定
   const [pasteAfterTranscription, setPasteAfterTranscription] = useState(true);
@@ -279,6 +280,10 @@ export default function App() {
         // 載入置頂狀態
         const alwaysOnTop = await window.electronAPI.getSetting('window_always_on_top', true);
         setIsAlwaysOnTop(alwaysOnTop !== false);
+
+        // 載入 AI 優化狀態
+        const aiEnabled = await window.electronAPI.getSetting('enable_ai_optimization', false);
+        setAiOptimizationEnabled(aiEnabled === true);
       }
     };
     loadSettings();
@@ -294,6 +299,8 @@ export default function App() {
           setAutoEnterAfterPaste(data.value === true);
         } else if (data.key === 'window_always_on_top') {
           setIsAlwaysOnTop(data.value !== false);
+        } else if (data.key === 'enable_ai_optimization') {
+          setAiOptimizationEnabled(data.value === true);
         }
       });
       return () => {
@@ -337,6 +344,9 @@ export default function App() {
   // 串流模式設定
   const [streamingMode, setStreamingMode] = useState(false);
 
+  // TypeLess 模式（按住錄音）
+  const [typelessMode, setTypelessMode] = useState(false);
+
   // 載入串流模式設定
   useEffect(() => {
     const loadStreamingMode = async () => {
@@ -353,6 +363,41 @@ export default function App() {
         if (data.key === 'enable_streaming_mode') {
           setStreamingMode(data.value);
           console.log('串流模式已更新:', data.value);
+        }
+      });
+      return () => {
+        if (unsubscribe) unsubscribe();
+      };
+    }
+  }, []);
+
+  // 載入 TypeLess 模式設定
+  useEffect(() => {
+    const loadTypelessMode = async () => {
+      if (window.electronAPI) {
+        const enabled = await window.electronAPI.getSetting('enable_typeless_mode', false);
+        setTypelessMode(enabled);
+
+        // 如果啟用，則啟動 TypeLess 模式
+        if (enabled) {
+          const hotkey = await window.electronAPI.getSetting('hotkey', 'CommandOrControl+Shift+Space');
+          await window.electronAPI.enableTypelessMode(hotkey);
+        }
+      }
+    };
+    loadTypelessMode();
+
+    // 監聽設定變更事件
+    if (window.electronAPI?.onSettingChanged) {
+      const unsubscribe = window.electronAPI.onSettingChanged(async (data) => {
+        if (data.key === 'enable_typeless_mode') {
+          setTypelessMode(data.value);
+          if (data.value) {
+            const hotkey = await window.electronAPI.getSetting('hotkey', 'CommandOrControl+Shift+Space');
+            await window.electronAPI.enableTypelessMode(hotkey);
+          } else {
+            await window.electronAPI.disableTypelessMode();
+          }
         }
       });
       return () => {
@@ -780,6 +825,32 @@ export default function App() {
     }
   }, [toggleRecording, handleCancelRecording, handleCopyLastResult]);
 
+  // TypeLess 模式事件監聽（按住錄音）
+  useEffect(() => {
+    if (!window.electronAPI || !typelessMode) return;
+
+    // 監聽 TypeLess 開始錄音事件
+    const unsubscribeStart = window.electronAPI.onTypelessStartRecording?.(() => {
+      console.log('TypeLess: 收到開始錄音事件');
+      if (!isRecording && !isRecordingProcessing && modelStatus.isReady) {
+        startRecording();
+      }
+    });
+
+    // 監聽 TypeLess 停止錄音事件
+    const unsubscribeStop = window.electronAPI.onTypelessStopRecording?.(() => {
+      console.log('TypeLess: 收到停止錄音事件');
+      if (isRecording) {
+        stopRecording();
+      }
+    });
+
+    return () => {
+      if (unsubscribeStart) unsubscribeStart();
+      if (unsubscribeStop) unsubscribeStop();
+    };
+  }, [typelessMode, isRecording, isRecordingProcessing, modelStatus.isReady, startRecording, stopRecording]);
+
   // 同步录音状态到热键管理器
   useEffect(() => {
     if (syncRecordingState) {
@@ -910,14 +981,15 @@ export default function App() {
       <div className="max-w-2xl mx-auto min-h-screen flex flex-col">
         {/* 标题栏 */}
         <div
-          className="flex items-center justify-between mb-8 draggable"
+          className="flex flex-col mb-8 draggable"
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
         >
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 chinese-title">
-            {t('appName')}
-          </h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 chinese-title">
+              {t('appName')}
+            </h1>
           <div className="flex items-center space-x-2 non-draggable">
             <Tooltip content={t('app.history')} position="bottom">
               <button
@@ -968,6 +1040,16 @@ export default function App() {
               </button>
             </Tooltip>
           </div>
+          </div>
+          {/* AI 優化狀態指示器 - 標題下方 */}
+          {aiOptimizationEnabled && (
+            <div className="mt-2">
+              <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-900/40 rounded-full">
+                <Sparkles className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400" />
+                <span className="text-xs font-medium text-purple-600 dark:text-purple-300">AI 優化已啟用</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 录音控制区域 */}

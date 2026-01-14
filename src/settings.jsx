@@ -20,6 +20,7 @@ const SettingsPage = () => {
     enable_ai_optimization: false,
     enable_notifications: true,
     enable_streaming_mode: false,
+    enable_typeless_mode: false,      // TypeLess 模式（按住錄音）
     language: "zh-TW",
     convert_transcription: true,
     // 錄音完成後動作設定
@@ -70,6 +71,8 @@ const SettingsPage = () => {
           ai_model: allSettings.ai_model || "gpt-3.5-turbo",
           enable_ai_optimization: allSettings.enable_ai_optimization === true, // 默认为false
           enable_notifications: allSettings.enable_notifications !== false, // 默认为true
+          enable_streaming_mode: allSettings.enable_streaming_mode === true, // 默認關閉
+          enable_typeless_mode: allSettings.enable_typeless_mode === true, // TypeLess 默認關閉
           language: allSettings.language || "zh-TW", // 默认繁体中文
           convert_transcription: allSettings.convert_transcription !== false, // 默认转换
           // 錄音完成後動作設定
@@ -178,14 +181,14 @@ const SettingsPage = () => {
     }
   };
 
-  // 应用推荐配置
+  // 应用推荐配置（阿里云国内版）
   const applyRecommendedConfig = () => {
     setSettings(prev => ({
       ...prev,
       ai_base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1",
-      ai_model: "qwen3-30b-a3b-instruct-2507"
+      ai_model: "qwen-plus"
     }));
-    setCustomModel(true);
+    setCustomModel(false);
     toast.info(t('settings.configApplied', { provider: t('settings.alibabaConfig') }));
   };
 
@@ -462,6 +465,34 @@ const SettingsPage = () => {
                       aria-hidden="true"
                       className={`${
                         settings.enable_streaming_mode ? 'translate-x-4' : 'translate-x-0'
+                      } inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
+                    />
+                  </button>
+                </div>
+
+                {/* TypeLess 模式開關（按住錄音） */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label htmlFor="typeless-toggle" className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                      TypeLess 模式（按住錄音）
+                    </label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      按住快捷鍵開始錄音，放開停止錄音並自動辨識（文字不會自動送出）
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={settings.enable_typeless_mode}
+                    onClick={() => handleToggleChange('enable_typeless_mode', !settings.enable_typeless_mode)}
+                    className={`${
+                      settings.enable_typeless_mode ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
+                    } relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`${
+                        settings.enable_typeless_mode ? 'translate-x-4' : 'translate-x-0'
                       } inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
                     />
                   </button>
@@ -799,7 +830,33 @@ const SettingsPage = () => {
                     {!customModel && (
                       <select
                         value={settings.ai_model}
-                        onChange={(e) => handleInputChange('ai_model', e.target.value)}
+                        onChange={(e) => {
+                          const model = e.target.value;
+                          // 根據模型自動設定對應的 base URL
+                          let baseUrl = settings.ai_base_url;
+                          let providerName = '';
+
+                          if (model.startsWith('deepseek')) {
+                            baseUrl = 'https://api.deepseek.com';
+                            providerName = 'DeepSeek';
+                          } else if (model.startsWith('gpt')) {
+                            baseUrl = 'https://api.openai.com/v1';
+                            providerName = 'OpenAI';
+                          } else if (model.startsWith('qwen')) {
+                            baseUrl = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+                            providerName = '阿里雲';
+                          }
+
+                          setSettings(prev => ({
+                            ...prev,
+                            ai_model: model,
+                            ai_base_url: baseUrl
+                          }));
+
+                          if (providerName) {
+                            toast.info(`已自動設定 ${providerName} API 端點`);
+                          }
+                        }}
                         className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                       >
                         <optgroup label="DeepSeek (推薦)">
@@ -813,8 +870,11 @@ const SettingsPage = () => {
                           <option value="gpt-4o">GPT-4o</option>
                           <option value="gpt-4o-mini">GPT-4o Mini</option>
                         </optgroup>
-                        <optgroup label="阿里雲">
-                          <option value="qwen3-30b-a3b-instruct-2507">Qwen3-30B</option>
+                        <optgroup label="阿里雲 (通義千問)">
+                          <option value="qwen-plus">Qwen Plus (推薦)</option>
+                          <option value="qwen-turbo">Qwen Turbo (經濟)</option>
+                          <option value="qwen-max">Qwen Max (高性能)</option>
+                          <option value="qwen-long">Qwen Long (長文本)</option>
                         </optgroup>
                       </select>
                     )}

@@ -125,6 +125,24 @@ contextBridge.exposeInMainWorld("electronAPI", {
   },
 
   // =====================================================
+  // TypeLess 模式（按住錄音）API
+  // =====================================================
+  enableTypelessMode: (hotkey) => ipcRenderer.invoke("enable-typeless-mode", hotkey),
+  disableTypelessMode: () => ipcRenderer.invoke("disable-typeless-mode"),
+  getTypelessStatus: () => ipcRenderer.invoke("get-typeless-status"),
+  setTypelessHotkey: (hotkey) => ipcRenderer.invoke("set-typeless-hotkey", hotkey),
+
+  // TypeLess 事件監聽
+  onTypelessStartRecording: (callback) => {
+    ipcRenderer.on("typeless-start-recording", callback);
+    return () => ipcRenderer.removeListener("typeless-start-recording", callback);
+  },
+  onTypelessStopRecording: (callback) => {
+    ipcRenderer.on("typeless-stop-recording", callback);
+    return () => ipcRenderer.removeListener("typeless-stop-recording", callback);
+  },
+
+  // =====================================================
   // 自定義快捷鍵設定 API
   // =====================================================
   getHotkeySettings: () => ipcRenderer.invoke("get-hotkey-settings"),

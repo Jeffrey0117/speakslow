@@ -10,6 +10,7 @@ class IPCHandlers {
     this.sherpaManager = managers.sherpaManager;
     this.windowManager = managers.windowManager;
     this.hotkeyManager = managers.hotkeyManager;
+    this.typelessManager = managers.typelessManager;
     this.logger = managers.logger; // 添加logger引用
     
     // 跟踪F2热键注册状态
@@ -830,6 +831,105 @@ class IPCHandlers {
     });
 
     // =====================================================
+    // TypeLess 模式（按住錄音）API
+    // =====================================================
+
+    // 啟用 TypeLess 模式
+    ipcMain.handle("enable-typeless-mode", async (event, hotkey) => {
+      try {
+        if (!this.typelessManager) {
+          return { success: false, error: "TypeLess 管理器未初始化" };
+        }
+
+        // 設置快捷鍵
+        if (hotkey) {
+          this.typelessManager.setHotkey(hotkey);
+        }
+
+        // 設置回調函數
+        this.typelessManager.setCallbacks({
+          onStartRecording: () => {
+            this.logger.info('TypeLess: 觸發開始錄音');
+            // 先儲存當前前景視窗
+            try {
+              const result = this.clipboardManager.saveForegroundWindow();
+              this.logger.info('TypeLess: 儲存前景視窗結果:', result);
+            } catch (err) {
+              this.logger.warn('TypeLess: 儲存前景視窗失敗:', err.message);
+            }
+            // 發送開始錄音事件到渲染進程
+            if (this.windowManager?.mainWindow && !this.windowManager.mainWindow.isDestroyed()) {
+              this.windowManager.mainWindow.webContents.send("typeless-start-recording");
+            }
+          },
+          onStopRecording: () => {
+            this.logger.info('TypeLess: 觸發停止錄音');
+            // 發送停止錄音事件到渲染進程
+            if (this.windowManager?.mainWindow && !this.windowManager.mainWindow.isDestroyed()) {
+              this.windowManager.mainWindow.webContents.send("typeless-stop-recording");
+            }
+          }
+        });
+
+        // 啟用 TypeLess 模式
+        this.typelessManager.enable();
+
+        return { success: true };
+      } catch (error) {
+        this.logger.error("啟用 TypeLess 模式失敗:", error);
+        return { success: false, error: error.message };
+      }
+    });
+
+    // 停用 TypeLess 模式
+    ipcMain.handle("disable-typeless-mode", async () => {
+      try {
+        if (!this.typelessManager) {
+          return { success: false, error: "TypeLess 管理器未初始化" };
+        }
+
+        this.typelessManager.disable();
+        return { success: true };
+      } catch (error) {
+        this.logger.error("停用 TypeLess 模式失敗:", error);
+        return { success: false, error: error.message };
+      }
+    });
+
+    // 獲取 TypeLess 模式狀態
+    ipcMain.handle("get-typeless-status", () => {
+      try {
+        if (!this.typelessManager) {
+          return { success: false, error: "TypeLess 管理器未初始化" };
+        }
+
+        return {
+          success: true,
+          enabled: this.typelessManager.isEnabled,
+          isKeyDown: this.typelessManager.isKeyDown
+        };
+      } catch (error) {
+        this.logger.error("獲取 TypeLess 狀態失敗:", error);
+        return { success: false, error: error.message };
+      }
+    });
+
+    // 更新 TypeLess 快捷鍵
+    ipcMain.handle("set-typeless-hotkey", async (event, hotkey) => {
+      try {
+        if (!this.typelessManager) {
+          return { success: false, error: "TypeLess 管理器未初始化" };
+        }
+
+        this.typelessManager.setHotkey(hotkey);
+        return { success: true };
+      } catch (error) {
+        this.logger.error("設置 TypeLess 快捷鍵失敗:", error);
+        return { success: false, error: error.message };
+      }
+    });
+
+    // =====================================================
     // 自定義快捷鍵設定 API
     // =====================================================
 
@@ -1470,13 +1570,22 @@ class IPCHandlers {
 
 # 明确的优化指令 (Do's)
 1.  **纠正明显的拼写和语法错误**：修正同音错字、标点误用、以及基础的语法搭配错误（如主谓不一致）。
-2.  **移除无意义的填充词**：删除如"呃"、"嗯"、"啊这"、"那个"、"内个"、"然后那个"、"就是说"等在思考或停顿时使用的、不承载实际信息的词语。
-3.  **处理重复与口吃**：合并无意义的重复词语。
+2.  **繁体中文错字纠正**：语音识别常产生繁简混用或错误的繁体字，必须纠正为正确的繁体中文。
+    -   常见错误：熒幕→螢幕、週末→周末、裏面→裡面、著→着（看情况）
+    -   原则：确保输出为正确的繁体中文用字
+3.  **移除无意义的填充词**：删除如"呃"、"嗯"、"啊这"、"那个"、"内个"、"然后那个"、"就是说"等在思考或停顿时使用的、不承载实际信息的词语。
+4.  **处理重复与口吃**：合并无意义的重复词语。
     -   例子1: "我我我觉得" -> "我觉得"
     -   例子2: "这个这个方案" -> "这个方案"
-4.  **整合自我修正**：当用户明确表达了修正意图时，保留修正后的最终内容，并移除被修正的错误部分。
+5.  **整合自我修正**：当用户明确表达了修正意图时，保留修正后的最终内容，并移除被修正的错误部分。
     -   例子1: "会议定在周三，呃不对，是周四" -> "会议定在周四"
     -   例子2: "他的名字是小明，哦我想起来了，是小强" -> "他的名字是小强"
+6.  **列表排版（重要！）**：当检测到列表或枚举结构时，**必须**使用换行分隔每个项目。这是排版，不是改变内容。
+    -   触发词：一/二/三、1/2/3、第一/第二/第三、首先/然后/最后/接着、A/B/C 等
+    -   例子1: "一汉堡二奶茶三小笼包" -> "1. 汉堡\n2. 奶茶\n3. 小笼包"
+    -   例子2: "第一要安全第二要准时" -> "第一，要安全\n第二，要准时"
+    -   例子3: "买三样东西，一苹果，二香蕉" -> "买三样东西：\n1. 苹果\n2. 香蕉"
+    -   **注意**：只要看到连续的编号词（一二三、123、第一第二），就要换行！
 
 # 严格的禁止项 (Don'ts)
 1.  **禁止风格转换**：绝不能将口语化的表达（如"录个影"、"蛮不错"）替换为更书面化的词语（如"录制视频"、"非常好"）。
@@ -1555,15 +1664,21 @@ ${text}
         stream: false
       };
 
+      // 確保 baseUrl 不會重複添加 /chat/completions
+      let apiEndpoint = baseUrl;
+      if (!apiEndpoint.endsWith('/chat/completions')) {
+        apiEndpoint = `${apiEndpoint}/chat/completions`;
+      }
+
       this.logger.info('AI文本处理请求:', {
-        baseUrl,
+        baseUrl: apiEndpoint,
         model,
         mode,
         inputText: text.substring(0, 100) + (text.length > 100 ? '...' : ''),
         requestData
       });
 
-      const response = await fetch(`${baseUrl}/chat/completions`, {
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
@@ -1614,8 +1729,12 @@ ${text}
         };
       }
     } catch (error) {
-      this.logger.error('AI文本处理失败:', error);
-      
+      this.logger.error('AI文本处理失败:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+
       let errorMessage = '文本处理失败';
       if (error.response) {
         // API错误响应
