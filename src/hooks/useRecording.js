@@ -265,7 +265,13 @@ export const useRecording = () => {
                   const result = await window.electronAPI.processText(raw_text, 'optimize');
 
                   if (result && result.success) {
-                    const processed_text = result.text;
+                    let processed_text = result.text;
+
+                    // AI 輸出也需要繁簡轉換
+                    if (shouldConvert && targetLang === 'zh-TW') {
+                      processed_text = convertText(processed_text, 'zh-TW');
+                    }
+
                     finalData.processed_text = processed_text;
                     // 如果AI优化后的文本与原始文本不同，则将优化后的文本作为主文本
                     if (processed_text && processed_text.trim() !== raw_text.trim()) {

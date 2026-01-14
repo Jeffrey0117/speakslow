@@ -18,6 +18,9 @@ import { ModelDownloadProgress } from "./components/ui/model-status-indicator";
 // 动态导入设置页面组件
 const SettingsPage = React.lazy(() => import('./settings.jsx').then(module => ({ default: module.SettingsPage })));
 
+// 动态导入 TypeLess 指示器组件
+const TypelessIndicator = React.lazy(() => import('./components/TypelessIndicator'));
+
 // 声波图标组件（空闲/悬停状态）- 使用 React.memo 優化
 const SoundWaveIcon = React.memo(({ size = 16, isActive = false }) => {
   return (
@@ -243,6 +246,15 @@ export default function App() {
     return <SettingsPageWrapper />;
   }
 
+  // TypeLess 錄音指示器頁面
+  if (page === 'typeless-indicator') {
+    return (
+      <React.Suspense fallback={<div className="w-full h-full" />}>
+        <TypelessIndicator />
+      </React.Suspense>
+    );
+  }
+
   const [isHovered, setIsHovered] = useState(false);
   const [originalText, setOriginalText] = useState("");
   const [processedText, setProcessedText] = useState("");
@@ -380,8 +392,12 @@ export default function App() {
 
         // 如果啟用，則啟動 TypeLess 模式
         if (enabled) {
-          const hotkey = await window.electronAPI.getSetting('hotkey', 'CommandOrControl+Shift+Space');
-          await window.electronAPI.enableTypelessMode(hotkey);
+          // 從快捷鍵設定中獲取 TypeLess 專用快捷鍵
+          const hotkeySettings = await window.electronAPI.getHotkeySettings();
+          const typelessHotkey = hotkeySettings?.hotkeys?.['typeless-recording'] ||
+                                 hotkeySettings?.defaults?.['typeless-recording'] ||
+                                 'Alt+Space';
+          await window.electronAPI.enableTypelessMode(typelessHotkey);
         }
       }
     };
@@ -393,8 +409,12 @@ export default function App() {
         if (data.key === 'enable_typeless_mode') {
           setTypelessMode(data.value);
           if (data.value) {
-            const hotkey = await window.electronAPI.getSetting('hotkey', 'CommandOrControl+Shift+Space');
-            await window.electronAPI.enableTypelessMode(hotkey);
+            // 從快捷鍵設定中獲取 TypeLess 專用快捷鍵
+            const hotkeySettings = await window.electronAPI.getHotkeySettings();
+            const typelessHotkey = hotkeySettings?.hotkeys?.['typeless-recording'] ||
+                                   hotkeySettings?.defaults?.['typeless-recording'] ||
+                                   'Alt+Space';
+            await window.electronAPI.enableTypelessMode(typelessHotkey);
           } else {
             await window.electronAPI.disableTypelessMode();
           }

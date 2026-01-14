@@ -8,6 +8,10 @@ const HOTKEY_ACTIONS = {
     name: '開始/停止錄音',
     description: '主要錄音切換快捷鍵',
   },
+  'typeless-recording': {
+    name: 'TypeLess 按住錄音',
+    description: '按住開始錄音，放開停止並辨識',
+  },
   'cancel-recording': {
     name: '取消錄音',
     description: '取消當前錄音不處理',
@@ -148,7 +152,7 @@ const HotkeyItem = ({ actionId, actionInfo, currentHotkey, defaultHotkey, onUpda
           toast.success(`快捷鍵已更新為 ${formatHotkey(tempHotkey)}`);
 
           // 通知其他組件快捷鍵已變更
-          if (actionId === 'toggle-recording') {
+          if (actionId === 'toggle-recording' || actionId === 'typeless-recording') {
             window.dispatchEvent(new CustomEvent('hotkey-changed', {
               detail: { hotkey: tempHotkey, actionId }
             }));

@@ -22,6 +22,7 @@ class HotkeyManager {
     // 預設快捷鍵配置
     this.defaultHotkeys = {
       'toggle-recording': 'CommandOrControl+Shift+Space',
+      'typeless-recording': 'Alt+Space',
       'cancel-recording': 'Escape',
       'show-window': 'CommandOrControl+Shift+Q',
       'copy-last': 'CommandOrControl+Shift+C',
@@ -94,6 +95,7 @@ class HotkeyManager {
   getActionName(actionId) {
     const names = {
       'toggle-recording': '開始/停止錄音',
+      'typeless-recording': 'TypeLess 按住錄音',
       'cancel-recording': '取消錄音',
       'show-window': '顯示主視窗',
       'copy-last': '複製上次結果',

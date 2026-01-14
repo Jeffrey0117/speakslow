@@ -178,7 +178,14 @@ class ClipboardManager {
   }
 
   async pasteWindows() {
-    // 不再需要 originalClipboard 參數，因為我們不恢復剪貼簿
+    // 先恢復焦點到之前的視窗，再貼上
+    if (this.previousForegroundWindow) {
+      this.safeLog("🔄 貼上前先恢復焦點到之前的視窗...");
+      await this.restoreForegroundWindow();
+      // 等待視窗切換完成
+      await new Promise(r => setTimeout(r, 100));
+    }
+
     return new Promise((resolve) => {
       const pasteProcess = spawn("powershell", [
         "-Command",
@@ -410,10 +417,9 @@ self.close
       // 方法 2: 直接用 cmd 的方式，配合預編譯的 .NET assembly
       // 但這需要額外的檔案，太複雜
 
-      // 方法 3: 用 timeout 更長的 PowerShell，但改用更簡單的命令
-      // 這次只用 Get-Process，不用 Add-Type
+      // 使用 user32.dll GetForegroundWindow 取得真正的前景視窗
       const output = execSync(
-        `powershell -NoProfile -Command "$p = Get-Process | Where-Object { $_.MainWindowHandle -ne 0 -and $_.MainWindowTitle -ne '' } | Sort-Object -Property CPU -Descending | Select-Object -First 1; if($p){$p.MainWindowHandle}else{0}"`,
+        `powershell -NoProfile -Command "Add-Type -MemberDefinition '[DllImport(\\\"user32.dll\\\")] public static extern IntPtr GetForegroundWindow();' -Name Win32 -Namespace Native; [Native.Win32]::GetForegroundWindow().ToInt64()"`,
         {
           encoding: 'utf8',
           timeout: 3000, // 3 秒
@@ -456,7 +462,7 @@ self.close
       const handle = this.previousForegroundWindow;
       this.safeLog(`🔄 嘗試恢復焦點到視窗 handle: ${handle}`);
 
-      // 使用 PowerShell 設定前景視窗
+      // 使用 PowerShell 設定前景視窗（簡化版，不改變視窗狀態）
       const psCommand = `
         Add-Type @"
           using System;
@@ -466,9 +472,6 @@ self.close
             [return: MarshalAs(UnmanagedType.Bool)]
             public static extern bool SetForegroundWindow(IntPtr hWnd);
             [DllImport("user32.dll")]
-            [return: MarshalAs(UnmanagedType.Bool)]
-            public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-            [DllImport("user32.dll")]
             public static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
             [DllImport("user32.dll")]
             public static extern uint GetWindowThreadProcessId(IntPtr hWnd, IntPtr ProcessId);
@@ -477,9 +480,6 @@ self.close
           }
 "@
         $hwnd = [IntPtr]::new(${handle})
-
-        # 先 ShowWindow 確保視窗不是最小化
-        [Win32]::ShowWindow($hwnd, 9) | Out-Null  # SW_RESTORE = 9
 
         # 嘗試 AttachThreadInput 讓 SetForegroundWindow 更可靠
         $foregroundThread = [Win32]::GetWindowThreadProcessId($hwnd, [IntPtr]::Zero)

@@ -8,6 +8,7 @@ class WindowManager {
     this.controlPanelWindow = null;
     this.historyWindow = null;
     this.settingsWindow = null;
+    this.typelessIndicatorWindow = null; // TypeLess 錄音指示器視窗
     this.isQuitting = false; // 用於判斷是否真正退出
   }
 
@@ -280,6 +281,82 @@ class WindowManager {
     }
   }
 
+  // TypeLess 錄音指示器視窗
+  async createTypelessIndicatorWindow() {
+    if (this.typelessIndicatorWindow && !this.typelessIndicatorWindow.isDestroyed()) {
+      return this.typelessIndicatorWindow;
+    }
+
+    const { screen } = require("electron");
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
+
+    // 視窗尺寸
+    const windowWidth = 200;
+    const windowHeight = 60;
+
+    this.typelessIndicatorWindow = new BrowserWindow({
+      width: windowWidth,
+      height: windowHeight,
+      x: Math.round((screenWidth - windowWidth) / 2), // 螢幕正中間
+      y: screenHeight - windowHeight - 80, // 螢幕底部（留一些空間給任務欄）
+      frame: false,
+      transparent: true,
+      alwaysOnTop: true,
+      resizable: false,
+      skipTaskbar: true,
+      focusable: false,
+      show: false,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+        preload: path.join(__dirname, "..", "..", "preload.js"),
+      },
+    });
+
+    const isDev = process.env.NODE_ENV === "development";
+
+    if (isDev) {
+      await this.typelessIndicatorWindow.loadURL("http://localhost:5173?page=typeless-indicator");
+    } else {
+      await this.typelessIndicatorWindow.loadFile(
+        path.join(__dirname, "..", "dist", "index.html"),
+        { query: { page: "typeless-indicator" } }
+      );
+    }
+
+    this.typelessIndicatorWindow.on("closed", () => {
+      this.typelessIndicatorWindow = null;
+    });
+
+    return this.typelessIndicatorWindow;
+  }
+
+  showTypelessIndicator() {
+    if (this.typelessIndicatorWindow && !this.typelessIndicatorWindow.isDestroyed()) {
+      this.typelessIndicatorWindow.show();
+    } else {
+      this.createTypelessIndicatorWindow().then(() => {
+        if (this.typelessIndicatorWindow) {
+          this.typelessIndicatorWindow.show();
+        }
+      });
+    }
+  }
+
+  hideTypelessIndicator() {
+    if (this.typelessIndicatorWindow && !this.typelessIndicatorWindow.isDestroyed()) {
+      this.typelessIndicatorWindow.hide();
+    }
+  }
+
+  closeTypelessIndicator() {
+    if (this.typelessIndicatorWindow && !this.typelessIndicatorWindow.isDestroyed()) {
+      this.typelessIndicatorWindow.close();
+      this.typelessIndicatorWindow = null;
+    }
+  }
+
   closeAllWindows() {
     if (this.mainWindow) {
       this.mainWindow.close();
@@ -292,6 +369,9 @@ class WindowManager {
     }
     if (this.settingsWindow) {
       this.settingsWindow.close();
+    }
+    if (this.typelessIndicatorWindow) {
+      this.typelessIndicatorWindow.close();
     }
   }
 }

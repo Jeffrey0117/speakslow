@@ -857,6 +857,10 @@ class IPCHandlers {
             } catch (err) {
               this.logger.warn('TypeLess: 儲存前景視窗失敗:', err.message);
             }
+            // 顯示錄音指示器視窗
+            if (this.windowManager) {
+              this.windowManager.showTypelessIndicator();
+            }
             // 發送開始錄音事件到渲染進程
             if (this.windowManager?.mainWindow && !this.windowManager.mainWindow.isDestroyed()) {
               this.windowManager.mainWindow.webContents.send("typeless-start-recording");
@@ -864,6 +868,10 @@ class IPCHandlers {
           },
           onStopRecording: () => {
             this.logger.info('TypeLess: 觸發停止錄音');
+            // 隱藏錄音指示器視窗
+            if (this.windowManager) {
+              this.windowManager.hideTypelessIndicator();
+            }
             // 發送停止錄音事件到渲染進程
             if (this.windowManager?.mainWindow && !this.windowManager.mainWindow.isDestroyed()) {
               this.windowManager.mainWindow.webContents.send("typeless-stop-recording");
@@ -945,9 +953,12 @@ class IPCHandlers {
         const defaultHotkeys = this.hotkeyManager.getDefaultHotkeys();
         const currentBindings = this.hotkeyManager.getHotkeyBindings();
 
+        // 合併：預設值為基礎，已保存的設定覆蓋（確保新增的快捷鍵也會顯示）
+        const mergedHotkeys = { ...defaultHotkeys, ...(savedHotkeys || {}), ...currentBindings };
+
         return {
           success: true,
-          hotkeys: savedHotkeys || currentBindings || defaultHotkeys,
+          hotkeys: mergedHotkeys,
           defaults: defaultHotkeys,
         };
       } catch (error) {
@@ -1104,10 +1115,11 @@ class IPCHandlers {
           }
         });
 
-        // 從資料庫讀取設定
+        // 從資料庫讀取設定，並與預設值合併（確保新增的快捷鍵也會被註冊）
         const savedHotkeys = await this.databaseManager.getSetting('custom_hotkeys', null);
         const defaults = this.hotkeyManager.getDefaultHotkeys();
-        const hotkeyConfig = savedHotkeys || defaults;
+        // 合併：預設值為基礎，已保存的設定覆蓋
+        const hotkeyConfig = { ...defaults, ...(savedHotkeys || {}) };
 
         // 註冊所有快捷鍵
         const results = {};
