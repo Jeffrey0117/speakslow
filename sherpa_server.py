@@ -943,12 +943,11 @@ class SherpaServer:
             samples, sample_rate = self._read_wave_file(audio_path)
             duration = len(samples) / sample_rate
 
-            # 音頻預處理：正規化音量、簡易降噪
-            samples = self._preprocess_audio(samples)
-
-            # 跳過 VAD，直接使用預處理後的音頻（速度優先）
-            # speech_samples, skipped_duration = self._extract_speech_segments(samples, sample_rate)
-            # self.vad_skipped_duration += skipped_duration
+            # 只做音量正規化，不做降噪和 VAD（平衡速度和準確度）
+            max_val = np.max(np.abs(samples))
+            if max_val > 0 and max_val < 0.1:
+                gain = min(0.7 / max_val, 5.0)
+                samples = samples * gain
             speech_samples = samples
             skipped_duration = 0.0
 
