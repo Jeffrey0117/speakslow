@@ -946,27 +946,13 @@ class SherpaServer:
             # 音頻預處理：正規化音量、簡易降噪
             samples = self._preprocess_audio(samples)
 
-            # 使用 VAD 提取語音段（跳過靜音）
-            speech_samples, skipped_duration = self._extract_speech_segments(samples, sample_rate)
-            self.vad_skipped_duration += skipped_duration
+            # 跳過 VAD，直接使用預處理後的音頻（速度優先）
+            # speech_samples, skipped_duration = self._extract_speech_segments(samples, sample_rate)
+            # self.vad_skipped_duration += skipped_duration
+            speech_samples = samples
+            skipped_duration = 0.0
 
-            # 如果 VAD 提取後無語音，返回空結果
-            if len(speech_samples) == 0:
-                logger.warning("VAD 提取後無語音內容")
-                return {
-                    "success": True,
-                    "text": "",
-                    "raw_text": "",
-                    "confidence": 0.0,
-                    "duration": duration,
-                    "language": "zh-CN",
-                    "model_type": "sherpa-onnx",
-                    "rtf": 0.0,
-                    "process_time": time.time() - start_time,
-                    "vad_skipped": skipped_duration,
-                }
-
-            # 創建流並識別（使用 VAD 提取的語音段）
+            # 創建流並識別
             stream = self.recognizer.create_stream()
             stream.accept_waveform(sample_rate, speech_samples)
 
