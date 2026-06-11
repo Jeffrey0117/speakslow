@@ -294,7 +294,6 @@ export default function App() {
   const [processedText, setProcessedText] = useState("");
   const [showTextArea, setShowTextArea] = useState(false);
   const [stats, setStats] = useState(null); // 累計統計（次數 / 字數）
-  const [aiProcessing, setAiProcessing] = useState(null); // 隨選 AI：目前處理中的模式
   const [showSettings, setShowSettings] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(true); // 視窗置頂狀態
@@ -604,25 +603,6 @@ export default function App() {
     // 轉錄完成、字數已寫入資料庫後，檢查是否突破新等級
     setTimeout(() => checkLevelUp(), 400);
   }, [safePaste, checkLevelUp]);
-
-  // 隨選 AI：對目前面板文字套用指定模式（潤飾 / 排版 / 校稿 / 摘要）
-  const applyAIMode = useCallback(async (mode) => {
-    const src = processedText || originalText;
-    if (!src || aiProcessing || !window.electronAPI?.processText) return;
-    setAiProcessing(mode);
-    try {
-      const res = await window.electronAPI.processText(src, mode);
-      if (res?.success && res.text) {
-        setProcessedText(res.text);
-      } else {
-        toast.error(res?.error || 'AI 處理失敗（請先在設定填 AI API 或本地 LLM 位址）');
-      }
-    } catch (e) {
-      toast.error('AI 處理失敗：' + (e?.message || e));
-    } finally {
-      setAiProcessing(null);
-    }
-  }, [processedText, originalText, aiProcessing]);
 
   // 设置转录完成回调
   useEffect(() => {
@@ -1288,31 +1268,6 @@ export default function App() {
             <IdlePlaceholder />
           )}
         </div>
-
-        {/* 隨選 AI：有文字時顯示，手動套用模式（需在設定填 AI / 本地 LLM）*/}
-        {(originalText || processedText) && (
-          <div className="flex-shrink-0 flex items-center justify-center gap-1.5 pt-1 pb-0.5 select-none">
-            {[
-              { mode: 'optimize', label: '潤飾' },
-              { mode: 'format', label: '排版' },
-              { mode: 'correct', label: '校稿' },
-              { mode: 'summarize', label: '摘要' },
-            ].map(({ mode, label }) => (
-              <button
-                key={mode}
-                onClick={() => applyAIMode(mode)}
-                disabled={!!aiProcessing}
-                title={`AI ${label}`}
-                className="px-2.5 py-1 text-[11px] rounded-full bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors disabled:opacity-40 flex items-center gap-1"
-              >
-                {aiProcessing === mode && (
-                  <span className="inline-block w-2.5 h-2.5 border border-purple-400 border-t-transparent rounded-full animate-spin" />
-                )}
-                {label}
-              </button>
-            ))}
-          </div>
-        )}
 
         {/* 底部列：左=次數、中=署名、右=字數（mt-auto 推到最底）*/}
         <div className="mt-auto flex-shrink-0 flex items-center justify-between gap-2 px-1 pt-1.5 text-[11px] select-none">
