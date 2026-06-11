@@ -201,7 +201,7 @@ const TextDisplay = React.memo(({ originalText, processedText, onCopy, t }) => {
   }
 
   return (
-    <div className="relative bg-slate-100/80 dark:bg-gray-800/80 rounded-lg p-4 pr-12 shadow-sm">
+    <div className="relative bg-white/90 dark:bg-gray-800/90 rounded-xl p-4 pr-12 shadow-md border border-gray-200/70 dark:border-gray-700/60">
       {/* 右上角複製按鈕 */}
       <button
         onClick={() => onCopy(displayText)}
@@ -971,12 +971,12 @@ export default function App() {
   const micProps = getMicButtonProps();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 pb-4 rounded-3xl overflow-hidden">
+    <div className="h-screen bg-gradient-to-br from-slate-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 rounded-3xl overflow-hidden">
       {/* 主界面 */}
-      <div className="max-w-2xl mx-auto min-h-screen flex flex-col">
+      <div className="max-w-2xl mx-auto h-full flex flex-col">
         {/* 标题栏 */}
         <div
-          className="flex flex-col mb-8 draggable"
+          className="flex flex-col mb-5 draggable"
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
@@ -1040,7 +1040,7 @@ export default function App() {
         </div>
 
         {/* 录音控制区域 */}
-        <div className="text-center mb-8 flex-shrink-0">
+        <div className="text-center mb-5 flex-shrink-0">
           <Tooltip content={micProps.tooltip}>
             <button
               onClick={(e) => {

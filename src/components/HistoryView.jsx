@@ -36,23 +36,23 @@ const StatsBanner = ({ stats }) => {
   }
 
   return (
-    <div className={`border-2 ${borderClass} rounded-xl mb-4 bg-white dark:bg-gray-800`}>
-      <div className="p-4">
+    <div className={`border-2 ${borderClass} rounded-xl mb-3 bg-white dark:bg-gray-800`}>
+      <div className="p-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <span className="text-3xl">{emoji}</span>
+          <div className="flex items-center space-x-2.5">
+            <span className="text-2xl">{emoji}</span>
             <div>
               <div className="flex items-baseline space-x-1 flex-wrap">
-                <span className="text-sm text-gray-600 dark:text-gray-400">已經幫你辨識了</span>
-                <span className={`text-2xl font-bold ${getNumberColorClass(color)}`}>
+                <span className="text-xs text-gray-600 dark:text-gray-400">已經幫你辨識了</span>
+                <span className={`text-lg font-bold ${getNumberColorClass(color)}`}>
                   {(stats.totalChars || 0).toLocaleString()}
                 </span>
-                <span className="text-sm text-gray-600 dark:text-gray-400">個字</span>
+                <span className="text-xs text-gray-600 dark:text-gray-400">個字</span>
               </div>
-              <p className="text-sm text-gray-500 dark:text-gray-500 mt-0.5">{message}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-500 mt-0.5">{message}</p>
             </div>
           </div>
-          <div className="text-right text-sm text-gray-500 dark:text-gray-400">
+          <div className="text-right text-xs text-gray-500 dark:text-gray-400">
             <div>{stats.total || 0} 次辨識</div>
             {(stats.totalDuration || 0) > 0 && (
               <div>累計 {Math.round((stats.totalDuration || 0) / 60)} 分鐘</div>
@@ -202,13 +202,13 @@ export const HistoryView = () => {
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             {filteredTranscriptions.map((item) => (
               <div
                 key={item.id}
-                className="bg-white dark:bg-gray-800 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow border border-gray-200 dark:border-gray-700"
+                className="bg-white dark:bg-gray-800 rounded-lg p-3.5 shadow-sm hover:shadow-md transition-shadow border border-gray-200 dark:border-gray-700"
               >
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center space-x-3 text-sm text-gray-500 dark:text-gray-400">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -242,24 +242,24 @@ export const HistoryView = () => {
                   </div>
                 </div>
 
-                <div className="mb-3">
-                  <p className="chinese-content leading-relaxed bg-gray-50 dark:bg-gray-700/60 p-4 rounded-lg border dark:border-gray-600/30">
+                <div>
+                  <p className="chinese-content text-sm leading-normal bg-gray-50 dark:bg-gray-700/60 p-3 rounded-lg border dark:border-gray-600/30">
                     {item.text}
                   </p>
                 </div>
 
                 {item.processed_text && item.processed_text.trim() !== (item.raw_text || '').trim() && (
-                  <div className="mb-3">
-                    <h4 className="text-sm font-medium text-emerald-700 dark:text-emerald-400 mb-2">{t('history.aiOptimized')}：</h4>
-                    <p className="chinese-content leading-relaxed bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-lg border border-emerald-200 dark:border-emerald-700">
+                  <div className="mt-2">
+                    <h4 className="text-xs font-medium text-emerald-700 dark:text-emerald-400 mb-1.5">{t('history.aiOptimized')}：</h4>
+                    <p className="chinese-content text-sm leading-normal bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-lg border border-emerald-200 dark:border-emerald-700">
                       {item.processed_text}
                     </p>
                   </div>
                 )}
 
                 {item.raw_text && item.raw_text.trim() !== item.text.trim() && (
-                  <div>
-                    <p className="text-xs chinese-content leading-relaxed bg-gray-100 dark:bg-gray-700/40 p-3 rounded-lg border dark:border-gray-600/20 text-gray-600 dark:text-gray-200">
+                  <div className="mt-2">
+                    <p className="text-xs chinese-content leading-normal bg-gray-100 dark:bg-gray-700/40 p-2.5 rounded-lg border dark:border-gray-600/20 text-gray-600 dark:text-gray-200">
                       {item.raw_text}
                     </p>
                   </div>

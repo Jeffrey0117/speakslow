@@ -43,7 +43,7 @@ class WindowManager {
 
     this.mainWindow = new BrowserWindow({
       width: 400,
-      height: 500,
+      height: 450,
       frame: false,
       transparent: true,
       alwaysOnTop: alwaysOnTop,
@@ -183,8 +183,10 @@ class WindowManager {
     }
 
     this.settingsWindow = new BrowserWindow({
-      width: 700,
-      height: 600,
+      width: 920,
+      height: 780,
+      minWidth: 820,
+      minHeight: 640,
       show: false,
       title: "設定 - 聲聲慢",
       frame: false,          // 移除原生標題列（改用 settings.jsx 內的自訂標題列）
