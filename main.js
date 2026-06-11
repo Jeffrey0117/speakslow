@@ -114,6 +114,27 @@ function setupProductionPath() {
 // 在初始化管理器之前设置PATH
 setupProductionPath();
 
+// 計算 BUILD 版本標記（git short hash + 啟動時間），方便確認「現在跑哪一版」
+function getBuildInfo() {
+  let commit = "unknown";
+  try {
+    commit = require("child_process")
+      .execSync("git rev-parse --short HEAD", {
+        cwd: __dirname,
+        stdio: ["ignore", "pipe", "ignore"],
+      })
+      .toString()
+      .trim();
+  } catch (e) {
+    commit = "n/a";
+  }
+  return { commit, version: app.getVersion(), startedAt: new Date().toISOString() };
+}
+const BUILD_INFO = getBuildInfo();
+logger.info(
+  `🏷️ BUILD ququ v${BUILD_INFO.version} commit=${BUILD_INFO.commit} started=${BUILD_INFO.startedAt}`
+);
+
 // 用户数据目录环境变量将在 app ready 后设置
 
 // 初始化管理器
