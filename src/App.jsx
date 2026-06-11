@@ -1258,10 +1258,10 @@ export default function App() {
         </div>
 
         {/* 底部列：左=次數、中=署名、右=字數（mt-auto 推到最底）*/}
-        <div className="mt-auto flex-shrink-0 flex items-center justify-between gap-2 px-1 pt-1.5 text-[11px] text-gray-400 dark:text-gray-600 select-none">
-          <span className="tabular-nums">用了 {stats?.total || 0} 次</span>
-          <span className="tracking-wide whitespace-nowrap">聲聲慢 · by 切版職人</span>
-          <span className="tabular-nums">{(stats?.totalChars || 0).toLocaleString()} 字</span>
+        <div className="mt-auto flex-shrink-0 flex items-center justify-between gap-2 px-1 pt-1.5 text-[11px] select-none">
+          <span className="tabular-nums text-sky-500/80 dark:text-sky-400/70">用了 {stats?.total || 0} 次</span>
+          <span className="tracking-wide whitespace-nowrap text-gray-400 dark:text-gray-600">聲聲慢 · by 切版職人</span>
+          <span className="tabular-nums text-sky-500/80 dark:text-sky-400/70">{(stats?.totalChars || 0).toLocaleString()} 字</span>
         </div>
       </div>
       </div>
