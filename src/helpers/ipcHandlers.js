@@ -1596,6 +1596,21 @@ class IPCHandlers {
     });
   }
 
+  // 砍掉小模型常亂加的前言/解釋/代碼框，只留結果本身
+  _stripAIPreamble(s) {
+    let t = (s || '').trim();
+    t = t.replace(/^```[a-zA-Z]*\s*\n?/, '').replace(/\n?```\s*$/, '').trim();
+    const lines = t.split('\n');
+    if (lines.length > 1) {
+      const first = lines[0].trim();
+      if (/[：:]\s*$/.test(first) && /(修正|優化|优化|以下|文本|結果|结果|根據|根据|如下|整理|here|following|result)/i.test(first)) {
+        t = lines.slice(1).join('\n').trim();
+      }
+    }
+    t = t.replace(/^```[a-zA-Z]*\s*\n?/, '').replace(/\n?```\s*$/, '').trim();
+    return t;
+  }
+
   // AI文本处理方法
   async processTextWithAI(text, mode = 'optimize') {
     try {
@@ -1724,6 +1739,10 @@ ${text}
         model: model,
         messages: [
           {
+            role: 'system',
+            content: '你是一個文字處理引擎。你的唯一輸出就是「處理後的最終文字本身」。絕對禁止任何前言、說明、解釋、標題、引號或 markdown 代碼框（```）。不要說「以下是」「優化後的文本」「根據核心原則」這類話，直接給結果。'
+          },
+          {
             role: 'user',
             content: prompts[mode] || prompts.optimize
           }
@@ -1778,7 +1797,7 @@ ${text}
       if (data.choices && data.choices.length > 0) {
         const result = {
           success: true,
-          text: data.choices[0].message.content.trim(),
+          text: this._stripAIPreamble(data.choices[0].message.content),
           usage: data.usage,
           model: model
         };
