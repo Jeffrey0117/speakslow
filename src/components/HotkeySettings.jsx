@@ -4,10 +4,6 @@ import { toast } from "sonner";
 
 // 快捷鍵操作定義
 const HOTKEY_ACTIONS = {
-  'toggle-recording': {
-    name: '開始/停止錄音',
-    description: '主要錄音切換快捷鍵',
-  },
   'typeless-recording': {
     name: 'TypeLess 模式',
     description: '右 Alt 單擊開始錄音，再按一次停止並貼到當前游標處（固定為右 Alt）',

@@ -20,9 +20,9 @@ class HotkeyManager {
     this.hotkeyBindings = new Map();
 
     // 預設快捷鍵配置
+    // 註：錄音已統一為 TypeLess「右 Alt」（由 TypelessManager 處理，非 globalShortcut），
+    //     故不再註冊 toggle-recording（Ctrl+Shift+Space）。
     this.defaultHotkeys = {
-      'toggle-recording': 'CommandOrControl+Shift+Space',
-      'typeless-recording': 'Alt+Space',
       'cancel-recording': 'Escape',
       'show-window': 'CommandOrControl+Shift+Q',
       'copy-last': 'CommandOrControl+Shift+C',

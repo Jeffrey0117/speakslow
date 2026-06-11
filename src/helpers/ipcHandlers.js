@@ -1122,8 +1122,12 @@ class IPCHandlers {
         const hotkeyConfig = { ...defaults, ...(savedHotkeys || {}) };
 
         // 註冊所有快捷鍵
+        // 略過已停用的錄音熱鍵：toggle-recording（已統一為 TypeLess 右 Alt）
+        // 與 typeless-recording（由 TypelessManager 以 uiohook 處理，非 globalShortcut）
+        const SKIP_ACTIONS = new Set(['toggle-recording', 'typeless-recording']);
         const results = {};
         for (const [actionId, accelerator] of Object.entries(hotkeyConfig)) {
+          if (SKIP_ACTIONS.has(actionId)) continue;
           results[actionId] = this.hotkeyManager.registerActionHotkey(actionId, accelerator);
         }
 

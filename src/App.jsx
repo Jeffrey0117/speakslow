@@ -387,7 +387,7 @@ export default function App() {
   useEffect(() => {
     const loadTypelessMode = async () => {
       if (window.electronAPI) {
-        const enabled = await window.electronAPI.getSetting('enable_typeless_mode', false);
+        const enabled = await window.electronAPI.getSetting('enable_typeless_mode', true);
         setTypelessMode(enabled);
 
         // 如果啟用，則啟動 TypeLess 模式

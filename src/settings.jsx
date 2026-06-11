@@ -20,7 +20,7 @@ const SettingsPage = () => {
     enable_ai_optimization: false,
     enable_notifications: true,
     enable_streaming_mode: false,
-    enable_typeless_mode: false,      // TypeLess 模式（按住錄音）
+    enable_typeless_mode: true,       // TypeLess 模式（右 Alt 單擊切換，預設開啟）
     language: "zh-TW",
     convert_transcription: true,
     // 錄音完成後動作設定
@@ -72,7 +72,7 @@ const SettingsPage = () => {
           enable_ai_optimization: allSettings.enable_ai_optimization === true, // 默认为false
           enable_notifications: allSettings.enable_notifications !== false, // 默认为true
           enable_streaming_mode: allSettings.enable_streaming_mode === true, // 默認關閉
-          enable_typeless_mode: allSettings.enable_typeless_mode === true, // TypeLess 默認關閉
+          enable_typeless_mode: allSettings.enable_typeless_mode !== false, // TypeLess 默認開啟
           language: allSettings.language || "zh-TW", // 默认繁体中文
           convert_transcription: allSettings.convert_transcription !== false, // 默认转换
           // 錄音完成後動作設定
