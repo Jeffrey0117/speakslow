@@ -653,7 +653,7 @@ class SherpaServer:
         rec.decode_stream(stream)
         return (stream.result.text or "").strip()
 
-    def _apply_pause_breaks(self, result, break_gap=0.8):
+    def _apply_pause_breaks(self, result, break_gap=1.1):
         """用逐字時間戳的「停頓」插入換行：字間隔 >= break_gap 秒視為一次斷句，插入 \\n。
         連續講話約 0.1~0.2s，真正停頓 0.5~2.7s，分得很開。
         token 對齊不到（含英文 subword）時放棄斷行，回傳原文字。"""
