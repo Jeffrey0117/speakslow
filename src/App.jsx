@@ -191,7 +191,7 @@ const Tooltip = ({ children, content, position = "top" }) => {
 
 // 文本显示区域组件 - 簡化版，只顯示一個結果
 // 移除了 isProcessing 時的載入文字，避免閃跳
-const TextDisplay = React.memo(({ originalText, processedText, onCopy, t }) => {
+const TextDisplay = React.memo(({ originalText, processedText, scrollRef, t }) => {
   // 顯示的文字：優先顯示 AI 優化後的，沒有就顯示原始的
   const displayText = processedText || originalText;
 
@@ -201,22 +201,14 @@ const TextDisplay = React.memo(({ originalText, processedText, onCopy, t }) => {
   }
 
   return (
-    <div className="fade-in">
-      {/* 複製按鈕：移到文字卡片上方，文字區塊不再留右側空白 */}
-      <div className="flex justify-end mb-1">
-        <button
-          onClick={() => onCopy(displayText)}
-          className="p-1.5 hover:bg-slate-200/70 dark:hover:bg-gray-700/70 rounded-md transition-colors"
-          title={t ? t('app.copy') : "複製文字"}
-        >
-          <Copy className="w-4 h-4 text-slate-500 dark:text-gray-400" />
-        </button>
-      </div>
-
-      <div className="bg-white/90 dark:bg-gray-800/90 rounded-xl p-4 shadow-md border border-gray-200/70 dark:border-gray-700/60">
-        <p className="chinese-content text-gray-800 dark:text-gray-200 leading-relaxed">
-          {displayText}
-        </p>
+    <div className="fade-in h-full min-h-0">
+      {/* 卡片固定，捲動軸在卡片內部（複製鈕已移到上方標題列）*/}
+      <div className="h-full bg-white/90 dark:bg-gray-800/90 rounded-xl shadow-md border border-gray-200/70 dark:border-gray-700/60 flex flex-col overflow-hidden">
+        <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto p-4 panel-scroll">
+          <p className="chinese-content text-gray-800 dark:text-gray-200 leading-relaxed">
+            {displayText}
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -999,6 +991,16 @@ export default function App() {
               {t('appName')}
             </h1>
           <div className="flex items-center space-x-2 non-draggable">
+            {(originalText || processedText) && (
+              <Tooltip content={t('app.copy') || '複製'} position="bottom">
+                <button
+                  onClick={() => handleCopyText(processedText || originalText)}
+                  className="p-2.5 hover:bg-white/70 dark:hover:bg-gray-700/70 rounded-xl transition-colors"
+                >
+                  <Copy className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                </button>
+              </Tooltip>
+            )}
             <Tooltip content={t('app.settings')} position="bottom">
               <button
                 onClick={handleOpenSettings}
@@ -1151,12 +1153,12 @@ export default function App() {
           </div>
         )}
 
-        {/* 文本显示区域 - 可滚动（新文字出現時自動捲到底）*/}
-        <div ref={textScrollRef} className="flex-1 min-h-0 text-area-scroll">
+        {/* 文本显示区域（卡片內部捲動，新文字自動捲到底）*/}
+        <div className="flex-1 min-h-0">
           <TextDisplay
             originalText={originalText}
             processedText={processedText}
-            onCopy={handleCopyText}
+            scrollRef={textScrollRef}
             t={t}
           />
         </div>
