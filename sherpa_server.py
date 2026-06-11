@@ -35,6 +35,58 @@ def to_traditional(text):
     except Exception:
         return text
 
+
+def normalize_ascii_width(text):
+    """全形英文字母 / 數字 → 半形（不動中文與全形標點，避免破壞，。？）"""
+    if not text:
+        return text
+    out = []
+    for ch in text:
+        code = ord(ch)
+        if 0xFF10 <= code <= 0xFF19 or 0xFF21 <= code <= 0xFF3A or 0xFF41 <= code <= 0xFF5A:
+            out.append(chr(code - 0xFEE0))  # 全形數字/字母 → 半形
+        else:
+            out.append(ch)
+    return ''.join(out)
+
+
+# 幾乎不可能是疊字的字（人稱代詞 + 結構虛詞）：連續重複視為口吃，收成 1 個。
+_NON_REDUP_CHARS = set("我你妳他她它您是的了在把被將就都和跟與而並且或但卻則之其從向對為")
+
+
+def collapse_repeats(text):
+    """去除口吃式重複字，但保留正常疊字（慢慢、謝謝）。
+    - 口吃字（_NON_REDUP_CHARS）連續重複 → 留 1 個
+    - 其他中文字連續 → 最多留 2 個（保住 AA 疊字、截斷過長口吃）
+    - 非中文（英文/數字/標點）不動
+    """
+    if not text:
+        return text
+    out = []
+    i, n = 0, len(text)
+    while i < n:
+        ch = text[i]
+        j = i
+        while j < n and text[j] == ch:
+            j += 1
+        run = j - i
+        if run >= 2 and 0x4E00 <= ord(ch) <= 0x9FFF:
+            if ch in _NON_REDUP_CHARS:
+                out.append(ch)
+            else:
+                out.append(ch * 2)
+        else:
+            out.append(ch * run)
+        i = j
+    return ''.join(out)
+
+
+def clean_transcript(text):
+    """辨識後文字清理：全形→半形 + 去口吃重複"""
+    if not text:
+        return text
+    return collapse_repeats(normalize_ascii_width(text))
+
 # 設置日誌
 def get_log_path():
     if "ELECTRON_USER_DATA" in os.environ:
@@ -939,7 +991,7 @@ class SherpaServer:
             return {
                 "success": True,
                 "session_id": session_id,
-                "final_text": to_traditional(text_with_punc),
+                "final_text": to_traditional(clean_transcript(text_with_punc)),
                 "raw_text": to_traditional(raw_text),
                 "duration": round(duration, 2),
                 "process_time": round(elapsed, 2),
@@ -1009,6 +1061,9 @@ class SherpaServer:
             # 執行識別
             self.recognizer.decode_stream(stream)
             text = stream.result.text
+
+            # 文字清理：全形英文→半形 + 去口吃重複（保留正常疊字）
+            text = clean_transcript(text)
 
             elapsed = time.time() - start_time
             rtf = elapsed / duration
