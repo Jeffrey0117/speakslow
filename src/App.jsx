@@ -472,27 +472,24 @@ export default function App() {
     lastPasteRef.current = { text, timestamp: now };
 
     try {
-      // 先用 navigator.clipboard 直接在前端寫入（不管設定如何都寫入剪貼簿）
-      try {
-        await navigator.clipboard.writeText(text);
-        await new Promise(resolve => setTimeout(resolve, 50));
-      } catch (clipErr) {
-        // 備用：用 Electron 寫入剪貼簿
-        if (window.electronAPI) {
-          await window.electronAPI.copyText(text);
-          await new Promise(resolve => setTimeout(resolve, 50));
-        }
-      }
-
-      // 根據設定決定是否自動貼上
       if (pasteAfterTranscription && window.electronAPI) {
+        // 貼上模式：完全交由主進程處理剪貼簿（保存原本 → 寫入辨識文字 → 貼上 → 還原原本）
+        // 不在前端先寫剪貼簿，否則主進程會把「辨識文字」誤當成原本內容
         await window.electronAPI.pasteText(text);
 
         // 如果啟用完全信任模式，貼上後自動發送 Enter
         if (autoEnterAfterPaste) {
-          // 稍微等待貼上完成
           await new Promise(resolve => setTimeout(resolve, 100));
           await window.electronAPI.sendEnter();
+        }
+      } else {
+        // 不自動貼上：把辨識文字放到剪貼簿，供使用者手動貼上（此情況不還原）
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch (clipErr) {
+          if (window.electronAPI) {
+            await window.electronAPI.copyText(text);
+          }
         }
       }
 

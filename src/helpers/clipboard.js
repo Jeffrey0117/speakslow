@@ -182,15 +182,28 @@ class ClipboardManager {
       this.safeLog("🎯 pasteText:", text?.substring(0, 30));
 
       if (process.platform === "win32") {
-        // Windows: 前端已經用 navigator.clipboard 寫入了
+        // 先保存使用者原本的剪貼簿，貼上後再還原，避免覆蓋掉他複製的東西
+        const originalClipboard = clipboard.readText();
+        clipboard.writeText(text);
+
         // 優先用常駐 PowerShell 快速還原焦點 + 貼上（~0.1 秒）
         if (this.focusAndPasteFast()) {
           this.safeLog("⚡ 快速貼上 (常駐 PS, 還原焦點 + Ctrl+V)");
-          return;
+        } else {
+          // 回退：舊的 spawn 方式（每次 Add-Type，較慢）
+          this.safeLog("⌨️ 嘗試自動貼上 (SendKeys 回退)");
+          await this.pasteWindows();
         }
-        // 回退：舊的 spawn 方式（每次 Add-Type，較慢）
-        this.safeLog("⌨️ 嘗試自動貼上 (SendKeys 回退)");
-        await this.pasteWindows();
+
+        // 等貼上完成後還原原本的剪貼簿內容（給足 Ctrl+V 讀取的時間）
+        setTimeout(() => {
+          try {
+            clipboard.writeText(originalClipboard);
+            this.safeLog("↩️ 已還原使用者原本的剪貼簿");
+          } catch (e) {
+            // 還原失敗不影響貼上
+          }
+        }, 400);
         return;
       }
 
