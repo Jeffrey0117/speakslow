@@ -6,7 +6,7 @@ import { toast } from "sonner";
 const HOTKEY_ACTIONS = {
   'typeless-recording': {
     name: 'TypeLess 模式',
-    description: '右 Alt 單擊開始錄音，再按一次停止並貼到當前游標處。錄音中按 Esc 可取消（固定）',
+    description: '右 Alt 或右 Ctrl 單擊開始錄音，再按一次停止並貼到游標處。瀏覽器裡建議用右 Ctrl（右 Alt 會觸發瀏覽器選單）。錄音中按 Esc 可取消（固定）',
   },
   'show-window': {
     name: '顯示主視窗',
@@ -197,7 +197,7 @@ const HotkeyItem = ({ actionId, actionInfo, currentHotkey, defaultHotkey, onUpda
       <div className="flex items-center gap-2">
         {isTypeless ? (
           <div className="flex-1 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-center font-mono text-gray-700 dark:text-gray-300">
-            右 Alt（單擊切換）
+            右 Alt / 右 Ctrl（單擊切換）
           </div>
         ) : isRecording ? (
           <>

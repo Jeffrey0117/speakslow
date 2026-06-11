@@ -10,8 +10,9 @@ class TypelessManager {
     this.logger = logger;
     this.isEnabled = false;
     this.isKeyDown = false;
-    // 預設：右 Alt（單擊切換）。uiohook 能區分左右 Alt（AltRight=3640）
-    this.triggerKey = UiohookKey.AltRight;
+    // 觸發鍵（單擊切換）：右 Alt + 右 Ctrl 都可。
+    // 在瀏覽器裡用右 Ctrl 可避開「右 Alt 放開觸發選單列」的衝突。
+    this.triggerKeys = [UiohookKey.AltRight, UiohookKey.CtrlRight];
     this.modifiers = {
       ctrl: false,
       shift: false,
@@ -69,7 +70,7 @@ class TypelessManager {
       return;
     }
 
-    if (event.keycode !== this.triggerKey) return;
+    if (!this.triggerKeys.includes(event.keycode)) return;
 
     if (this.mode === 'toggle') {
       // 單擊切換：忽略長按造成的自動重複（keydown 會連續觸發）
@@ -102,7 +103,7 @@ class TypelessManager {
    */
   handleKeyUp(event) {
     if (!this.isEnabled) return;
-    if (event.keycode !== this.triggerKey) return;
+    if (!this.triggerKeys.includes(event.keycode)) return;
 
     // 放開觸發鍵：解除長按鎖定
     this.triggerHeld = false;
@@ -180,13 +181,13 @@ class TypelessManager {
    * 設定為「右 Alt 單擊切換」模式（TypeLess 預設）
    */
   setRightAltToggle() {
-    this.triggerKey = UiohookKey.AltRight;
+    this.triggerKeys = [UiohookKey.AltRight, UiohookKey.CtrlRight];
     this.modifiers = { ctrl: false, shift: false, alt: false, meta: false };
     this.mode = 'toggle';
     this.isActive = false;
     this.triggerHeld = false;
-    this.safeLog('info', 'TypeLess 設定為「右 Alt 單擊切換」', {
-      triggerKey: this.triggerKey,
+    this.safeLog('info', 'TypeLess 設定為「右 Alt / 右 Ctrl 單擊切換」', {
+      triggerKeys: this.triggerKeys,
     });
   }
 
@@ -247,7 +248,7 @@ class TypelessManager {
     }
 
     if (triggerKey) {
-      this.triggerKey = triggerKey;
+      this.triggerKeys = [triggerKey];
       this.modifiers = modifiers;
       this.safeLog('info', `TypeLess 快捷鍵已設置: ${accelerator}`, { triggerKey, modifiers });
     } else {

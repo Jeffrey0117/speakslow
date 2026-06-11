@@ -221,7 +221,8 @@ const TextDisplay = React.memo(({ originalText, processedText, scrollRef, t }) =
 // 空閒/錄音時的趣味輪播文字：重用使用者手寫的白爛句 + 幾句操作提示
 const IDLE_MESSAGES = [
   ...PROCESSING_MESSAGES,
-  "按一下右 Alt 開始錄音 🎤",
+  "按右 Alt 或右 Ctrl 開始錄音 🎤",
+  "瀏覽器裡用右 Ctrl 比較順（避開選單）",
   "講完自動貼到游標處 ✨",
   "錄音中按 Esc 可以取消喔",
   "本地辨識，講什麼都不外流 🔒",

@@ -5,8 +5,8 @@ import { useState, useCallback, useRef } from 'react';
  * 处理全局快捷键功能，包括F2双击功能
  */
 export const useHotkey = () => {
-  // 錄音熱鍵已統一為 TypeLess「右 Alt」（單擊切換），由 TypelessManager 處理
-  const [hotkey, setHotkey] = useState('右 Alt');
+  // 錄音熱鍵已統一為 TypeLess「右 Alt / 右 Ctrl」（單擊切換），由 TypelessManager 處理
+  const [hotkey, setHotkey] = useState('右 Alt / 右 Ctrl');
   const [isRegistered, setIsRegistered] = useState(false);
   const registeredHotkeyRef = useRef(null); // 跟踪已注册的热键
 
@@ -83,8 +83,8 @@ export const useHotkey = () => {
   };
 
   return {
-    // 已固定為「右 Alt」，直接顯示（不經過 Mac 取向的 formatHotkey）
-    hotkey: hotkey === '右 Alt' ? hotkey : formatHotkey(hotkey),
+    // 已固定為中文鍵名（右 Alt / 右 Ctrl），直接顯示（不經過 Mac 取向的 formatHotkey）
+    hotkey: hotkey.includes('右') ? hotkey : formatHotkey(hotkey),
     rawHotkey: hotkey,
     isRegistered,
     registerHotkey,
