@@ -295,14 +295,14 @@ class WindowManager {
     const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
 
     // 視窗尺寸
-    const windowWidth = 200;
-    const windowHeight = 60;
+    const windowWidth = 240;
+    const windowHeight = 72;
 
     this.typelessIndicatorWindow = new BrowserWindow({
       width: windowWidth,
       height: windowHeight,
       x: Math.round((screenWidth - windowWidth) / 2), // 螢幕正中間
-      y: screenHeight - windowHeight - 80, // 螢幕底部（留一些空間給任務欄）
+      y: screenHeight - windowHeight - 24, // 更貼近螢幕底部
       frame: false,
       transparent: true,
       alwaysOnTop: true,

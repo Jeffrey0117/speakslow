@@ -428,6 +428,13 @@ export default function App() {
 
   // 防重复粘贴的引用
   const lastPasteRef = useRef({ text: '', timestamp: 0 });
+  // 文字捲動容器：有新辨識結果時自動捲到底
+  const textScrollRef = useRef(null);
+  useEffect(() => {
+    if (textScrollRef.current) {
+      textScrollRef.current.scrollTop = textScrollRef.current.scrollHeight;
+    }
+  }, [originalText, processedText]);
   const PASTE_DEBOUNCE_TIME = 1000; // 1秒内相同文本不重复粘贴
 
   // 安全粘贴函数（根據設定決定是否貼上和送出 Enter）
@@ -1144,8 +1151,8 @@ export default function App() {
           </div>
         )}
 
-        {/* 文本显示区域 - 可滚动 */}
-        <div className="flex-1 min-h-0 text-area-scroll">
+        {/* 文本显示区域 - 可滚动（新文字出現時自動捲到底）*/}
+        <div ref={textScrollRef} className="flex-1 min-h-0 text-area-scroll">
           <TextDisplay
             originalText={originalText}
             processedText={processedText}

@@ -290,6 +290,15 @@ html, body {
   animation: recording-glow 1.4s ease-out infinite;
 }
 
+/* TypeLess 紅色錄音膠囊的輕跳動 */
+@keyframes pill-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+.pill-bounce {
+  animation: pill-bounce 0.9s ease-in-out infinite;
+}
+
 /* 處理中狀態動畫 */
 @keyframes processing-shimmer {
   0% {
