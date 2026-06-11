@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import "./index.css";
 import { toast } from "sonner";
+import { getLevelIndex, LEVELS } from "./utils/levels";
 import { LoadingDots } from "./components/ui/loading-dots";
 import { useHotkey } from "./hooks/useHotkey";
 import { useWindowDrag } from "./hooks/useWindowDrag";
@@ -366,6 +367,41 @@ export default function App() {
     if (!notificationsEnabled && type !== 'error') return;
     toast[type](message, options);
   }, [notificationsEnabled]);
+
+  // 好看的「已取消」提示（取代陽春的 info toast）
+  const notifyCancel = useCallback(() => {
+    toast.custom(() => (
+      <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-900/92 backdrop-blur-sm text-gray-100 rounded-2xl shadow-xl border border-white/10">
+        <X className="w-4 h-4 text-red-400" />
+        <span className="text-sm font-medium">已取消錄音</span>
+      </div>
+    ), { duration: 1400 });
+  }, []);
+
+  // 字數成就：突破新等級時慶祝一下（不干擾使用）
+  const checkLevelUp = useCallback(async () => {
+    try {
+      if (!window.electronAPI?.getTranscriptionStats) return;
+      const stats = await window.electronAPI.getTranscriptionStats();
+      const newIdx = getLevelIndex(stats?.totalChars || 0);
+      const prevIdx = parseInt(localStorage.getItem('level_idx') || '0', 10);
+      if (newIdx > prevIdx) {
+        const lv = LEVELS[newIdx];
+        toast.custom(() => (
+          <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/40 dark:to-orange-900/40 rounded-2xl shadow-xl border border-amber-200 dark:border-amber-700/50">
+            <span className="text-2xl">{lv.emoji}</span>
+            <div>
+              <div className="text-sm font-bold text-amber-700 dark:text-amber-300">解鎖新等級・{lv.title}</div>
+              <div className="text-xs text-amber-600/90 dark:text-amber-400/90">{lv.message}</div>
+            </div>
+          </div>
+        ), { duration: 4000 });
+      }
+      localStorage.setItem('level_idx', String(Math.max(newIdx, prevIdx)));
+    } catch (e) {
+      /* 統計失敗不影響主流程 */
+    }
+  }, []);
   
   const { isDragging, handleMouseDown, handleMouseMove, handleMouseUp, handleClick } = useWindowDrag();
   const modelStatus = useModelStatus();
@@ -563,7 +599,9 @@ export default function App() {
         await safePaste(textToPaste);
       }
     }
-  }, [safePaste]);
+    // 轉錄完成、字數已寫入資料庫後，檢查是否突破新等級
+    setTimeout(() => checkLevelUp(), 400);
+  }, [safePaste, checkLevelUp]);
 
   // 设置转录完成回调
   useEffect(() => {
@@ -789,10 +827,10 @@ export default function App() {
   const handleCancelRecording = useCallback(() => {
     if (isRecordingNormal) {
       cancelRecordingNormal();
-      showNotification('info', '錄音已取消');
+      notifyCancel();
     } else if (streamingMode) {
       cancelStreaming();
-      showNotification('info', '錄音已取消');
+      notifyCancel();
     }
   }, [isRecordingNormal, cancelRecordingNormal, streamingMode, cancelStreaming, showNotification]);
 
@@ -889,7 +927,7 @@ export default function App() {
       console.log('TypeLess: 收到取消錄音事件 (Esc)');
       if (isRecordingNormal) {
         cancelRecordingNormal();
-        showNotification('info', '錄音已取消');
+        notifyCancel();
       }
     });
 
