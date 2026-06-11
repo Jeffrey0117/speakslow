@@ -202,11 +202,14 @@ const TextDisplay = React.memo(({ originalText, processedText, scrollRef, t }) =
   }
 
   return (
-    <div className="fade-in">
-      {/* 卡片高度=文字內容（短到剛好），超過上限才在卡片內捲動 */}
+    <div className="fade-in mb-3">
+      {/* 卡片只顯示少數幾行，超過就在卡片內捲動；與底部留間距(mb-3) */}
       <div className="bg-white/90 dark:bg-gray-800/90 rounded-xl shadow-md border border-gray-200/70 dark:border-gray-700/60 overflow-hidden">
-        <div ref={scrollRef} className="max-h-[42vh] overflow-y-auto p-4 panel-scroll">
-          <p className="chinese-content text-gray-800 dark:text-gray-200 leading-relaxed">
+        <div ref={scrollRef} className="max-h-[108px] overflow-y-auto px-3.5 py-3 panel-scroll">
+          <p
+            className="chinese-content text-gray-800 dark:text-gray-200"
+            style={{ fontSize: '14px', lineHeight: 1.7, letterSpacing: '0.02em' }}
+          >
             {displayText}
           </p>
         </div>
