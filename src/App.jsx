@@ -990,35 +990,35 @@ export default function App() {
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 chinese-title">
               {t('appName')}
             </h1>
-          <div className="flex items-center space-x-2 non-draggable">
+          <div className="flex items-center space-x-1 non-draggable">
             {(originalText || processedText) && (
               <Tooltip content={t('app.copy') || '複製'} position="bottom">
                 <button
                   onClick={() => handleCopyText(processedText || originalText)}
-                  className="p-2.5 hover:bg-white/70 dark:hover:bg-gray-700/70 rounded-xl transition-colors"
+                  className="p-1.5 hover:bg-white/70 dark:hover:bg-gray-700/70 rounded-lg transition-colors"
                 >
-                  <Copy className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                  <Copy className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                 </button>
               </Tooltip>
             )}
             <Tooltip content={t('app.settings')} position="bottom">
               <button
                 onClick={handleOpenSettings}
-                className="p-2.5 hover:bg-white/70 dark:hover:bg-gray-700/70 rounded-xl transition-colors"
+                className="p-1.5 hover:bg-white/70 dark:hover:bg-gray-700/70 rounded-lg transition-colors"
               >
-                <Settings className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                <Settings className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               </button>
             </Tooltip>
             <Tooltip content={isAlwaysOnTop ? '取消置頂' : '視窗置頂'} position="bottom">
               <button
                 onClick={handleToggleAlwaysOnTop}
-                className={`p-2.5 rounded-xl transition-colors ${
+                className={`p-1.5 rounded-lg transition-colors ${
                   isAlwaysOnTop
                     ? 'bg-blue-100 dark:bg-blue-900/50 hover:bg-blue-200 dark:hover:bg-blue-800/50'
                     : 'hover:bg-white/70 dark:hover:bg-gray-700/70'
                 }`}
               >
-                <Pin className={`w-5 h-5 ${
+                <Pin className={`w-4 h-4 ${
                   isAlwaysOnTop
                     ? 'text-blue-600 dark:text-blue-400'
                     : 'text-gray-600 dark:text-gray-400'
@@ -1028,17 +1028,17 @@ export default function App() {
             <Tooltip content="縮小" position="bottom">
               <button
                 onClick={handleMinimize}
-                className="p-2.5 hover:bg-white/70 dark:hover:bg-gray-700/70 rounded-xl transition-colors"
+                className="p-1.5 hover:bg-white/70 dark:hover:bg-gray-700/70 rounded-lg transition-colors"
               >
-                <Minus className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                <Minus className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               </button>
             </Tooltip>
             <Tooltip content={t('app.close') || '關閉'} position="bottom">
               <button
                 onClick={handleClose}
-                className="p-2.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-xl transition-colors"
+                className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
               >
-                <X className="w-5 h-5 text-gray-500 dark:text-gray-400 hover:text-red-500" />
+                <X className="w-4 h-4 text-gray-500 dark:text-gray-400 hover:text-red-500" />
               </button>
             </Tooltip>
           </div>
