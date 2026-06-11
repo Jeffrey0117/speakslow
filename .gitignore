@@ -160,3 +160,5 @@ poc-sherpa/sherpa-onnx-punct-ct-transformer-zh-en-vocab272727-2024-04-12/model.o
 poc-sherpa/sherpa-onnx-punct-ct-transformer-zh-en-vocab272727-2024-04-12/tokens.json
 # sherpa-onnx 串流 Zipformer 模型（下載取得）
 poc-sherpa/sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20/*.onnx
+# sherpa-onnx Whisper small（精準/重辨救援，下載取得，勿提交大檔）
+poc-sherpa/sherpa-onnx-whisper-small/
