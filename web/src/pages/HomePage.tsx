@@ -14,11 +14,14 @@ export default function HomePage() {
           </h1>
           <p className="text-lg text-gray-400 dark:text-gray-500 mb-5">SpeakSlow</p>
 
-          <p className="text-xl md:text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-2">
-            給開發者的中文語音輸入
+          <p className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-3">
+            讓每一個字，都被聽見
           </p>
-          <p className="text-base md:text-lg text-gray-500 dark:text-gray-400 mb-9">
-            對著 Cursor / Claude Code 講中文 — <strong>本地、免費、隱私</strong>
+          <p className="text-lg md:text-xl text-gray-700 dark:text-gray-200 mb-2">
+            專為中文打造、<strong>最快</strong>的本地語音輸入
+          </p>
+          <p className="text-base md:text-lg text-gray-500 dark:text-gray-400 mb-9 max-w-2xl mx-auto">
+            用講的取代打字 — 超快、超準。<strong className="text-blue-600 dark:text-blue-400">特別適合用語音跟 AI 對話</strong>，講完馬上送出，小錯字 AI 也讀得懂。
           </p>
 
           {/* Primary CTAs */}
@@ -43,15 +46,15 @@ export default function HomePage() {
 
           {/* Features */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <FeatureCard icon="⚡" title="極速" desc="講完約 0.3 秒貼上" />
-            <FeatureCard icon="🔒" title="隱私" desc="100% 本地、不上雲" />
-            <FeatureCard icon="🆓" title="免費開源" desc="Apache 2.0" />
-            <FeatureCard icon="🈶" title="中文優化" desc="專為中文打造" />
+            <FeatureCard icon="⚡" title="最快" desc="講完約 0.3 秒貼上" />
+            <FeatureCard icon="🈶" title="為中文而生" desc="專門中文優化、更準" />
+            <FeatureCard icon="🤖" title="AI 對話神器" desc="講得比打字快十倍" />
+            <FeatureCard icon="🔒" title="本地隱私" desc="100% 本機、不上雲" />
           </div>
 
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-10">
-            免費開源的 <strong>Wispr Flow</strong> 替代方案 ·
-            比 Windows 內建更私密（本地非雲端）、還能接 AI 潤飾
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-10 max-w-2xl mx-auto">
+            想跟 ChatGPT / Claude / Cursor 講很多話？用講的比打字快太多，講完馬上送出。
+            免費開源、比 Windows 內建更私密（本地非雲端）。
           </p>
 
           {/* Secondary: online demo (needs local backend) */}

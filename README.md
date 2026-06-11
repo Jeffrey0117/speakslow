@@ -4,9 +4,9 @@
 
 # 聲聲慢 (SpeakSlow)
 
-### 給開發者的中文語音輸入 — 對著 Cursor / Claude Code 講中文，本地、免費、隱私
+### 讓每一個字，都被聽見 — 專為中文打造、最快的本地語音輸入
 
-**開源、100% 本地的 Wispr Flow 替代方案，專為中文與 AI 編程（vibe coding）打造**
+**用講的取代打字，超快超準。特別適合用語音跟 AI 對話（ChatGPT / Claude / Cursor），講完馬上送出。開源、100% 本地、免費。**
 
 <img src="https://img.shields.io/badge/license-Apache_2.0-blue.svg" alt="License">
 <img src="https://img.shields.io/badge/platform-Windows-0078D6" alt="Platform">
