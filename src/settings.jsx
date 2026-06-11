@@ -1039,27 +1039,6 @@ const SettingsPage = () => {
 
             )}
 
-            {activeTab === 'permissions' && (
-          <div className="mt-4 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-            <div className="p-4">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 chinese-title mb-3">
-                {t('settings.about')}
-              </h2>
-              <div className="bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20 p-3 rounded-lg">
-                <p className="text-xs text-gray-700 dark:text-gray-300 mb-1">
-                  🎤 <strong>{t('appName')} (SpeakSlow)</strong> - {t('settings.aboutDesc')}
-                </p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
-                  • {t('settings.features.recognition')}<br/>
-                  • {t('settings.features.ai')}<br/>
-                  • {t('settings.features.realtime')}<br/>
-                  • {t('settings.features.privacy')}
-                </p>
-              </div>
-            </div>
-          </div>
-            )}
-
             {activeTab === 'about' && (
             <div className="space-y-4 max-w-xl">
               {/* 專案 */}
