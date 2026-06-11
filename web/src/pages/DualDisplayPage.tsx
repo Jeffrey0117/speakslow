@@ -10,6 +10,8 @@ export default function DualDisplayPage() {
   const [state, setState] = useState<RecordingState>('idle')
   const [isFullscreen, setIsFullscreen] = useState(false)
   const recordingRef = useRef(false) // 音訊回呼即時讀取（避免 stale closure）
+  const topScrollRef = useRef<HTMLDivElement>(null)
+  const bottomScrollRef = useRef<HTMLDivElement>(null)
 
   const {
     isConnected,
@@ -51,6 +53,12 @@ export default function DualDisplayPage() {
   const displayText = partialText
     ? `${finalText}${finalText ? '\n' : ''}${partialText}`
     : finalText
+
+  // 文字變多時自動捲到底，最新內容永遠可見（舊的往上消失）
+  useEffect(() => {
+    if (topScrollRef.current) topScrollRef.current.scrollTop = topScrollRef.current.scrollHeight
+    if (bottomScrollRef.current) bottomScrollRef.current.scrollTop = bottomScrollRef.current.scrollHeight
+  }, [displayText])
 
   const error = wsError || recorderError
 
@@ -138,35 +146,39 @@ export default function DualDisplayPage() {
         </div>
       )}
 
-      {/* Top Half - Flipped 180° for person across */}
-      <div className="flex-1 flex items-center justify-center p-6 border-b border-gray-700 overflow-auto">
-        <div className="text-flipped w-full max-w-4xl">
-          {displayText ? (
-            <p className="font-content text-2xl md:text-4xl text-white leading-relaxed text-center whitespace-pre-wrap">
-              {displayText}
-              {partialText && <span className="text-gray-500 animate-pulse">|</span>}
-            </p>
-          ) : (
-            <p className="font-content text-2xl md:text-3xl text-gray-500 text-center">
-              {statusText}
-            </p>
-          )}
+      {/* Top Half - Flipped 180° for person across（自動捲動，最新可見）*/}
+      <div className="flex-1 min-h-0 border-b border-gray-700 overflow-hidden">
+        <div ref={topScrollRef} className="text-flipped h-full overflow-y-auto p-6 flex flex-col justify-end">
+          <div className="w-full max-w-4xl mx-auto">
+            {displayText ? (
+              <p className="font-content text-2xl md:text-4xl text-white leading-relaxed text-center whitespace-pre-wrap">
+                {displayText}
+                {partialText && <span className="text-gray-500 animate-pulse">|</span>}
+              </p>
+            ) : (
+              <p className="font-content text-2xl md:text-3xl text-gray-500 text-center">
+                {statusText}
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Bottom Half - Normal for self */}
-      <div className="flex-1 flex items-center justify-center p-6 overflow-auto">
-        <div className="w-full max-w-4xl">
-          {displayText ? (
-            <p className="font-content text-2xl md:text-4xl text-white leading-relaxed text-center whitespace-pre-wrap">
-              {displayText}
-              {partialText && <span className="text-gray-500 animate-pulse">|</span>}
-            </p>
-          ) : (
-            <p className="font-content text-2xl md:text-3xl text-gray-500 text-center">
-              {statusText}
-            </p>
-          )}
+      {/* Bottom Half - Normal for self（自動捲動，最新可見）*/}
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <div ref={bottomScrollRef} className="h-full overflow-y-auto p-6 flex flex-col justify-end">
+          <div className="w-full max-w-4xl mx-auto">
+            {displayText ? (
+              <p className="font-content text-2xl md:text-4xl text-white leading-relaxed text-center whitespace-pre-wrap">
+                {displayText}
+                {partialText && <span className="text-gray-500 animate-pulse">|</span>}
+              </p>
+            ) : (
+              <p className="font-content text-2xl md:text-3xl text-gray-500 text-center">
+                {statusText}
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
