@@ -215,6 +215,52 @@ const TextDisplay = React.memo(({ originalText, processedText, scrollRef, t }) =
 });
 
 // 设置页面包装组件 - 用于 ?page=settings 路由
+// 空閒時的趣味 placeholder：輪播訊息 + 跳動點點
+const IDLE_MESSAGES = [
+  "講點什麼吧～ 我在聽 👂",
+  "按一下右 Alt 開始錄音 🎤",
+  "你說，我幫你打字 ⌨️",
+  "今天想說什麼呢？",
+  "講完自動貼到游標處 ✨",
+  "錄音中按 Esc 可以取消喔",
+  "本地辨識，講什麼都不外流 🔒",
+];
+
+const IdlePlaceholder = React.memo(() => {
+  const [idx, setIdx] = useState(0);
+  const [show, setShow] = useState(true);
+  useEffect(() => {
+    const iv = setInterval(() => {
+      setShow(false);
+      setTimeout(() => {
+        setIdx((i) => (i + 1) % IDLE_MESSAGES.length);
+        setShow(true);
+      }, 300);
+    }, 3500);
+    return () => clearInterval(iv);
+  }, []);
+  return (
+    <div className="h-full flex flex-col items-center justify-center text-center select-none">
+      <div className="flex gap-1.5 mb-3">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600 idle-dot"
+            style={{ animationDelay: `${i * 0.16}s` }}
+          />
+        ))}
+      </div>
+      <p
+        className={`text-sm text-gray-400 dark:text-gray-500 px-6 transition-opacity duration-300 ${
+          show ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        {IDLE_MESSAGES[idx]}
+      </p>
+    </div>
+  );
+});
+
 const SettingsPageWrapper = () => {
   const { t } = useTranslation();
   return (
@@ -427,6 +473,15 @@ export default function App() {
       textScrollRef.current.scrollTop = textScrollRef.current.scrollHeight;
     }
   }, [originalText, processedText]);
+
+  // 重新開始錄音時，先清空上一次的結果（面板淨空）
+  useEffect(() => {
+    if (isRecordingNormal) {
+      setOriginalText("");
+      setProcessedText("");
+      setShowTextArea(false);
+    }
+  }, [isRecordingNormal]);
   const PASTE_DEBOUNCE_TIME = 1000; // 1秒内相同文本不重复粘贴
 
   // 安全粘贴函数（根據設定決定是否貼上和送出 Enter）
@@ -1155,12 +1210,16 @@ export default function App() {
 
         {/* 文本显示区域（卡片內部捲動，新文字自動捲到底）*/}
         <div className="flex-1 min-h-0">
-          <TextDisplay
-            originalText={originalText}
-            processedText={processedText}
-            scrollRef={textScrollRef}
-            t={t}
-          />
+          {(originalText || processedText) ? (
+            <TextDisplay
+              originalText={originalText}
+              processedText={processedText}
+              scrollRef={textScrollRef}
+              t={t}
+            />
+          ) : (micState === "idle" || micState === "hover") ? (
+            <IdlePlaceholder />
+          ) : null}
         </div>
 
         {/* 底部置中標記（mt-auto 推到最底）*/}
