@@ -119,17 +119,23 @@ export const useRecording = () => {
       try {
         const micTrack = stream.getAudioTracks()[0];
         const micSettings = micTrack?.getSettings?.() || {};
-        if (window.electronAPI && window.electronAPI.log) {
-          window.electronAPI.log('info', '🎤 使用麥克風:', {
-            label: micTrack?.label,
-            deviceId: micSettings.deviceId,
-            sampleRate: micSettings.sampleRate,
-            channelCount: micSettings.channelCount,
-            noiseSuppression: micSettings.noiseSuppression,
-            autoGainControl: micSettings.autoGainControl,
-            echoCancellation: micSettings.echoCancellation,
-          });
+        let label = micTrack?.label || '';
+        // label 為空時，用 enumerateDevices 透過 deviceId 反查名稱
+        if (!label && micSettings.deviceId && navigator.mediaDevices?.enumerateDevices) {
+          try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const dev = devices.find(
+              (d) => d.kind === 'audioinput' && d.deviceId === micSettings.deviceId
+            );
+            label = dev?.label || '';
+          } catch (e) { /* ignore */ }
         }
+        const msg =
+          `🎤 使用麥克風: label="${label || '(未知)'}" ` +
+          `sampleRate=${micSettings.sampleRate} NS=${micSettings.noiseSuppression} ` +
+          `AGC=${micSettings.autoGainControl} EC=${micSettings.echoCancellation}`;
+        if (window.electronAPI?.log) window.electronAPI.log('info', msg);
+        console.log(msg);
       } catch (logErr) {
         // 記錄失敗不影響錄音
       }
@@ -372,41 +378,8 @@ export const useRecording = () => {
   }, []);
 
   // PCM 數據直接轉 WAV（帶重採樣）- 不需要 decodeAudioData
-  // 2 階 Butterworth 低通濾波（biquad），用於降採樣前的抗鋸齒處理
-  const lowPassFilter = (data, sampleRate, cutoff) => {
-    const w0 = (2 * Math.PI * cutoff) / sampleRate;
-    const cosw0 = Math.cos(w0);
-    const sinw0 = Math.sin(w0);
-    const Q = Math.SQRT1_2; // 0.707，最大平坦響應
-    const alpha = sinw0 / (2 * Q);
-    const a0 = 1 + alpha;
-    const b0 = ((1 - cosw0) / 2) / a0;
-    const b1 = (1 - cosw0) / a0;
-    const b2 = ((1 - cosw0) / 2) / a0;
-    const a1 = (-2 * cosw0) / a0;
-    const a2 = (1 - alpha) / a0;
-
-    const out = new Float32Array(data.length);
-    let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
-    for (let i = 0; i < data.length; i++) {
-      const x0 = data[i];
-      const y0 = b0 * x0 + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2;
-      out[i] = y0;
-      x2 = x1; x1 = x0; y2 = y1; y1 = y0;
-    }
-    return out;
-  };
-
   const pcmToWav = (pcmData, sourceSampleRate, targetSampleRate) => {
     const sourceLength = pcmData.length;
-
-    // 降採樣前先做抗鋸齒低通濾波，避免高頻混疊（aliasing）降低辨識準確度
-    // 截止頻率設為目標 Nyquist 的 90%（16kHz → 約 7.2kHz）
-    let filteredData = pcmData;
-    if (sourceSampleRate > targetSampleRate) {
-      const cutoff = (targetSampleRate / 2) * 0.9;
-      filteredData = lowPassFilter(pcmData, sourceSampleRate, cutoff);
-    }
 
     // 計算重採樣後的長度
     const resampleRatio = targetSampleRate / sourceSampleRate;
@@ -419,7 +392,7 @@ export const useRecording = () => {
       const index0 = Math.floor(sourceIndex);
       const index1 = Math.min(index0 + 1, sourceLength - 1);
       const fraction = sourceIndex - index0;
-      resampledData[i] = filteredData[index0] * (1 - fraction) + filteredData[index1] * fraction;
+      resampledData[i] = pcmData[index0] * (1 - fraction) + pcmData[index1] * fraction;
     }
 
     const bytesPerSample = 2;
