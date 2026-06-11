@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
 import { toast, Toaster } from "sonner";
-import { Settings, Save, Eye, EyeOff, X, Loader2, TestTube, CheckCircle, XCircle, Mic, Shield, Globe } from "lucide-react";
+import { Settings, Save, Eye, EyeOff, X, Loader2, TestTube, CheckCircle, XCircle, Mic, Shield, Globe, Keyboard, Sparkles, BookText, Tag } from "lucide-react";
 import { usePermissions } from "./hooks/usePermissions";
 import PermissionCard from "./components/ui/permission-card";
 import HotkeySettings from "./components/HotkeySettings";
@@ -10,8 +10,19 @@ import HotwordsManager from "./components/HotwordsManager";
 import DictionaryManager from "./components/DictionaryManager";
 import { useTranslation, LanguageProvider } from "./i18n";
 
+// 設定面板左側分頁（依重要性排序）
+const SETTINGS_TABS = [
+  { id: 'general', label: '一般設定', icon: Settings },
+  { id: 'ai', label: 'AI 文字優化', icon: Sparkles },
+  { id: 'hotkeys', label: '快捷鍵', icon: Keyboard },
+  { id: 'hotwords', label: '熱詞', icon: Tag },
+  { id: 'dictionary', label: '字典', icon: BookText },
+  { id: 'permissions', label: '權限管理', icon: Shield },
+];
+
 const SettingsPage = () => {
   const { t, language, setLanguage, languages } = useTranslation();
+  const [activeTab, setActiveTab] = useState('general');
 
   const [settings, setSettings] = useState({
     ai_api_key: "",
@@ -300,10 +311,33 @@ const SettingsPage = () => {
         </div>
       </div>
 
-      {/* 主要内容 - 可滚动 */}
-      <div className="flex-1 overflow-y-auto min-h-0">
-        <div className="max-w-2xl mx-auto p-6 pb-8">
-          {/* 权限管理部分 */}
+      {/* 主要內容：左側分頁 + 右側內容 */}
+      <div className="flex-1 flex min-h-0">
+        {/* 側邊欄分頁 */}
+        <nav className="w-44 flex-shrink-0 overflow-y-auto border-r border-gray-200 dark:border-gray-700 bg-white/40 dark:bg-gray-800/40 py-3">
+          {SETTINGS_TABS.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-left transition-colors ${
+                  activeTab === tab.id
+                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-r-2 border-blue-500 font-medium'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'
+                }`}
+              >
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* 內容區 - 可滾動 */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <div className="max-w-2xl mx-auto p-6 pb-8">
+            {activeTab === 'permissions' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 mb-6">
             <div className="p-6">
               <div className="mb-4">
@@ -337,6 +371,9 @@ const SettingsPage = () => {
             </div>
           </div>
 
+            )}
+
+            {activeTab === 'general' && (<>
           {/* 一般设置部分 */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 mb-6">
             <div className="p-6">
@@ -627,28 +664,36 @@ const SettingsPage = () => {
             </div>
           </div>
 
-          {/* 快捷鍵設定部分 */}
+            </>)}
+
+            {activeTab === 'hotkeys' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 mb-6">
             <div className="p-6">
               <HotkeySettings />
             </div>
           </div>
 
-          {/* 熱詞設定部分 */}
+            )}
+
+            {activeTab === 'hotwords' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 mb-6">
             <div className="p-6">
               <HotwordsManager t={t} />
             </div>
           </div>
 
-          {/* 字典功能部分 */}
+            )}
+
+            {activeTab === 'dictionary' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 mb-6">
             <div className="p-6">
               <DictionaryManager t={t} />
             </div>
           </div>
 
-          {/* AI配置部分 */}
+            )}
+
+            {activeTab === 'ai' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
             <div className="p-6">
               <div className="mb-4">
@@ -956,7 +1001,9 @@ const SettingsPage = () => {
             </div>
           </div>
 
-          {/* 关于部分 */}
+            )}
+
+            {activeTab === 'permissions' && (
           <div className="mt-4 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
             <div className="p-4">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 chinese-title mb-3">
@@ -974,6 +1021,8 @@ const SettingsPage = () => {
                 </p>
               </div>
             </div>
+          </div>
+            )}
           </div>
         </div>
       </div>
