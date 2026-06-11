@@ -971,9 +971,9 @@ export default function App() {
   const micProps = getMicButtonProps();
 
   return (
-    <div className="h-screen bg-gradient-to-br from-slate-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 px-4 pt-4 pb-2 rounded-3xl overflow-hidden">
+    <div className="h-screen bg-gradient-to-br from-slate-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 px-4 pt-4 pb-2 rounded-3xl overflow-hidden flex flex-col border border-gray-200/80 dark:border-gray-700/60 shadow-2xl">
       {/* 主界面 */}
-      <div className="max-w-2xl mx-auto h-full flex flex-col">
+      <div className="w-full max-w-2xl mx-auto flex-1 min-h-0 flex flex-col">
         {/* 标题栏 */}
         <div
           className="flex flex-col mb-5 draggable"
