@@ -215,13 +215,10 @@ const TextDisplay = React.memo(({ originalText, processedText, scrollRef, t }) =
   );
 });
 
-// 设置页面包装组件 - 用于 ?page=settings 路由
-// 空閒時的趣味 placeholder：輪播訊息 + 跳動點點
+// 空閒/錄音時的趣味輪播文字：重用使用者手寫的白爛句 + 幾句操作提示
 const IDLE_MESSAGES = [
-  "講點什麼吧～ 我在聽 👂",
+  ...PROCESSING_MESSAGES,
   "按一下右 Alt 開始錄音 🎤",
-  "你說，我幫你打字 ⌨️",
-  "今天想說什麼呢？",
   "講完自動貼到游標處 ✨",
   "錄音中按 Esc 可以取消喔",
   "本地辨識，講什麼都不外流 🔒",
@@ -241,16 +238,7 @@ const IdlePlaceholder = React.memo(() => {
     return () => clearInterval(iv);
   }, []);
   return (
-    <div className="h-full flex flex-col items-center justify-center text-center select-none">
-      <div className="flex gap-1.5 mb-3">
-        {[0, 1, 2].map((i) => (
-          <span
-            key={i}
-            className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600 idle-dot"
-            style={{ animationDelay: `${i * 0.16}s` }}
-          />
-        ))}
-      </div>
+    <div className="h-full flex items-center justify-center text-center select-none">
       <p
         className={`text-sm text-gray-400 dark:text-gray-500 px-6 transition-opacity duration-300 ${
           show ? "opacity-100" : "opacity-0"
