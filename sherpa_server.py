@@ -554,7 +554,33 @@ class SherpaServer:
         if result is None:
             script_dir = os.path.dirname(os.path.abspath(__file__))
             result = os.path.join(script_dir, "poc-sherpa")
-        return self._to_ascii_path(result)
+        # 轉 ASCII：先試 8.3 短檔名；仍含非 ASCII（中文帳號 + 8.3 關閉）則複製到 ProgramData
+        result = self._to_ascii_path(result)
+        if result and any(ord(c) >= 128 for c in result):
+            result = self._copy_models_to_ascii(result)
+        return result
+
+    @staticmethod
+    def _copy_models_to_ascii(src):
+        """最後保險：8.3 短名也救不了時（中文使用者名 + 8.3 關閉），
+        把模型複製到保證 ASCII 的 C:\\ProgramData\\SpeakSlow（與使用者名無關）。"""
+        try:
+            import shutil
+            program_data = os.environ.get("ProgramData", r"C:\ProgramData")
+            dst = os.path.join(program_data, "SpeakSlow", "poc-sherpa")
+            marker = os.path.join(dst, ".copy_complete")
+            if os.path.exists(marker):
+                return dst
+            logger.info(f"模型路徑含非 ASCII，首次複製到 ASCII 路徑（約需數十秒）: {dst}")
+            if os.path.isdir(dst):
+                shutil.rmtree(dst, ignore_errors=True)
+            shutil.copytree(src, dst)
+            with open(marker, "w") as f:
+                f.write("ok")
+            return dst
+        except Exception as e:
+            logger.error(f"複製模型到 ASCII 路徑失敗，沿用原路徑: {e}")
+            return src
 
     def _find_model_dir(self):
         """尋找 sherpa-onnx 離線模型目錄 (Paraformer)"""
