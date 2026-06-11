@@ -105,11 +105,53 @@ def collapse_repeats(text):
     return ''.join(out)
 
 
-def clean_transcript(text):
-    """辨識後文字清理：全形→半形 + 去口吃重複"""
+def merge_spaced_letters(text):
+    """合併被空白拆開的單一英文字母（Paraformer 常把英文逐字母吐出：
+    "h e n t" → "hent"），但保留正常的英文詞間空白（"hello world" 不動）。
+    """
+    if not text or ' ' not in text:
+        return text
+    import re
+    # 連續的「單一字母 + 空白」序列 → 去掉中間空白（用 ASCII lookaround，
+    # 不用 \b，因為中文也算 word char 會誤判，導致 開h 連在一起時抓不到 h）
+    return re.sub(
+        r'(?<![A-Za-z])([A-Za-z](?: [A-Za-z])+)(?![A-Za-z])',
+        lambda m: m.group(1).replace(' ', ''),
+        text
+    )
+
+
+# 常見發語詞 / 口頭禪：連續重複（即使只重複 2 次）多半是口吃，收成 1 次。
+_FILLER_WORDS = ["其實", "然後", "就是", "那個", "這個", "反正", "所以",
+                 "可是", "但是", "不過", "而且", "對啊", "對對", "那就", "之類"]
+
+
+def collapse_phrase_repeats(text):
+    """去除「詞組」層級的口吃重複：
+    - 任何 2~4 字詞連續重複 3 次以上 → 收成 1 次（其實其實其實 → 其實）
+    - 發語詞（_FILLER_WORDS）連續重複 2 次以上 → 收成 1 次（然後然後 → 然後）
+    - 一般 2 字詞剛好重複 2 次（快樂快樂）暫不處理，避免誤刪正常疊詞（研究研究）
+    """
     if not text:
         return text
-    return collapse_repeats(normalize_ascii_width(text))
+    import re
+    # 1) 任意 2~4 字詞重複 3+ 次 → 1 次
+    text = re.sub(r'([一-鿿]{2,4})\1{2,}', r'\1', text)
+    # 2) 發語詞重複 2+ 次 → 1 次
+    for w in _FILLER_WORDS:
+        text = re.sub(r'(?:' + re.escape(w) + r'){2,}', w, text)
+    return text
+
+
+def clean_transcript(text):
+    """辨識後文字清理：全形→半形 + 合併英文 + 去口吃（單字 + 詞組）"""
+    if not text:
+        return text
+    text = normalize_ascii_width(text)
+    text = merge_spaced_letters(text)
+    text = collapse_repeats(text)
+    text = collapse_phrase_repeats(text)
+    return text
 
 # 設置日誌
 def get_log_path():
