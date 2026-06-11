@@ -942,12 +942,16 @@ class SherpaManager {
         throw new Error(result.error || "轉錄失敗");
       }
 
+      // 保存原始錄音（永不丟失），供日後「重新辨識」使用
+      const persistedAudioPath = await this.persistAudioFile(tempAudioPath);
+
       return {
         success: true,
         text: result.text.trim(),
         raw_text: result.raw_text,
         confidence: result.confidence || 0.95,
         language: result.language || "zh-CN",
+        audio_path: persistedAudioPath,
       };
     } catch (error) {
       throw error;
@@ -1000,6 +1004,46 @@ class SherpaManager {
       await fs.promises.unlink(tempAudioPath);
     } catch (cleanupError) {
       // 臨時文件清理錯誤不是關鍵問題
+    }
+  }
+
+  // 直接用既有檔案路徑辨識（給「重新辨識」用，不建暫存、不重複保存）
+  async transcribeFilePath(audioPath, options = {}) {
+    if (!this.serverReady && this.initializationPromise) {
+      await this.initializationPromise;
+    }
+    if (!this.serverReady) {
+      throw new Error("Sherpa 服務器未就緒");
+    }
+    const result = await this._sendServerCommand({
+      action: "transcribe",
+      audio_path: audioPath,
+      options: options,
+    });
+    if (!result.success) {
+      throw new Error(result.error || "轉錄失敗");
+    }
+    return {
+      success: true,
+      text: result.text.trim(),
+      raw_text: result.raw_text,
+      confidence: result.confidence || 0.95,
+      language: result.language || "zh-CN",
+    };
+  }
+
+  // 把暫存 WAV 複製到永久目錄（userData/audio），回傳路徑；失敗回 null 不影響辨識
+  async persistAudioFile(tempAudioPath) {
+    try {
+      const userDataPath = require("electron").app.getPath("userData");
+      const audioDir = path.join(userDataPath, "audio");
+      await fs.promises.mkdir(audioDir, { recursive: true });
+      const destPath = path.join(audioDir, `rec_${crypto.randomUUID()}.wav`);
+      await fs.promises.copyFile(tempAudioPath, destPath);
+      return destPath;
+    } catch (e) {
+      this.logger.warn && this.logger.warn("保存錄音檔失敗:", e?.message || e);
+      return null;
     }
   }
 

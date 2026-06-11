@@ -302,6 +302,14 @@ class DatabaseManager {
     return stmt.run(id);
   }
 
+  // 重新辨識後更新文字
+  updateTranscriptionText(id, text, processedText = null) {
+    const stmt = this.db.prepare(
+      `UPDATE transcriptions SET text = ?, processed_text = ? WHERE id = ?`
+    );
+    return stmt.run(text, processedText, id);
+  }
+
   clearAllTranscriptions() {
     const stmt = this.db.prepare("DELETE FROM transcriptions");
     return stmt.run();

@@ -138,6 +138,32 @@ export const HistoryView = () => {
     }
   };
 
+  const [retranscribingId, setRetranscribingId] = React.useState(null);
+
+  const handleRetranscribe = async (id) => {
+    if (!window.electronAPI?.retranscribeTranscription || retranscribingId) return;
+    setRetranscribingId(id);
+    try {
+      const res = await window.electronAPI.retranscribeTranscription(id);
+      if (res?.success) {
+        setTranscriptions(prev =>
+          prev.map(it => (it.id === id ? { ...it, text: res.text, processed_text: null } : it))
+        );
+      } else {
+        console.warn("重新辨識失敗:", res?.error);
+        const tip = document.createElement('div');
+        tip.textContent = res?.error || '重新辨識失敗';
+        tip.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#ef4444;color:#fff;padding:8px 16px;border-radius:9999px;font-size:13px;z-index:9999';
+        document.body.appendChild(tip);
+        setTimeout(() => tip.remove(), 2500);
+      }
+    } catch (e) {
+      console.error("重新辨識錯誤:", e);
+    } finally {
+      setRetranscribingId(null);
+    }
+  };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -221,6 +247,21 @@ export const HistoryView = () => {
                     )}
                   </div>
                   <div className="flex space-x-2">
+                    {item.audio_path && (
+                      <button
+                        onClick={() => handleRetranscribe(item.id)}
+                        disabled={retranscribingId === item.id}
+                        className="p-2 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors disabled:opacity-50"
+                        title="用保存的錄音重新辨識"
+                      >
+                        <svg
+                          className={`w-4 h-4 text-blue-500 dark:text-blue-400 ${retranscribingId === item.id ? 'animate-spin' : ''}`}
+                          fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                      </button>
+                    )}
                     <button
                       onClick={() => handleCopy(item.processed_text || item.text)}
                       className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"

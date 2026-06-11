@@ -185,6 +185,29 @@ class IPCHandlers {
       return this.databaseManager.deleteTranscription(id);
     });
 
+    // 重新辨識：用保存的原始錄音重跑，更新該筆文字
+    ipcMain.handle("retranscribe-transcription", async (event, id, options = {}) => {
+      try {
+        const record = this.databaseManager.getTranscriptionById(id);
+        if (!record) return { success: false, error: "找不到該筆紀錄" };
+        if (!record.audio_path) {
+          return { success: false, error: "這筆沒有保存錄音檔（舊資料無法重辨）" };
+        }
+        const fs = require("fs");
+        if (!fs.existsSync(record.audio_path)) {
+          return { success: false, error: "錄音檔已不存在" };
+        }
+        const result = await this.sherpaManager.transcribeFilePath(record.audio_path, options);
+        if (!result || !result.success) {
+          return { success: false, error: result?.error || "辨識失敗" };
+        }
+        this.databaseManager.updateTranscriptionText(id, result.text, null);
+        return { success: true, text: result.text };
+      } catch (e) {
+        return { success: false, error: e.message };
+      }
+    });
+
     ipcMain.handle("search-transcriptions", (event, query, limit) => {
       return this.databaseManager.searchTranscriptions(query, limit);
     });
