@@ -163,18 +163,44 @@ _PUNCT_RULES = {
 }
 
 
+# 句末「單字語助詞」→ 標點（主規則，命中率高）。
+# 疑問語氣 → ？；感嘆/驚嘆語氣 → ！。（含簡繁，文字此時為簡體但一併納入）
+_END_PARTICLE_PUNCT = {
+    '吗': '？', '嗎': '？', '呢': '？',
+    '啊': '！', '呀': '！', '啦': '！', '哇': '！',
+    '喔': '！', '哦': '！', '噢': '！', '耶': '！', '欸': '！',
+}
+_PARTICLE_CLASS = '吗嗎呢啊呀啦哇喔哦噢耶欸'
+
+
 def apply_punct_rules(text):
-    """依句末片語修正標點：句子（以 。，！？ 結尾或字串結尾）若以規則片語結束，
-    就把句末標點改成對應的 ？或 ！。"""
+    """修正句末標點：
+    1) 句末單字語助詞（啊→！、吗→？...）—— 主規則
+    2) 句末多字片語（对不对→？、真的假的→！...）—— 補充
+    只在句末標點（。！？）或字串結尾前作用；句中的「啊，」等逗號不動。
+    """
     if not text:
         return text
     import re
+
+    # 1) 句末單字語助詞 + 句末標點 → 換標點
+    text = re.sub(
+        r'([' + _PARTICLE_CLASS + r'])([。！？])',
+        lambda m: m.group(1) + _END_PARTICLE_PUNCT.get(m.group(1), m.group(2)),
+        text
+    )
+    # 句末單字語助詞在字串結尾、沒有標點 → 補上
+    text = re.sub(
+        r'([' + _PARTICLE_CLASS + r'])$',
+        lambda m: m.group(1) + _END_PARTICLE_PUNCT[m.group(1)],
+        text
+    )
+
+    # 2) 多字片語補充（針對非語助詞結尾，如 对不对 / 是不是）
     for mark, phrases in _PUNCT_RULES.items():
         for p in phrases:
             ep = re.escape(p)
-            # 片語後接句末標點 。，！？ → 換成目標標點
             text = re.sub(ep + r'[。，！？]', p + mark, text)
-            # 片語在字串最末、沒有標點 → 補上目標標點
             text = re.sub(ep + r'$', p + mark, text)
     return text
 
