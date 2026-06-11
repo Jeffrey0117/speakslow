@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom'
-import { Mic, Users, Github, Download } from 'lucide-react'
+import { Github, Download } from 'lucide-react'
+import screenshot from '../assets/screenshot.png'
 
 const REPO = 'https://github.com/Jeffrey0117/speakslow'
 
@@ -44,6 +44,15 @@ export default function HomePage() {
             </a>
           </div>
 
+          {/* Product screenshot */}
+          <div className="mb-10">
+            <img
+              src={screenshot}
+              alt="聲聲慢 SpeakSlow 介面"
+              className="mx-auto rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 max-w-sm w-full"
+            />
+          </div>
+
           {/* Features */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <FeatureCard icon="⚡" title="最快" desc="講完約 0.3 秒貼上" />
@@ -52,25 +61,10 @@ export default function HomePage() {
             <FeatureCard icon="🔒" title="本地隱私" desc="100% 本機、不上雲" />
           </div>
 
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-10 max-w-2xl mx-auto">
+          <p className="text-sm text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
             想跟 ChatGPT / Claude / Cursor 講很多話？用講的比打字快太多，講完馬上送出。
             免費開源、比 Windows 內建更私密（本地非雲端）。
           </p>
-
-          {/* Secondary: online demo (needs local backend) */}
-          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-            <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
-              線上 Demo（需在本機執行後端）
-            </p>
-            <div className="flex flex-wrap gap-4 justify-center">
-              <Link to="/voice" className="inline-flex items-center gap-1.5 text-sm text-blue-500 hover:underline">
-                <Mic className="w-4 h-4" /> 語音輸入
-              </Link>
-              <Link to="/dual" className="inline-flex items-center gap-1.5 text-sm text-blue-500 hover:underline">
-                <Users className="w-4 h-4" /> 雙向顯示
-              </Link>
-            </div>
-          </div>
         </div>
       </div>
 

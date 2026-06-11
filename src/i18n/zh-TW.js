@@ -125,6 +125,9 @@ export default {
   app: {
     history: '歷史紀錄',
     settings: '設定',
+    copy: '複製',
+    close: '關閉',
+    minimize: '最小化',
     needDownload: '需要下載AI模型檔案才能開始使用',
     downloading: '正在下載模型檔案...',
     loading: '模型載入中，請稍候...',
