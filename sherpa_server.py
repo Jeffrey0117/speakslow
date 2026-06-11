@@ -653,6 +653,26 @@ class SherpaServer:
         rec.decode_stream(stream)
         return (stream.result.text or "").strip()
 
+    def _apply_pause_breaks(self, result, break_gap=0.8):
+        """用逐字時間戳的「停頓」插入換行：字間隔 >= break_gap 秒視為一次斷句，插入 \\n。
+        連續講話約 0.1~0.2s，真正停頓 0.5~2.7s，分得很開。
+        token 對齊不到（含英文 subword）時放棄斷行，回傳原文字。"""
+        text = (getattr(result, "text", "") or "").strip()
+        tokens = list(getattr(result, "tokens", []) or [])
+        ts = list(getattr(result, "timestamps", []) or [])
+        if not tokens or len(ts) != len(tokens) or len(tokens) < 2:
+            return text
+        out = [tokens[0]]
+        for i in range(1, len(tokens)):
+            if ts[i] - ts[i - 1] >= break_gap:
+                out.append("\n")
+            out.append(tokens[i])
+        rebuilt = "".join(out)
+        # 重建文字（去 \n）若與 result.text 差太多（多半是英文 subword 標記），放棄斷行
+        if abs(len(rebuilt.replace("\n", "")) - len(text)) > max(3, int(len(text) * 0.15)):
+            return text
+        return rebuilt.strip()
+
     def _get_whisper_recognizer(self):
         """延遲載入 Whisper small（精準模式 / 重辨救援用）。首次呼叫才載入。"""
         if getattr(self, "whisper_recognizer", None) is not None:
@@ -1305,9 +1325,16 @@ class SherpaServer:
                 raw_parts = [self._transcribe_samples(seg, sample_rate, recognizer) for seg in segments]
                 text = "".join(p for p in raw_parts if p)
             else:
-                text = self._transcribe_samples(speech_samples, sample_rate, recognizer)
+                # 單次解碼：用逐字時間戳在「停頓」處斷行（韻律斷句，免 AI）
+                stream = recognizer.create_stream()
+                stream.accept_waveform(sample_rate, speech_samples)
+                recognizer.decode_stream(stream)
+                if recognizer is self.recognizer:  # 只有 Paraformer 有時間戳
+                    text = self._apply_pause_breaks(stream.result)
+                else:
+                    text = (stream.result.text or "").strip()
 
-            # 文字清理：全形英文→半形 + 去口吃重複（保留正常疊字）
+            # 文字清理：全形英文→半形 + 去口吃重複（保留正常疊字、保留換行）
             text = clean_transcript(text)
 
             elapsed = time.time() - start_time
@@ -1316,10 +1343,17 @@ class SherpaServer:
             self.transcription_count += 1
             self.total_audio_duration += duration
 
-            # 加標點（ct-punc 模型）+ 句末語助詞規則。
-            # sherpa 的 Whisper 輸出不帶標點，所以兩種模型都套同一套標點流程。
-            text_with_punc = self._add_punctuation(text)
-            text_with_punc = apply_punct_rules(text_with_punc)
+            # 逐行加標點（ct-punc 模型）+ 句末語助詞規則。
+            # 逐行處理是為了不把換行 \n 餵進標點模型導致出錯。
+            punct_lines = []
+            for ln in text.split("\n"):
+                if ln.strip():
+                    p = self._add_punctuation(ln)
+                    p = apply_punct_rules(p)
+                    punct_lines.append(p)
+                else:
+                    punct_lines.append(ln)
+            text_with_punc = "\n".join(punct_lines)
             # 規則式列點排版（免 AI）：第一/第二/第三… → 1. 2. 3. 換行清單
             text_with_punc = format_lists(text_with_punc)
 
