@@ -933,6 +933,18 @@ class IPCHandlers {
       }
     });
 
+    // 同步真實錄音狀態給 TypeLess（避免快捷鍵切換與滑鼠點擊狀態打架）
+    ipcMain.handle("sync-typeless-state", (event, isRecording) => {
+      try {
+        if (this.typelessManager) {
+          this.typelessManager.syncActiveState(isRecording);
+        }
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: error.message };
+      }
+    });
+
     // 更新 TypeLess 快捷鍵
     ipcMain.handle("set-typeless-hotkey", async (event, hotkey) => {
       try {

@@ -10,9 +10,8 @@ import { useTextProcessing } from "./hooks/useTextProcessing";
 import { useModelStatus } from "./hooks/useModelStatus";
 import { usePermissions } from "./hooks/usePermissions";
 import { useTranslation } from "./i18n";
-import { Mic, MicOff, Settings, History, Copy, Download, X, Pin, Minus, Sparkles } from "lucide-react";
+import { Mic, MicOff, Settings, Copy, Download, X, Pin, Minus, Sparkles } from "lucide-react";
 import SettingsPanel from "./components/SettingsPanel";
-import HistorySidebar from "./components/HistorySidebar";
 import { ModelDownloadProgress } from "./components/ui/model-status-indicator";
 
 // 动态导入设置页面组件
@@ -260,7 +259,6 @@ export default function App() {
   const [processedText, setProcessedText] = useState("");
   const [showTextArea, setShowTextArea] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [showHistorySidebar, setShowHistorySidebar] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(true); // 視窗置頂狀態
   const [aiOptimizationEnabled, setAiOptimizationEnabled] = useState(false); // AI 優化狀態
@@ -729,12 +727,6 @@ export default function App() {
     }
   };
 
-  // 处理打开历史记录（改為側邊欄）
-  const handleOpenHistory = () => {
-    setShowHistorySidebar(true);
-  };
-
-
   // 處理取消錄音：丟棄音訊，不轉錄、不貼上（而非 stopRecording 會處理結果）
   const handleCancelRecording = useCallback(() => {
     if (isRecordingNormal) {
@@ -854,6 +846,10 @@ export default function App() {
   useEffect(() => {
     if (syncRecordingState) {
       syncRecordingState(isRecording);
+    }
+    // 同步真實錄音狀態給 TypeLess，避免「右 Alt 切換」與「滑鼠點麥克風」打架
+    if (window.electronAPI?.syncTypelessState) {
+      window.electronAPI.syncTypelessState(isRecording);
     }
   }, [isRecording, syncRecordingState]);
 
@@ -990,14 +986,6 @@ export default function App() {
               {t('appName')}
             </h1>
           <div className="flex items-center space-x-2 non-draggable">
-            <Tooltip content={t('app.history')} position="bottom">
-              <button
-                onClick={handleOpenHistory}
-                className="p-2.5 hover:bg-white/70 dark:hover:bg-gray-700/70 rounded-xl transition-colors"
-              >
-                <History className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-              </button>
-            </Tooltip>
             <Tooltip content={t('app.settings')} position="bottom">
               <button
                 onClick={handleOpenSettings}
@@ -1165,13 +1153,6 @@ export default function App() {
       {showSettings && (
         <SettingsPanel onClose={() => setShowSettings(false)} />
       )}
-
-      {/* 歷史記錄側邊欄 */}
-      <HistorySidebar
-        isOpen={showHistorySidebar}
-        onClose={() => setShowHistorySidebar(false)}
-        t={t}
-      />
 
     </div>
   );

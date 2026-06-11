@@ -167,6 +167,16 @@ class TypelessManager {
   }
 
   /**
+   * 由渲染層同步「真實錄音狀態」。
+   * 因為錄音可由右 Alt 或滑鼠點擊麥克風按鈕觸發/停止，
+   * 若 isActive 與實際狀態脫鉤，下次按右 Alt 會 off-by-one（切換方向相反）。
+   * 每當渲染層錄音狀態改變就呼叫此方法，保持一致。
+   */
+  syncActiveState(isRecording) {
+    this.isActive = !!isRecording;
+  }
+
+  /**
    * 設定為「右 Alt 單擊切換」模式（TypeLess 預設）
    */
   setRightAltToggle() {
