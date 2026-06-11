@@ -207,6 +207,41 @@ def apply_punct_rules(text):
     return text
 
 
+def format_lists(text):
+    """規則式列點排版（免 AI）：偵測「第一…第二…第三…」連續列舉，
+    轉成換行的「1. 2. 3.」清單，開頭引言補上冒號。
+    觸發條件：以「第一」開頭、>=2 項；排除「第一次/第二次」這種時間詞。
+    """
+    if not text:
+        return text
+    import re
+    markers = []
+    for m in re.finditer(r'第([一二三四五六七八九十兩两])', text):
+        after = text[m.end():m.end() + 1]
+        if after == '次':  # 第一次/第二次 = 次數，非列點
+            continue
+        markers.append((m, m.group(1)))
+    if len(markers) < 2 or markers[0][1] != '一':
+        return text
+
+    intro = text[:markers[0][0].start()].strip().rstrip('，,、：:；; 。　')
+    items = []
+    for i, (m, _ord) in enumerate(markers):
+        start = m.end()
+        end = markers[i + 1][0].start() if i + 1 < len(markers) else len(text)
+        seg = text[start:end]
+        # 去掉項目開頭的量詞/連接詞（第一「個」是、第一「，」…）
+        seg = re.sub(r'^[個个位種种類类條条項项點点步名是為为來来，,、：:。　\s]+', '', seg)
+        seg = seg.strip().rstrip('。，,、；;　 ')
+        if seg:
+            items.append(seg)
+    if len(items) < 2:
+        return text
+
+    body = '\n'.join(f'{i + 1}. {it}' for i, it in enumerate(items))
+    return (intro + '：\n' + body) if intro else body
+
+
 def clean_transcript(text):
     """辨識前清理（標點之前）：全形→半形 + 合併英文 + 去口吃 + 語助詞正規化"""
     if not text:
@@ -1179,7 +1214,7 @@ class SherpaServer:
             return {
                 "success": True,
                 "session_id": session_id,
-                "final_text": to_traditional(apply_punct_rules(clean_transcript(text_with_punc))),
+                "final_text": to_traditional(format_lists(apply_punct_rules(clean_transcript(text_with_punc)))),
                 "raw_text": to_traditional(raw_text),
                 "duration": round(duration, 2),
                 "process_time": round(elapsed, 2),
@@ -1281,6 +1316,8 @@ class SherpaServer:
             # sherpa 的 Whisper 輸出不帶標點，所以兩種模型都套同一套標點流程。
             text_with_punc = self._add_punctuation(text)
             text_with_punc = apply_punct_rules(text_with_punc)
+            # 規則式列點排版（免 AI）：第一/第二/第三… → 1. 2. 3. 換行清單
+            text_with_punc = format_lists(text_with_punc)
 
             logger.info(f"轉錄完成: {text_with_punc[:100]}... (RTF: {rtf:.3f})")
 
