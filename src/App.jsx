@@ -1102,7 +1102,7 @@ export default function App() {
           onMouseUp={handleMouseUp}
         >
           <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 chinese-title">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 brand-title">
               {t('appName')}
             </h1>
           <div className="flex items-center space-x-1 non-draggable">

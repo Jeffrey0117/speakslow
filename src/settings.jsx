@@ -1043,7 +1043,7 @@ const SettingsPage = () => {
             <div className="space-y-4 max-w-xl">
               {/* 專案 */}
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-5 text-center">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 brand-title">
                   聲聲慢 <span className="text-base font-normal text-gray-400">SpeakSlow</span>
                 </h2>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">專為中文打造、最快的本地語音輸入 · 免費、隱私</p>

@@ -114,12 +114,12 @@ html, body {
   font-weight: 400;
 }
 
-/* 中文標題優化 - 使用源雲明體（主字體） */
+/* 中文標題 - 統一用粉圓（與內文同調性），明體只保留給品牌 .brand-title */
 .chinese-title {
-  font-family: 'GenWan', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', system-ui, -apple-system, sans-serif;
+  font-family: 'OpenHuninn', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', system-ui, -apple-system, sans-serif;
   line-height: 1.4;
-  letter-spacing: 0.1em;
-  font-weight: 500;
+  letter-spacing: 0.06em;
+  font-weight: 700;
 }
 
 /* 品牌名稱專用樣式 - 聲聲慢（使用源雲明體） */
