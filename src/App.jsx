@@ -982,9 +982,9 @@ export default function App() {
   const micProps = getMicButtonProps();
 
   return (
-    <div className="h-screen w-screen p-6">
-      {/* 卡片：透明外層留邊距，讓陰影均勻顯示、四角圓角不被視窗裁切 */}
-      <div className="h-full bg-gradient-to-br from-slate-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 px-4 pt-4 pb-2 rounded-3xl overflow-hidden flex flex-col border border-gray-200/70 dark:border-gray-700/60 shadow-[0_8px_44px_rgba(0,0,0,0.30)]">
+    <div className="h-screen w-screen p-8">
+      {/* 卡片：透明外層留足夠邊距，讓柔和陰影完整顯示、不被視窗裁成硬邊方塊 */}
+      <div className="h-full bg-gradient-to-br from-slate-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 px-4 pt-4 pb-2 rounded-3xl overflow-hidden flex flex-col shadow-[0_10px_30px_rgba(0,0,0,0.16)]">
       {/* 主界面 */}
       <div className="w-full max-w-2xl mx-auto flex-1 min-h-0 flex flex-col">
         {/* 标题栏 */}
