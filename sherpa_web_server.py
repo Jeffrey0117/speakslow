@@ -408,10 +408,10 @@ async def websocket_stream(websocket: WebSocket):
                         # 將 bytes 轉換為 base64 字符串給 stream_feed
                         feed_result = sherpa.stream_feed(session_id, audio_b64, is_final=False)
 
-                        if feed_result.get("success") and feed_result.get("text"):
+                        if feed_result.get("success") and feed_result.get("partial_text"):
                             await websocket.send_json({
                                 "type": "partial",
-                                "text": feed_result.get("text", "")
+                                "text": feed_result.get("partial_text", "")
                             })
                     else:
                         # 離線模式：累積音訊
@@ -426,7 +426,7 @@ async def websocket_stream(websocket: WebSocket):
                 if sherpa and sherpa.streaming_initialized:
                     # 串流模式：結束會話
                     end_result = sherpa.stream_end(session_id)
-                    final_text = end_result.get("text", "")
+                    final_text = end_result.get("final_text", "")
                 else:
                     # 離線模式：處理累積的音訊
                     if audio_buffer and sherpa:
