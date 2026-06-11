@@ -2,17 +2,19 @@ import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
 import { toast, Toaster } from "sonner";
-import { Settings, Save, Eye, EyeOff, X, Loader2, TestTube, CheckCircle, XCircle, Mic, Shield, Globe, Keyboard, Sparkles, BookText, Tag } from "lucide-react";
+import { Settings, Save, Eye, EyeOff, X, Loader2, TestTube, CheckCircle, XCircle, Mic, Shield, Globe, Keyboard, Sparkles, BookText, Tag, History } from "lucide-react";
 import { usePermissions } from "./hooks/usePermissions";
 import PermissionCard from "./components/ui/permission-card";
 import HotkeySettings from "./components/HotkeySettings";
 import HotwordsManager from "./components/HotwordsManager";
 import DictionaryManager from "./components/DictionaryManager";
+import HistoryView from "./components/HistoryView";
 import { useTranslation, LanguageProvider } from "./i18n";
 
 // 設定面板左側分頁（依重要性排序）
 const SETTINGS_TABS = [
   { id: 'general', label: '一般設定', icon: Settings },
+  { id: 'history', label: '歷史紀錄', icon: History },
   { id: 'ai', label: 'AI 文字優化', icon: Sparkles },
   { id: 'hotkeys', label: '快捷鍵', icon: Keyboard },
   { id: 'hotwords', label: '熱詞', icon: Tag },
@@ -665,6 +667,14 @@ const SettingsPage = () => {
           </div>
 
             </>)}
+
+            {activeTab === 'history' && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 mb-6">
+            <div className="p-6 h-[72vh]">
+              <HistoryView />
+            </div>
+          </div>
+            )}
 
             {activeTab === 'hotkeys' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 mb-6">

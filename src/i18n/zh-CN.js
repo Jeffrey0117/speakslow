@@ -158,7 +158,9 @@ export default {
     deleteSuccess: '已删除记录',
     deleteFailed: '删除记录失败',
     loadFailed: '加载历史记录失败',
-    aiOptimized: 'AI优化'
+    aiOptimized: 'AI优化',
+    total: '共 ',
+    records: ' 条'
   },
 
   // 通知消息

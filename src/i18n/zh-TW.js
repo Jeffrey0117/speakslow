@@ -158,7 +158,9 @@ export default {
     deleteSuccess: '已刪除紀錄',
     deleteFailed: '刪除紀錄失敗',
     loadFailed: '載入歷史紀錄失敗',
-    aiOptimized: 'AI優化'
+    aiOptimized: 'AI優化',
+    total: '共 ',
+    records: ' 筆'
   },
 
   // 通知訊息
