@@ -1,106 +1,83 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { Mic, MicOff, ArrowLeft, Copy, Trash2, Loader2, Wifi, WifiOff } from 'lucide-react'
+import { useWebSocket } from '../hooks/useWebSocket'
 import { useAudioRecorder } from '../hooks/useAudioRecorder'
-import { transcribeFile, checkHealth } from '../hooks/useApi'
 
-type RecordingState = 'idle' | 'recording' | 'processing'
-
-// 把累積的 16kHz / Int16 / mono PCM 片段組成 WAV Blob
-function pcmToWav(chunks: Int16Array[], sampleRate = 16000): Blob {
-  let total = 0
-  for (const c of chunks) total += c.length
-  const pcm = new Int16Array(total)
-  let off = 0
-  for (const c of chunks) { pcm.set(c, off); off += c.length }
-
-  const dataBytes = pcm.length * 2
-  const buf = new ArrayBuffer(44 + dataBytes)
-  const view = new DataView(buf)
-  const writeStr = (o: number, s: string) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)) }
-  writeStr(0, 'RIFF'); view.setUint32(4, 36 + dataBytes, true); writeStr(8, 'WAVE')
-  writeStr(12, 'fmt '); view.setUint32(16, 16, true)
-  view.setUint16(20, 1, true); view.setUint16(22, 1, true)
-  view.setUint32(24, sampleRate, true); view.setUint32(28, sampleRate * 2, true)
-  view.setUint16(32, 2, true); view.setUint16(34, 16, true)
-  writeStr(36, 'data'); view.setUint32(40, dataBytes, true)
-  let p = 44
-  for (let i = 0; i < pcm.length; i++, p += 2) view.setInt16(p, pcm[i], true)
-  return new Blob([buf], { type: 'audio/wav' })
-}
+type RecordingState = 'idle' | 'connecting' | 'recording' | 'processing'
 
 export default function VoicePage() {
   const [state, setState] = useState<RecordingState>('idle')
-  const [text, setText] = useState('')
-  const [apiError, setApiError] = useState<string | null>(null)
-  const [backendOk, setBackendOk] = useState(false)
-  const chunksRef = useRef<Int16Array[]>([])
+  const recordingRef = useRef(false) // 給音訊回呼即時讀取（避免 stale closure）
+
+  const {
+    isConnected,
+    partialText,
+    finalText,
+    error: wsError,
+    connect,
+    startRecording: wsStartRecording,
+    stopRecording: wsStopRecording,
+    sendAudio,
+    clearText,
+  } = useWebSocket()
 
   const {
     volumeLevel,
     error: recorderError,
-    startRecording,
-    stopRecording,
+    startRecording: startAudioRecording,
+    stopRecording: stopAudioRecording,
     onAudioData,
   } = useAudioRecorder()
 
-  // 累積 PCM 片段（複製一份，避免 buffer 被重用）
+  // 設置音訊回呼：只在錄音中送出（用 ref 即時判斷，sendAudio 內部會檢查連線）
   useEffect(() => {
-    onAudioData((bufData) => {
-      chunksRef.current.push(new Int16Array(bufData.slice(0)))
+    onAudioData((data) => {
+      if (recordingRef.current) sendAudio(data)
     })
-  }, [onAudioData])
+  }, [onAudioData, sendAudio])
 
-  // 開機檢查後端
-  useEffect(() => {
-    checkHealth().then(setBackendOk).catch(() => setBackendOk(false))
-  }, [])
+  // 即時組合顯示文字（已定稿 + 進行中）
+  const displayText = partialText
+    ? `${finalText}${finalText ? '\n' : ''}${partialText}`
+    : finalText
 
-  const error = apiError || recorderError
-  const displayText = text
+  const error = wsError || recorderError
 
   const handleMicClick = useCallback(async () => {
     if (state === 'recording') {
-      // 停止 → 組 WAV → 送離線辨識
+      // 停止：先停音訊回呼，通知伺服器結束，等最終結果
       setState('processing')
-      stopRecording()
-      await new Promise((r) => setTimeout(r, 150)) // 等最後一塊音訊
-      const chunks = chunksRef.current
-      chunksRef.current = []
-      try {
-        if (chunks.length === 0) { setState('idle'); return }
-        const wav = pcmToWav(chunks)
-        const res = await transcribeFile(wav)
-        if (res.success && res.text) {
-          setText((prev) => (prev ? prev + '\n' : '') + res.text)
-        } else if (!res.success) {
-          setApiError(res.error || '辨識失敗')
-        }
-      } catch {
-        setApiError('無法連接後端，請確認 sherpa_web_server 已啟動於 :8765')
-      } finally {
-        setState('idle')
-      }
+      recordingRef.current = false
+      stopAudioRecording()
+      wsStopRecording()
+      setTimeout(() => setState('idle'), 800)
     } else if (state === 'idle') {
-      // 開始錄音
-      setApiError(null)
-      chunksRef.current = []
+      setState('connecting')
       try {
-        await startRecording()
+        await connect()              // 連上才往下（已修 stale closure）
+        await startAudioRecording()
+        wsStartRecording()
+        recordingRef.current = true
         setState('recording')
-      } catch {
+      } catch (err) {
+        console.error('開始串流失敗:', err)
+        recordingRef.current = false
         setState('idle')
       }
     }
-  }, [state, startRecording, stopRecording])
+  }, [state, connect, startAudioRecording, stopAudioRecording, wsStartRecording, wsStopRecording])
 
-  const handleCopy = useCallback(() => { if (text) navigator.clipboard.writeText(text) }, [text])
-  const handleClear = useCallback(() => setText(''), [])
+  const handleCopy = useCallback(() => {
+    if (displayText) navigator.clipboard.writeText(displayText)
+  }, [displayText])
 
-  const BackendIndicator = () => (
-    <div className={`flex items-center gap-1 text-xs ${backendOk ? 'text-green-500' : 'text-gray-400'}`}>
-      {backendOk ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-      <span>{backendOk ? '後端就緒' : '後端未啟動'}</span>
+  const handleClear = useCallback(() => clearText(), [clearText])
+
+  const ConnectionIndicator = () => (
+    <div className={`flex items-center gap-1 text-xs ${isConnected ? 'text-green-500' : 'text-gray-400'}`}>
+      {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+      <span>{isConnected ? '已連線（串流）' : '未連線'}</span>
     </div>
   )
 
@@ -118,7 +95,7 @@ export default function VoicePage() {
           <span>返回</span>
         </Link>
         <h1 className="font-title text-xl font-bold text-gray-900 dark:text-white">聲聲慢</h1>
-        <BackendIndicator />
+        <ConnectionIndicator />
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-center p-4">
@@ -127,7 +104,13 @@ export default function VoicePage() {
             {displayText ? (
               <>
                 <p className="font-content text-lg text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">
-                  {displayText}
+                  {finalText}
+                  {partialText && (
+                    <>
+                      {finalText && '\n'}
+                      <span className="text-gray-400 dark:text-gray-500">{partialText}</span>
+                    </>
+                  )}
                 </p>
                 <div className="absolute top-4 right-4 flex gap-2">
                   <button onClick={handleCopy} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors" title="複製">
@@ -141,8 +124,9 @@ export default function VoicePage() {
             ) : (
               <p className="text-gray-400 dark:text-gray-500 text-center">
                 {state === 'idle' && '點擊麥克風開始錄音'}
+                {state === 'connecting' && '正在連接...'}
                 {state === 'recording' && '正在聆聽...'}
-                {state === 'processing' && '辨識中...'}
+                {state === 'processing' && '處理中...'}
               </p>
             )}
           </div>
@@ -160,7 +144,7 @@ export default function VoicePage() {
 
         <button
           onClick={handleMicClick}
-          disabled={state === 'processing'}
+          disabled={state === 'processing' || state === 'connecting'}
           className={`w-20 h-20 rounded-full flex items-center justify-center transition-all relative
             ${state === 'idle'
               ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
@@ -168,7 +152,7 @@ export default function VoicePage() {
               ? 'bg-red-500 text-white recording-pulse recording-glow'
               : 'bg-gray-400 text-white cursor-not-allowed'}`}
         >
-          {state === 'processing' ? (
+          {state === 'processing' || state === 'connecting' ? (
             <Loader2 className="w-8 h-8 animate-spin" />
           ) : state === 'recording' ? (
             <MicOff className="w-8 h-8" />
@@ -179,13 +163,14 @@ export default function VoicePage() {
 
         <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
           {state === 'idle' && '點擊開始錄音'}
-          {state === 'recording' && '點擊停止並辨識'}
+          {state === 'connecting' && '正在連接伺服器...'}
+          {state === 'recording' && '點擊停止錄音（即時逐字）'}
           {state === 'processing' && '正在辨識...'}
         </p>
       </main>
 
       <footer className="p-4 text-center text-sm text-gray-400 dark:text-gray-500">
-        <p>離線辨識 · 與桌面版相同引擎（去口吃、自動標點）</p>
+        <p>串流即時辨識 · 與桌面版相同引擎</p>
       </footer>
     </div>
   )

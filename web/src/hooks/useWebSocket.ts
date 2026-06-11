@@ -11,7 +11,7 @@ interface UseWebSocketReturn {
   partialText: string
   finalText: string
   error: string | null
-  connect: () => void
+  connect: () => Promise<void>
   disconnect: () => void
   startRecording: () => void
   stopRecording: () => void
@@ -37,24 +37,39 @@ export function useWebSocket(): UseWebSocketReturn {
     }
   }, [])
 
-  const connect = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      return
-    }
-
-    clearReconnectTimeout()
-    setConnectionState('connecting')
-    setError(null)
-
-    try {
-      const ws = new WebSocket(`${WS_BASE_URL}/ws/stream`)
-
-      ws.onopen = () => {
-        console.log('WebSocket connected')
-        setConnectionState('connected')
+  const connect = useCallback((): Promise<void> => {
+    return new Promise<void>((resolve, reject) => {
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        resolve()
+        return
       }
 
-      ws.onmessage = (event) => {
+      clearReconnectTimeout()
+      setConnectionState('connecting')
+      setError(null)
+
+      let settled = false
+      const settleTimeout = window.setTimeout(() => {
+        if (!settled) {
+          settled = true
+          reject(new Error('連接超時'))
+        }
+      }, 5000)
+
+      try {
+        const ws = new WebSocket(`${WS_BASE_URL}/ws/stream`)
+
+        ws.onopen = () => {
+          console.log('WebSocket connected')
+          setConnectionState('connected')
+          if (!settled) {
+            settled = true
+            clearTimeout(settleTimeout)
+            resolve()
+          }
+        }
+
+        ws.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data)
 
@@ -97,32 +112,43 @@ export function useWebSocket(): UseWebSocketReturn {
         }
       }
 
-      ws.onerror = (event) => {
-        console.error('WebSocket error:', event)
+        ws.onerror = (event) => {
+          console.error('WebSocket error:', event)
+          setConnectionState('error')
+          setError('連接錯誤')
+          if (!settled) {
+            settled = true
+            clearTimeout(settleTimeout)
+            reject(new Error('連接錯誤'))
+          }
+        }
+
+        ws.onclose = (event) => {
+          console.log('WebSocket closed:', event.code, event.reason)
+          setConnectionState('disconnected')
+          setSessionId(null)
+
+          // 非正常關閉時嘗試重連
+          if (event.code !== 1000) {
+            reconnectTimeoutRef.current = window.setTimeout(() => {
+              console.log('Attempting to reconnect...')
+              connect().catch(() => { /* 重連失敗，等下次 */ })
+            }, 3000)
+          }
+        }
+
+        wsRef.current = ws
+      } catch (e) {
+        console.error('Failed to create WebSocket:', e)
         setConnectionState('error')
-        setError('連接錯誤')
-      }
-
-      ws.onclose = (event) => {
-        console.log('WebSocket closed:', event.code, event.reason)
-        setConnectionState('disconnected')
-        setSessionId(null)
-
-        // 非正常關閉時嘗試重連
-        if (event.code !== 1000) {
-          reconnectTimeoutRef.current = window.setTimeout(() => {
-            console.log('Attempting to reconnect...')
-            connect()
-          }, 3000)
+        setError('無法建立連接')
+        if (!settled) {
+          settled = true
+          clearTimeout(settleTimeout)
+          reject(e as Error)
         }
       }
-
-      wsRef.current = ws
-    } catch (e) {
-      console.error('Failed to create WebSocket:', e)
-      setConnectionState('error')
-      setError('無法建立連接')
-    }
+    })
   }, [clearReconnectTimeout])
 
   const disconnect = useCallback(() => {
