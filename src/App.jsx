@@ -814,6 +814,19 @@ export default function App() {
     }
   };
 
+  // 面板上快速切換 AI 潤飾（暫時關掉省 API）
+  const toggleAiOptimization = useCallback(async () => {
+    const next = !aiOptimizationEnabled;
+    setAiOptimizationEnabled(next);
+    try {
+      if (window.electronAPI?.setSetting) {
+        await window.electronAPI.setSetting('enable_ai_optimization', next);
+      }
+    } catch (e) {
+      /* 設定寫入失敗不影響 */
+    }
+  }, [aiOptimizationEnabled]);
+
   // 处理打开设置
   const handleOpenSettings = () => {
     if (window.electronAPI) {
@@ -1103,6 +1116,18 @@ export default function App() {
                 </button>
               </Tooltip>
             )}
+            <Tooltip content={aiOptimizationEnabled ? 'AI 潤飾：開（點擊暫時關閉、省 API）' : 'AI 潤飾：關（點擊開啟）'} position="bottom">
+              <button
+                onClick={toggleAiOptimization}
+                className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition-colors non-draggable ${
+                  aiOptimizationEnabled
+                    ? 'bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300'
+                    : 'text-gray-400 dark:text-gray-500 hover:bg-white/70 dark:hover:bg-gray-700/70'
+                }`}
+              >
+                ✨AI
+              </button>
+            </Tooltip>
             <Tooltip content={t('app.settings')} position="bottom">
               <button
                 onClick={handleOpenSettings}
