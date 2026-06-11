@@ -7,15 +7,12 @@ import React from "react";
 const TypelessIndicator = () => {
   return (
     <div className="w-full h-full flex items-center justify-center">
-      <div className="bg-red-500 backdrop-blur-sm rounded-full px-5 py-2.5 flex items-center gap-3 border border-red-400/60">
-        {/* 錄音圓點動畫 */}
-        <div className="relative">
-          <div className="w-3.5 h-3.5 bg-white rounded-full animate-pulse" />
-          <div className="absolute inset-0 w-3.5 h-3.5 bg-white rounded-full animate-ping opacity-75" />
-        </div>
+      <div className="pill-bounce bg-red-500 backdrop-blur-sm rounded-full px-4 py-1.5 flex items-center gap-2.5 border border-red-400/60">
+        {/* 靜止白點（不跳動）*/}
+        <div className="w-2.5 h-2.5 bg-white rounded-full" />
 
         {/* 文字 */}
-        <span className="text-white font-semibold text-[15px] whitespace-nowrap tracking-wide">
+        <span className="text-white font-semibold text-sm whitespace-nowrap tracking-wide">
           錄音中...
         </span>
 
