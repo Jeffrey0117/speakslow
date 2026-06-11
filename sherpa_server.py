@@ -280,6 +280,12 @@ class SherpaServer:
         self.num_threads = min(os.cpu_count() or 4, 8)
         logger.info(f"動態執行緒數: {self.num_threads} (CPU 核心: {os.cpu_count()})")
 
+        # 推論提供者 (provider)：cpu / cuda / directml 等
+        # 透過環境變數 SHERPA_PROVIDER 控制，預設 cpu。
+        # 設為 cuda 可使用 NVIDIA GPU 加速（需安裝 CUDA 版 sherpa-onnx）。
+        self.provider = os.environ.get("SHERPA_PROVIDER", "cpu").strip().lower() or "cpu"
+        logger.info(f"推論提供者 (provider): {self.provider}")
+
         # 模型目錄
         self.model_dir = model_dir or self._find_model_dir()
         self.streaming_model_dir = self._find_streaming_model_dir()
@@ -511,15 +517,28 @@ class SherpaServer:
 
             import sherpa_onnx
 
-            # 創建識別器（使用動態執行緒數）
-            self.recognizer = sherpa_onnx.OfflineRecognizer.from_paraformer(
-                paraformer=model_path,
-                tokens=tokens_path,
-                num_threads=self.num_threads,
-                sample_rate=16000,
-                feature_dim=80,
-                decoding_method="greedy_search",
-            )
+            # 創建識別器（使用動態執行緒數 + 可選 GPU 加速）
+            def _build_offline(provider):
+                return sherpa_onnx.OfflineRecognizer.from_paraformer(
+                    paraformer=model_path,
+                    tokens=tokens_path,
+                    num_threads=self.num_threads,
+                    sample_rate=16000,
+                    feature_dim=80,
+                    decoding_method="greedy_search",
+                    provider=provider,
+                )
+
+            try:
+                self.recognizer = _build_offline(self.provider)
+                logger.info(f"離線辨識器建立成功，provider={self.provider}")
+            except Exception as e:
+                if self.provider != "cpu":
+                    logger.warning(f"provider={self.provider} 初始化失敗，回退至 CPU: {e}")
+                    self.provider = "cpu"
+                    self.recognizer = _build_offline("cpu")
+                else:
+                    raise
 
             # 初始化 Silero VAD
             self._init_vad()
@@ -637,6 +656,7 @@ class SherpaServer:
                 "joiner": joiner_path,
                 "tokens": tokens_path,
                 "num_threads": self.num_threads,
+                "provider": self.provider,
                 "sample_rate": 16000,
                 "feature_dim": 80,
                 "decoding_method": decoding_method,
@@ -658,7 +678,17 @@ class SherpaServer:
                 else:
                     logger.warning(f"BPE 詞彙表不存在: {bpe_vocab_path}，熱詞功能可能受限")
 
-            self.streaming_recognizer = sherpa_onnx.OnlineRecognizer.from_transducer(**recognizer_params)
+            try:
+                self.streaming_recognizer = sherpa_onnx.OnlineRecognizer.from_transducer(**recognizer_params)
+                logger.info(f"串流辨識器建立成功，provider={recognizer_params.get('provider')}")
+            except Exception as e:
+                if recognizer_params.get("provider") != "cpu":
+                    logger.warning(f"串流 provider={recognizer_params.get('provider')} 初始化失敗，回退至 CPU: {e}")
+                    recognizer_params["provider"] = "cpu"
+                    self.provider = "cpu"
+                    self.streaming_recognizer = sherpa_onnx.OnlineRecognizer.from_transducer(**recognizer_params)
+                else:
+                    raise
 
             # 記錄熱詞檔案路徑
             self.hotwords_file = hotwords_file
