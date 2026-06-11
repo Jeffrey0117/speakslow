@@ -841,10 +841,10 @@ class IPCHandlers {
           return { success: false, error: "TypeLess 管理器未初始化" };
         }
 
-        // 設置快捷鍵
-        if (hotkey) {
-          this.typelessManager.setHotkey(hotkey);
-        }
+        // TypeLess 固定使用「右 Alt 單擊切換」。
+        // （uiohook 可區分左右 Alt，但 Electron accelerator 無法表達單獨的右 Alt，
+        //   因此忽略設定中的快捷鍵字串，直接設定右 Alt 切換模式）
+        this.typelessManager.setRightAltToggle();
 
         // 設置回調函數
         this.typelessManager.setCallbacks({

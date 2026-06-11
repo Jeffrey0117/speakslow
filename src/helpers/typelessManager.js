@@ -10,13 +10,18 @@ class TypelessManager {
     this.logger = logger;
     this.isEnabled = false;
     this.isKeyDown = false;
-    this.triggerKey = UiohookKey.Space; // 預設觸發鍵
+    // 預設：右 Alt（單擊切換）。uiohook 能區分左右 Alt（AltRight=3640）
+    this.triggerKey = UiohookKey.AltRight;
     this.modifiers = {
-      ctrl: true,
-      shift: true,
+      ctrl: false,
+      shift: false,
       alt: false,
       meta: false
     };
+    // 操作模式：'toggle' 單擊切換（按一下開始、再按一下停止）| 'hold' 按住說話
+    this.mode = 'toggle';
+    this.isActive = false;   // toggle 模式：目前是否正在錄音
+    this.triggerHeld = false; // 防止長按時的自動重複觸發
 
     // 回調函數
     this.onStartRecording = null;
@@ -53,16 +58,30 @@ class TypelessManager {
    */
   handleKeyDown(event) {
     if (!this.isEnabled) return;
+    if (event.keycode !== this.triggerKey) return;
 
-    // 檢查是否為觸發鍵 + 正確的修飾鍵
-    if (event.keycode === this.triggerKey && this.checkModifiers(event)) {
+    if (this.mode === 'toggle') {
+      // 單擊切換：忽略長按造成的自動重複（keydown 會連續觸發）
+      if (this.triggerHeld) return;
+      this.triggerHeld = true;
+
+      this.isActive = !this.isActive;
+      if (this.isActive) {
+        this.safeLog('info', 'TypeLess(切換): 開始錄音');
+        if (this.onStartRecording) this.onStartRecording();
+      } else {
+        this.safeLog('info', 'TypeLess(切換): 停止錄音');
+        if (this.onStopRecording) this.onStopRecording();
+      }
+      return;
+    }
+
+    // hold 模式：按住說話（需檢查修飾鍵）
+    if (this.checkModifiers(event)) {
       if (!this.isKeyDown) {
         this.isKeyDown = true;
         this.safeLog('info', 'TypeLess: 開始錄音 (keydown)');
-
-        if (this.onStartRecording) {
-          this.onStartRecording();
-        }
+        if (this.onStartRecording) this.onStartRecording();
       }
     }
   }
@@ -72,17 +91,16 @@ class TypelessManager {
    */
   handleKeyUp(event) {
     if (!this.isEnabled) return;
+    if (event.keycode !== this.triggerKey) return;
 
-    // 檢查是否為觸發鍵
-    if (event.keycode === this.triggerKey) {
-      if (this.isKeyDown) {
-        this.isKeyDown = false;
-        this.safeLog('info', 'TypeLess: 停止錄音 (keyup)');
+    // 放開觸發鍵：解除長按鎖定
+    this.triggerHeld = false;
 
-        if (this.onStopRecording) {
-          this.onStopRecording();
-        }
-      }
+    // hold 模式才在放開時停止錄音；toggle 模式由再次按下控制
+    if (this.mode === 'hold' && this.isKeyDown) {
+      this.isKeyDown = false;
+      this.safeLog('info', 'TypeLess: 停止錄音 (keyup)');
+      if (this.onStopRecording) this.onStopRecording();
     }
   }
 
@@ -129,10 +147,26 @@ class TypelessManager {
 
       this.isEnabled = false;
       this.isKeyDown = false;
+      this.isActive = false;
+      this.triggerHeld = false;
       this.safeLog('info', 'TypeLess 模式已停用');
     } catch (error) {
       this.safeLog('error', 'TypeLess 模式停用失敗', error);
     }
+  }
+
+  /**
+   * 設定為「右 Alt 單擊切換」模式（TypeLess 預設）
+   */
+  setRightAltToggle() {
+    this.triggerKey = UiohookKey.AltRight;
+    this.modifiers = { ctrl: false, shift: false, alt: false, meta: false };
+    this.mode = 'toggle';
+    this.isActive = false;
+    this.triggerHeld = false;
+    this.safeLog('info', 'TypeLess 設定為「右 Alt 單擊切換」', {
+      triggerKey: this.triggerKey,
+    });
   }
 
   /**

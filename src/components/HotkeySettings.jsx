@@ -9,8 +9,8 @@ const HOTKEY_ACTIONS = {
     description: '主要錄音切換快捷鍵',
   },
   'typeless-recording': {
-    name: 'TypeLess 按住錄音',
-    description: '按住開始錄音，放開停止並辨識',
+    name: 'TypeLess 模式',
+    description: '右 Alt 單擊開始錄音，再按一次停止並貼到當前游標處（固定為右 Alt）',
   },
   'cancel-recording': {
     name: '取消錄音',
@@ -181,6 +181,8 @@ const HotkeyItem = ({ actionId, actionInfo, currentHotkey, defaultHotkey, onUpda
   };
 
   const isDefault = currentHotkey === defaultHotkey;
+  // TypeLess 固定為「右 Alt 單擊切換」，不可自訂（accelerator 無法表達單獨右 Alt）
+  const isTypeless = actionId === 'typeless-recording';
 
   return (
     <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
@@ -201,7 +203,11 @@ const HotkeyItem = ({ actionId, actionInfo, currentHotkey, defaultHotkey, onUpda
       </div>
 
       <div className="flex items-center gap-2">
-        {isRecording ? (
+        {isTypeless ? (
+          <div className="flex-1 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-center font-mono text-gray-700 dark:text-gray-300">
+            右 Alt（單擊切換）
+          </div>
+        ) : isRecording ? (
           <>
             <div
               className="flex-1 px-4 py-2 bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-400 dark:border-blue-500 rounded-lg text-center font-mono text-blue-700 dark:text-blue-300 animate-pulse"
