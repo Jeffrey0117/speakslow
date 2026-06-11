@@ -95,7 +95,7 @@ const SettingsPage = () => {
         setSettings(prev => ({ ...prev, ...loadedSettings }));
         
         // 检查是否使用自定义模型
-        const predefinedModels = ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo", "gpt-4o", "gpt-4o-mini", "qwen3-30b-a3b-instruct-2507", "deepseek-chat", "deepseek-reasoner"];
+        const predefinedModels = ["deepseek-chat", "deepseek-reasoner", "gpt-3.5-turbo", "gpt-4", "gpt-4-turbo", "gpt-4o", "gpt-4o-mini", "gemini-2.0-flash", "gemini-1.5-pro", "qwen2.5", "qwen2.5:3b", "llama3.2"];
         setCustomModel(!predefinedModels.includes(loadedSettings.ai_model));
       }
     } catch (error) {
@@ -862,9 +862,12 @@ const SettingsPage = () => {
                           } else if (model.startsWith('gpt')) {
                             baseUrl = 'https://api.openai.com/v1';
                             providerName = 'OpenAI';
-                          } else if (model.startsWith('qwen')) {
-                            baseUrl = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
-                            providerName = '阿里雲';
+                          } else if (model.startsWith('gemini')) {
+                            baseUrl = 'https://generativelanguage.googleapis.com/v1beta/openai';
+                            providerName = 'Gemini';
+                          } else if (model.startsWith('qwen') || model.startsWith('llama') || model.startsWith('gemma')) {
+                            baseUrl = 'http://localhost:11434/v1';
+                            providerName = 'Ollama（本地）';
                           }
 
                           setSettings(prev => ({
@@ -890,11 +893,14 @@ const SettingsPage = () => {
                           <option value="gpt-4o">GPT-4o</option>
                           <option value="gpt-4o-mini">GPT-4o Mini</option>
                         </optgroup>
-                        <optgroup label="阿里雲 (通義千問)">
-                          <option value="qwen-plus">Qwen Plus (推薦)</option>
-                          <option value="qwen-turbo">Qwen Turbo (經濟)</option>
-                          <option value="qwen-max">Qwen Max (高性能)</option>
-                          <option value="qwen-long">Qwen Long (長文本)</option>
+                        <optgroup label="Gemini">
+                          <option value="gemini-2.0-flash">Gemini 2.0 Flash (快、便宜)</option>
+                          <option value="gemini-1.5-pro">Gemini 1.5 Pro (高品質)</option>
+                        </optgroup>
+                        <optgroup label="Ollama（本地、免費）">
+                          <option value="qwen2.5">Qwen2.5 (中文推薦)</option>
+                          <option value="qwen2.5:3b">Qwen2.5 3B (更快)</option>
+                          <option value="llama3.2">Llama 3.2</option>
                         </optgroup>
                       </select>
                     )}
