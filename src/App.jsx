@@ -208,7 +208,7 @@ const TextDisplay = React.memo(({ originalText, processedText, scrollRef, t }) =
         <div ref={scrollRef} className="h-[148px] overflow-y-auto px-3.5 py-3 panel-scroll">
           <p
             className="chinese-content text-gray-800 dark:text-gray-200"
-            style={{ fontSize: '14px', lineHeight: 1.7, letterSpacing: '0.02em' }}
+            style={{ fontSize: '14px', lineHeight: 1.7, letterSpacing: '0.02em', whiteSpace: 'pre-wrap' }}
           >
             {displayText}
           </p>

@@ -410,7 +410,7 @@ export const HistoryView = () => {
                 <div>
                   <p
                     className="chinese-content bg-gray-50 dark:bg-gray-700/60 p-2.5 rounded-lg border dark:border-gray-600/30"
-                    style={{ fontSize: '13px', lineHeight: 1.6, letterSpacing: '0.02em' }}
+                    style={{ fontSize: '13px', lineHeight: 1.6, letterSpacing: '0.02em', whiteSpace: 'pre-wrap' }}
                   >
                     {item.text}
                   </p>
@@ -421,7 +421,7 @@ export const HistoryView = () => {
                     <h4 className="text-xs font-medium text-emerald-700 dark:text-emerald-400 mb-1">{t('history.aiOptimized')}：</h4>
                     <p
                       className="chinese-content bg-emerald-50 dark:bg-emerald-900/20 p-2.5 rounded-lg border border-emerald-200 dark:border-emerald-700"
-                      style={{ fontSize: '13px', lineHeight: 1.6, letterSpacing: '0.02em' }}
+                      style={{ fontSize: '13px', lineHeight: 1.6, letterSpacing: '0.02em', whiteSpace: 'pre-wrap' }}
                     >
                       {item.processed_text}
                     </p>
