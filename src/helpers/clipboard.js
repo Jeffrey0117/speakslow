@@ -9,6 +9,17 @@ class ClipboardManager {
     // Windows: 儲存之前的前景視窗 handle
     this.previousForegroundWindow = null;
 
+    // Windows: 常駐 PowerShell（避免每次 spawn + Add-Type 的數秒延遲）
+    this._psShell = null;
+    this._psReady = false;
+    this._psStdoutBuf = "";
+    this._psPending = [];      // 等待回應的請求佇列 [{marker, resolve}]
+    this._psReqSeq = 0;
+    if (process.platform === "win32") {
+      // 啟動時就預熱，第一次貼上即為快速
+      try { this._ensurePsShell(); } catch (e) { /* 失敗則回退舊方法 */ }
+    }
+
     // 尝试加载 osascript 模块（仅在 macOS 上）
     this.osascript = null;
     if (process.platform === "darwin") {
@@ -33,6 +44,91 @@ class ClipboardManager {
         }
       }
     }
+  }
+
+  // =====================================================
+  // Windows 常駐 PowerShell（避免每次 spawn + Add-Type 的數秒延遲）
+  // handle 直接存在 PS 變數 $savedHwnd，Node 不需解析 stdout
+  // =====================================================
+  _ensurePsShell() {
+    if (process.platform !== "win32") return null;
+    if (this._psShell && this._psReady) return this._psShell;
+    if (this._psShell) return this._psShell; // 啟動中
+
+    try {
+      const ps = spawn("powershell", ["-NoProfile", "-NoLogo"], {
+        windowsHide: true,
+        stdio: ["pipe", "pipe", "pipe"],
+      });
+      this._psShell = ps;
+      this._psReady = false;
+
+      ps.stdout.on("data", () => {}); // 排空，避免 buffer 塞滿
+      ps.stderr.on("data", (d) => {
+        this.safeLog(`⚠️ PS 常駐錯誤: ${d.toString().slice(0, 200)}`);
+      });
+      const cleanup = () => {
+        this._psShell = null;
+        this._psReady = false;
+      };
+      ps.on("exit", cleanup);
+      ps.on("error", (e) => {
+        this.safeLog(`❌ PS 常駐程序錯誤: ${e.message}`);
+        cleanup();
+      });
+
+      // 一次性初始化：載入 Win32 API + WScript.Shell COM + 還原焦點函式
+      const init = [
+        `Add-Type -Namespace Native -Name Fg -MemberDefinition '[DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow(); [DllImport("user32.dll")][return: MarshalAs(UnmanagedType.Bool)] public static extern bool SetForegroundWindow(IntPtr hWnd); [DllImport("user32.dll")] public static extern bool AttachThreadInput(uint a, uint b, bool c); [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, IntPtr p); [DllImport("kernel32.dll")] public static extern uint GetCurrentThreadId();'`,
+        `$ws = New-Object -ComObject WScript.Shell`,
+        `function Restore-Fg { param($hwnd) $ft=[Native.Fg]::GetWindowThreadProcessId($hwnd,[IntPtr]::Zero); $ct=[Native.Fg]::GetCurrentThreadId(); if($ft -ne $ct){[Native.Fg]::AttachThreadInput($ct,$ft,$true)|Out-Null}; [Native.Fg]::SetForegroundWindow($hwnd)|Out-Null; if($ft -ne $ct){[Native.Fg]::AttachThreadInput($ct,$ft,$false)|Out-Null} }`,
+        `$savedHwnd = [IntPtr]::Zero`,
+      ];
+      for (const line of init) ps.stdin.write(line + "\r\n");
+      this._psReady = true; // stdin 有序，後續指令會排在 init 之後執行
+      this.safeLog("✅ 常駐 PowerShell 已就緒（快速貼上）");
+      return ps;
+    } catch (e) {
+      this.safeLog(`⚠️ 無法啟動常駐 PowerShell，將回退舊方法: ${e.message}`);
+      this._psShell = null;
+      this._psReady = false;
+      return null;
+    }
+  }
+
+  _psSend(line) {
+    if (!this._psShell || !this._psReady) return false;
+    try {
+      this._psShell.stdin.write(line + "\r\n");
+      return true;
+    } catch (e) {
+      this.safeLog(`⚠️ 寫入常駐 PS 失敗: ${e.message}`);
+      this._psReady = false;
+      return false;
+    }
+  }
+
+  // 快速擷取目前前景視窗（存進 PS 變數，不回傳到 Node）
+  captureForegroundFast() {
+    const ps = this._ensurePsShell();
+    if (!ps) return false;
+    return this._psSend(`$savedHwnd = [Native.Fg]::GetForegroundWindow()`);
+  }
+
+  // 快速：還原焦點到先前視窗並貼上（Ctrl+V）
+  focusAndPasteFast() {
+    const ps = this._ensurePsShell();
+    if (!ps) return false;
+    return this._psSend(
+      `if ($savedHwnd -ne [IntPtr]::Zero) { Restore-Fg $savedHwnd; Start-Sleep -Milliseconds 25 }; $ws.SendKeys('^v')`
+    );
+  }
+
+  // 快速：送出 Enter
+  sendEnterFast() {
+    const ps = this._ensurePsShell();
+    if (!ps) return false;
+    return this._psSend(`Start-Sleep -Milliseconds 20; $ws.SendKeys('{ENTER}')`);
   }
 
   // 简化的 macOS accessibility 检查
@@ -87,8 +183,13 @@ class ClipboardManager {
 
       if (process.platform === "win32") {
         // Windows: 前端已經用 navigator.clipboard 寫入了
-        // 這裡只需要嘗試自動貼上（模擬 Ctrl+V）
-        this.safeLog("⌨️ 嘗試自動貼上 (SendKeys)");
+        // 優先用常駐 PowerShell 快速還原焦點 + 貼上（~0.1 秒）
+        if (this.focusAndPasteFast()) {
+          this.safeLog("⚡ 快速貼上 (常駐 PS, 還原焦點 + Ctrl+V)");
+          return;
+        }
+        // 回退：舊的 spawn 方式（每次 Add-Type，較慢）
+        this.safeLog("⌨️ 嘗試自動貼上 (SendKeys 回退)");
         await this.pasteWindows();
         return;
       }
@@ -386,6 +487,13 @@ class ClipboardManager {
       return { success: true, message: "非 Windows 平台" };
     }
 
+    // 優先：用常駐 PowerShell 快速擷取（非阻塞，handle 存在 PS 端 $savedHwnd）
+    if (this.captureForegroundFast()) {
+      this.previousForegroundWindow = "ps"; // 旗標：已在 PS 端擷取焦點
+      this.safeLog("✅ 已快速擷取前景視窗 (常駐 PS)");
+      return { success: true, handle: "ps" };
+    }
+
     try {
       this.safeLog("🔍 同步獲取前景視窗 handle...");
 
@@ -583,6 +691,11 @@ self.close
       this.safeLog("⏎ 發送 Enter 鍵（完全信任模式）");
 
       if (process.platform === "win32") {
+        // 優先用常駐 PowerShell（快速）
+        if (this.sendEnterFast()) {
+          this.safeLog("⚡ 快速送出 Enter (常駐 PS)");
+          return { success: true };
+        }
         return await this.sendEnterWindows();
       } else if (process.platform === "darwin") {
         return await this.sendEnterMacOS();
