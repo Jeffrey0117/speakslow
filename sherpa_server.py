@@ -254,7 +254,7 @@ class SherpaServer:
         self.recognizer = None  # 離線辨識器 (Paraformer)
         self.streaming_recognizer = None  # 串流辨識器 (Zipformer)
         self.vad = None  # Silero VAD 模型
-        self.punc_model = None  # FunASR 標點模型
+        self.punc_model = None  # sherpa-onnx ct-transformer 標點模型
         self.initialized = False
         self.streaming_initialized = False
         self.running = True
@@ -289,6 +289,7 @@ class SherpaServer:
         # 模型目錄
         self.model_dir = model_dir or self._find_model_dir()
         self.streaming_model_dir = self._find_streaming_model_dir()
+        self.punct_model_dir = self._find_punct_model_dir()
 
         signal.signal(signal.SIGTERM, self._signal_handler)
         signal.signal(signal.SIGINT, self._signal_handler)
@@ -320,6 +321,15 @@ class SherpaServer:
         if os.path.exists(streaming_model):
             return streaming_model
         return streaming_model  # 默認返回路徑
+
+    def _find_punct_model_dir(self):
+        """尋找 sherpa-onnx 標點模型目錄 (ct-transformer)"""
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        punct_model = os.path.join(
+            script_dir, "poc-sherpa",
+            "sherpa-onnx-punct-ct-transformer-zh-en-vocab272727-2024-04-12"
+        )
+        return punct_model
 
     def _signal_handler(self, signum, frame):
         logger.info(f"收到信號 {signum}，準備退出...")
@@ -412,26 +422,39 @@ class SherpaServer:
             return samples, 0.0
 
     def _init_punctuation_model(self):
-        """在背景線程初始化 FunASR 標點模型（ct-punc）"""
+        """在背景線程初始化 sherpa-onnx 標點模型（ct-transformer，免 torch）"""
         import threading
 
         def load_punc_model():
             try:
                 import time
+                import sherpa_onnx
                 start_time = time.time()
-                logger.info("正在載入 FunASR ct-punc 標點模型（背景）...")
 
-                from funasr import AutoModel
-                self.punc_model = AutoModel(model="ct-punc", model_revision="v2.0.4")
+                model_path = os.path.join(self.punct_model_dir, "model.onnx")
+                if not os.path.exists(model_path):
+                    logger.warning(
+                        f"標點模型不存在，將使用規則式標點: {model_path}"
+                    )
+                    self.punc_model = None
+                    return
+
+                logger.info("正在載入 sherpa-onnx 標點模型 ct-transformer（背景）...")
+
+                config = sherpa_onnx.OfflinePunctuationConfig(
+                    model=sherpa_onnx.OfflinePunctuationModelConfig(
+                        ct_transformer=model_path,
+                        num_threads=self.num_threads,
+                        provider="cpu",  # 標點模型小，CPU 已足夠快且最穩定
+                    )
+                )
+                self.punc_model = sherpa_onnx.OfflinePunctuation(config)
 
                 load_time = time.time() - start_time
-                logger.info(f"FunASR ct-punc 載入完成，耗時: {load_time:.2f} 秒")
+                logger.info(f"sherpa-onnx 標點模型載入完成，耗時: {load_time:.2f} 秒")
 
-            except ImportError as e:
-                logger.warning(f"FunASR 未安裝，將使用規則式標點: {e}")
-                self.punc_model = None
             except Exception as e:
-                logger.warning(f"ct-punc 模型載入失敗，將使用規則式標點: {e}")
+                logger.warning(f"標點模型載入失敗，將使用規則式標點: {e}")
                 self.punc_model = None
 
         # 在背景線程載入，不阻塞主服務
@@ -466,23 +489,21 @@ class SherpaServer:
         return samples.astype(np.float32)
 
     def _add_punctuation(self, text):
-        """使用 ct-punc 模型或規則式添加標點"""
+        """使用 sherpa-onnx ct-transformer 標點模型或規則式添加標點"""
         if not text or not text.strip():
             return text
 
         text = text.strip()
 
-        # 優先使用 FunASR ct-punc 模型
+        # 優先使用 sherpa-onnx 標點模型
         if self.punc_model is not None:
             try:
-                result = self.punc_model.generate(input=text)
-                if result and len(result) > 0:
-                    # result 格式: [{'text': '帶標點的文字', ...}]
-                    punctuated = result[0].get('text', text)
-                    logger.debug(f"ct-punc 標點結果: {punctuated}")
+                punctuated = self.punc_model.add_punctuation(text)
+                if punctuated:
+                    logger.debug(f"標點結果: {punctuated}")
                     return punctuated
             except Exception as e:
-                logger.warning(f"ct-punc 處理失敗，使用規則式: {e}")
+                logger.warning(f"標點模型處理失敗，使用規則式: {e}")
 
         # 備用：規則式標點
         return add_punctuation(text)

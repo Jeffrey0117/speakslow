@@ -155,3 +155,8 @@ temp/
 python
 poc-sherpa/sherpa-onnx-paraformer-zh-2023-09-14.tar.bz2
 poc-sherpa/sherpa-onnx-paraformer-zh-2023-09-14/model.int8.onnx
+# sherpa-onnx 標點模型（下載取得，勿提交大檔）
+poc-sherpa/sherpa-onnx-punct-ct-transformer-zh-en-vocab272727-2024-04-12/model.onnx
+poc-sherpa/sherpa-onnx-punct-ct-transformer-zh-en-vocab272727-2024-04-12/tokens.json
+# sherpa-onnx 串流 Zipformer 模型（下載取得）
+poc-sherpa/sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20/*.onnx
