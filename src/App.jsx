@@ -301,6 +301,7 @@ export default function App() {
   const [originalText, setOriginalText] = useState("");
   const [processedText, setProcessedText] = useState("");
   const [showTextArea, setShowTextArea] = useState(false);
+  const [stats, setStats] = useState(null); // 累計統計（次數 / 字數）
   const [showSettings, setShowSettings] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(true); // 視窗置頂狀態
@@ -383,6 +384,7 @@ export default function App() {
     try {
       if (!window.electronAPI?.getTranscriptionStats) return;
       const stats = await window.electronAPI.getTranscriptionStats();
+      setStats(stats); // 更新角落顯示
       const newIdx = getLevelIndex(stats?.totalChars || 0);
       const prevIdx = parseInt(localStorage.getItem('level_idx') || '0', 10);
       if (newIdx > prevIdx) {
@@ -518,6 +520,13 @@ export default function App() {
       setShowTextArea(false);
     }
   }, [isRecordingNormal]);
+
+  // 開機時抓一次累計統計（角落顯示用）
+  useEffect(() => {
+    if (window.electronAPI?.getTranscriptionStats) {
+      window.electronAPI.getTranscriptionStats().then(setStats).catch(() => {});
+    }
+  }, []);
   const PASTE_DEBOUNCE_TIME = 1000; // 1秒内相同文本不重复粘贴
 
   // 安全粘贴函数（根據設定決定是否貼上和送出 Enter）
@@ -1255,16 +1264,16 @@ export default function App() {
               scrollRef={textScrollRef}
               t={t}
             />
-          ) : (micState === "idle" || micState === "hover") ? (
+          ) : (
             <IdlePlaceholder />
-          ) : null}
+          )}
         </div>
 
-        {/* 底部置中標記（mt-auto 推到最底）*/}
-        <div className="text-center pt-1.5 mt-auto flex-shrink-0 select-none">
-          <span className="text-[11px] tracking-wide text-gray-400 dark:text-gray-600">
-            聲聲慢 · by 切版職人
-          </span>
+        {/* 底部列：左=次數、中=署名、右=字數（mt-auto 推到最底）*/}
+        <div className="mt-auto flex-shrink-0 flex items-center justify-between gap-2 px-1 pt-1.5 text-[11px] text-gray-400 dark:text-gray-600 select-none">
+          <span className="tabular-nums">用了 {stats?.total || 0} 次</span>
+          <span className="tracking-wide whitespace-nowrap">聲聲慢 · by 切版職人</span>
+          <span className="tabular-nums">{(stats?.totalChars || 0).toLocaleString()} 字</span>
         </div>
       </div>
       </div>
