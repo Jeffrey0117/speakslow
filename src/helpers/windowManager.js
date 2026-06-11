@@ -42,8 +42,8 @@ class WindowManager {
     }
 
     this.mainWindow = new BrowserWindow({
-      width: 400,
-      height: 420,
+      width: 448,
+      height: 470,
       frame: false,
       transparent: true,
       alwaysOnTop: alwaysOnTop,
