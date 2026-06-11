@@ -20,11 +20,9 @@ const SettingsPage = () => {
     enable_ai_optimization: false,
     enable_notifications: true,
     enable_streaming_mode: false,
-    enable_typeless_mode: true,       // TypeLess 模式（右 Alt 單擊切換，預設開啟）
     language: "zh-TW",
     convert_transcription: true,
-    // 錄音完成後動作設定
-    paste_after_transcription: true,  // 自動貼上辨識結果
+    // 錄音完成後動作設定（自動貼上已固定開啟，僅保留「自動送出 Enter」）
     auto_enter_after_paste: false,    // 貼上後自動送出（完全信任模式）
     // 視窗控制設定
     window_always_on_top: true,       // 視窗置頂
@@ -72,11 +70,9 @@ const SettingsPage = () => {
           enable_ai_optimization: allSettings.enable_ai_optimization === true, // 默认为false
           enable_notifications: allSettings.enable_notifications !== false, // 默认为true
           enable_streaming_mode: allSettings.enable_streaming_mode === true, // 默認關閉
-          enable_typeless_mode: allSettings.enable_typeless_mode !== false, // TypeLess 默認開啟
           language: allSettings.language || "zh-TW", // 默认繁体中文
           convert_transcription: allSettings.convert_transcription !== false, // 默认转换
           // 錄音完成後動作設定
-          paste_after_transcription: allSettings.paste_after_transcription !== false, // 默認自動貼上
           auto_enter_after_paste: allSettings.auto_enter_after_paste === true, // 默認不自動送出
           // 視窗控制設定
           window_always_on_top: allSettings.window_always_on_top !== false, // 默認置頂
@@ -470,33 +466,6 @@ const SettingsPage = () => {
                   </button>
                 </div>
 
-                {/* TypeLess 模式開關（按住錄音） */}
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label htmlFor="typeless-toggle" className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                      TypeLess 模式（按住錄音）
-                    </label>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                      按住快捷鍵開始錄音，放開停止錄音並自動辨識（文字不會自動送出）
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={settings.enable_typeless_mode}
-                    onClick={() => handleToggleChange('enable_typeless_mode', !settings.enable_typeless_mode)}
-                    className={`${
-                      settings.enable_typeless_mode ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
-                    } relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className={`${
-                        settings.enable_typeless_mode ? 'translate-x-4' : 'translate-x-0'
-                      } inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
-                    />
-                  </button>
-                </div>
               </div>
             </div>
           </div>
@@ -614,43 +583,21 @@ const SettingsPage = () => {
               </div>
 
               <div className="space-y-4">
-                {/* 自動貼上開關 */}
+                {/* 自動貼上：已固定開啟（不再提供開關，避免關掉後 TypeLess 失效） */}
                 <div className="flex items-center justify-between">
                   <div>
                     <label className="text-sm font-medium text-gray-800 dark:text-gray-200">
                       自動貼上辨識結果
                     </label>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                      辨識完成後自動貼到游標位置
+                      辨識完成後自動貼到目前游標位置，並還原你原本的剪貼簿內容
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={settings.paste_after_transcription}
-                    onClick={() => {
-                      const newValue = !settings.paste_after_transcription;
-                      handleToggleChange('paste_after_transcription', newValue);
-                      // 如果關閉自動貼上，也要關閉自動送出
-                      if (!newValue && settings.auto_enter_after_paste) {
-                        handleToggleChange('auto_enter_after_paste', false);
-                      }
-                    }}
-                    className={`${
-                      settings.paste_after_transcription ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
-                    } relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className={`${
-                        settings.paste_after_transcription ? 'translate-x-4' : 'translate-x-0'
-                      } inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
-                    />
-                  </button>
+                  <span className="text-xs font-medium text-green-600 dark:text-green-400 whitespace-nowrap">永遠開啟</span>
                 </div>
 
                 {/* 貼上後自動送出開關（完全信任模式） */}
-                <div className={`flex items-center justify-between ${!settings.paste_after_transcription ? 'opacity-50' : ''}`}>
+                <div className="flex items-center justify-between">
                   <div>
                     <label className="text-sm font-medium text-gray-800 dark:text-gray-200">
                       貼上後自動送出 (Enter)
@@ -663,11 +610,10 @@ const SettingsPage = () => {
                     type="button"
                     role="switch"
                     aria-checked={settings.auto_enter_after_paste}
-                    disabled={!settings.paste_after_transcription}
                     onClick={() => handleToggleChange('auto_enter_after_paste', !settings.auto_enter_after_paste)}
                     className={`${
                       settings.auto_enter_after_paste ? 'bg-orange-500' : 'bg-gray-300 dark:bg-gray-600'
-                    } ${!settings.paste_after_transcription ? 'cursor-not-allowed' : 'cursor-pointer'} relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2`}
+                    } cursor-pointer relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2`}
                   >
                     <span
                       aria-hidden="true"

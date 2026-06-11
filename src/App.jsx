@@ -383,47 +383,16 @@ export default function App() {
     }
   }, []);
 
-  // 載入 TypeLess 模式設定
+  // 啟用 TypeLess 模式（右 Alt 已是唯一錄音方式，固定一律啟用，不再受設定開關控制）
   useEffect(() => {
-    const loadTypelessMode = async () => {
+    const enableTypeless = async () => {
       if (window.electronAPI) {
-        const enabled = await window.electronAPI.getSetting('enable_typeless_mode', true);
-        setTypelessMode(enabled);
-
-        // 如果啟用，則啟動 TypeLess 模式
-        if (enabled) {
-          // 從快捷鍵設定中獲取 TypeLess 專用快捷鍵
-          const hotkeySettings = await window.electronAPI.getHotkeySettings();
-          const typelessHotkey = hotkeySettings?.hotkeys?.['typeless-recording'] ||
-                                 hotkeySettings?.defaults?.['typeless-recording'] ||
-                                 'Alt+Space';
-          await window.electronAPI.enableTypelessMode(typelessHotkey);
-        }
+        setTypelessMode(true);
+        // 觸發鍵由主進程固定為右 Alt（setRightAltToggle），這裡傳入值會被忽略
+        await window.electronAPI.enableTypelessMode('AltRight');
       }
     };
-    loadTypelessMode();
-
-    // 監聽設定變更事件
-    if (window.electronAPI?.onSettingChanged) {
-      const unsubscribe = window.electronAPI.onSettingChanged(async (data) => {
-        if (data.key === 'enable_typeless_mode') {
-          setTypelessMode(data.value);
-          if (data.value) {
-            // 從快捷鍵設定中獲取 TypeLess 專用快捷鍵
-            const hotkeySettings = await window.electronAPI.getHotkeySettings();
-            const typelessHotkey = hotkeySettings?.hotkeys?.['typeless-recording'] ||
-                                   hotkeySettings?.defaults?.['typeless-recording'] ||
-                                   'Alt+Space';
-            await window.electronAPI.enableTypelessMode(typelessHotkey);
-          } else {
-            await window.electronAPI.disableTypelessMode();
-          }
-        }
-      });
-      return () => {
-        if (unsubscribe) unsubscribe();
-      };
-    }
+    enableTypeless();
   }, []);
 
   // 統一的錄音狀態（根據模式選擇）
@@ -472,8 +441,8 @@ export default function App() {
     lastPasteRef.current = { text, timestamp: now };
 
     try {
-      if (pasteAfterTranscription && window.electronAPI) {
-        // 貼上模式：完全交由主進程處理剪貼簿（保存原本 → 寫入辨識文字 → 貼上 → 還原原本）
+      if (window.electronAPI) {
+        // 永遠自動貼上：交由主進程處理剪貼簿（保存原本 → 寫入辨識文字 → 貼上 → 還原原本）
         // 不在前端先寫剪貼簿，否則主進程會把「辨識文字」誤當成原本內容
         await window.electronAPI.pasteText(text);
 
@@ -483,13 +452,11 @@ export default function App() {
           await window.electronAPI.sendEnter();
         }
       } else {
-        // 不自動貼上：把辨識文字放到剪貼簿，供使用者手動貼上（此情況不還原）
+        // 沒有 electronAPI（理論上不會發生）：退而求其次寫入剪貼簿
         try {
           await navigator.clipboard.writeText(text);
         } catch (clipErr) {
-          if (window.electronAPI) {
-            await window.electronAPI.copyText(text);
-          }
+          /* ignore */
         }
       }
 
