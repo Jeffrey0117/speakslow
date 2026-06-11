@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { Mic, MicOff, ArrowLeft, Trash2, Loader2, Maximize2, Wifi, WifiOff, Minimize2 } from 'lucide-react'
 import { useWebSocket } from '../hooks/useWebSocket'
@@ -9,10 +9,10 @@ type RecordingState = 'idle' | 'connecting' | 'recording' | 'processing'
 export default function DualDisplayPage() {
   const [state, setState] = useState<RecordingState>('idle')
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const recordingRef = useRef(false) // 音訊回呼即時讀取（避免 stale closure）
 
   const {
     isConnected,
-    connectionState,
     partialText,
     finalText,
     error: wsError,
@@ -24,7 +24,6 @@ export default function DualDisplayPage() {
   } = useWebSocket()
 
   const {
-    isRecording,
     volumeLevel,
     error: recorderError,
     startRecording: startAudioRecording,
@@ -32,14 +31,12 @@ export default function DualDisplayPage() {
     onAudioData,
   } = useAudioRecorder()
 
-  // 設置音訊數據回調
+  // 設置音訊數據回調（只在錄音中送出；sendAudio 內部會檢查連線）
   useEffect(() => {
     onAudioData((data) => {
-      if (isConnected && isRecording) {
-        sendAudio(data)
-      }
+      if (recordingRef.current) sendAudio(data)
     })
-  }, [onAudioData, sendAudio, isConnected, isRecording])
+  }, [onAudioData, sendAudio])
 
   // 監聽全螢幕變化
   useEffect(() => {
@@ -61,45 +58,26 @@ export default function DualDisplayPage() {
     if (state === 'recording') {
       // 停止錄音
       setState('processing')
+      recordingRef.current = false
       stopAudioRecording()
       wsStopRecording()
-
-      setTimeout(() => {
-        setState('idle')
-      }, 500)
+      setTimeout(() => setState('idle'), 800)
     } else if (state === 'idle') {
       // 開始錄音
       setState('connecting')
-
       try {
-        // 先連接 WebSocket
-        if (!isConnected) {
-          connect()
-          await new Promise<void>((resolve, reject) => {
-            const timeout = setTimeout(() => reject(new Error('連接超時')), 5000)
-            const checkConnection = setInterval(() => {
-              if (connectionState === 'connected') {
-                clearInterval(checkConnection)
-                clearTimeout(timeout)
-                resolve()
-              } else if (connectionState === 'error') {
-                clearInterval(checkConnection)
-                clearTimeout(timeout)
-                reject(new Error('連接失敗'))
-              }
-            }, 100)
-          })
-        }
-
+        await connect()              // 連上才往下（connect 回傳 Promise，已修 stale closure）
         await startAudioRecording()
         wsStartRecording()
+        recordingRef.current = true
         setState('recording')
       } catch (err) {
-        console.error('Failed to start recording:', err)
+        console.error('開始串流失敗:', err)
+        recordingRef.current = false
         setState('idle')
       }
     }
-  }, [state, isConnected, connectionState, connect, startAudioRecording, stopAudioRecording, wsStartRecording, wsStopRecording])
+  }, [state, connect, startAudioRecording, stopAudioRecording, wsStartRecording, wsStopRecording])
 
   const handleClear = useCallback(() => {
     clearText()
