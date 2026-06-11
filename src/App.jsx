@@ -1139,13 +1139,20 @@ export default function App() {
         )}
 
         {/* 文本显示区域 - 可滚动 */}
-        <div className="flex-1 text-area-scroll">
+        <div className="flex-1 min-h-0 text-area-scroll">
           <TextDisplay
             originalText={originalText}
             processedText={processedText}
             onCopy={handleCopyText}
             t={t}
           />
+        </div>
+
+        {/* 底部置中標記 */}
+        <div className="text-center pt-2 flex-shrink-0 select-none">
+          <span className="text-[11px] tracking-wide text-gray-400 dark:text-gray-600">
+            聲聲慢 · by 切版職人
+          </span>
         </div>
       </div>
 

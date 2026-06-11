@@ -243,15 +243,21 @@ export const HistoryView = () => {
                 </div>
 
                 <div>
-                  <p className="chinese-content text-sm leading-normal bg-gray-50 dark:bg-gray-700/60 p-3 rounded-lg border dark:border-gray-600/30">
+                  <p
+                    className="chinese-content bg-gray-50 dark:bg-gray-700/60 p-2.5 rounded-lg border dark:border-gray-600/30"
+                    style={{ fontSize: '13px', lineHeight: 1.6, letterSpacing: '0.02em' }}
+                  >
                     {item.text}
                   </p>
                 </div>
 
                 {item.processed_text && item.processed_text.trim() !== (item.raw_text || '').trim() && (
                   <div className="mt-2">
-                    <h4 className="text-xs font-medium text-emerald-700 dark:text-emerald-400 mb-1.5">{t('history.aiOptimized')}：</h4>
-                    <p className="chinese-content text-sm leading-normal bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-lg border border-emerald-200 dark:border-emerald-700">
+                    <h4 className="text-xs font-medium text-emerald-700 dark:text-emerald-400 mb-1">{t('history.aiOptimized')}：</h4>
+                    <p
+                      className="chinese-content bg-emerald-50 dark:bg-emerald-900/20 p-2.5 rounded-lg border border-emerald-200 dark:border-emerald-700"
+                      style={{ fontSize: '13px', lineHeight: 1.6, letterSpacing: '0.02em' }}
+                    >
                       {item.processed_text}
                     </p>
                   </div>
@@ -259,7 +265,10 @@ export const HistoryView = () => {
 
                 {item.raw_text && item.raw_text.trim() !== item.text.trim() && (
                   <div className="mt-2">
-                    <p className="text-xs chinese-content leading-normal bg-gray-100 dark:bg-gray-700/40 p-2.5 rounded-lg border dark:border-gray-600/20 text-gray-600 dark:text-gray-200">
+                    <p
+                      className="chinese-content bg-gray-100 dark:bg-gray-700/40 p-2.5 rounded-lg border dark:border-gray-600/20 text-gray-600 dark:text-gray-200"
+                      style={{ fontSize: '12px', lineHeight: 1.55, letterSpacing: '0.02em' }}
+                    >
                       {item.raw_text}
                     </p>
                   </div>
