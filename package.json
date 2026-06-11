@@ -103,7 +103,8 @@
   },
   "build": {
     "appId": "com.speakslow.app",
-    "productName": "聲聲慢",
+    "productName": "SpeakSlow",
+    "npmRebuild": false,
     "directories": {
       "output": "dist"
     },

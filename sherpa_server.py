@@ -517,23 +517,44 @@ class SherpaServer:
         signal.signal(signal.SIGTERM, self._signal_handler)
         signal.signal(signal.SIGINT, self._signal_handler)
 
+    @staticmethod
+    def _to_ascii_path(p):
+        """sherpa-onnx 在 Windows 無法從含非 ASCII（中文）路徑載入模型
+        （會丟 'invalid unordered_map<K,T> key'）。路徑含非 ASCII 時轉成 8.3 短檔名（純 ASCII）。"""
+        try:
+            if not p or all(ord(c) < 128 for c in p):
+                return p
+            if os.name == "nt" and os.path.exists(p):
+                import ctypes
+                buf = ctypes.create_unicode_buffer(32768)
+                if ctypes.windll.kernel32.GetShortPathNameW(p, buf, 32768):
+                    short = buf.value
+                    if short and all(ord(c) < 128 for c in short):
+                        return short
+        except Exception:
+            pass
+        return p
+
     def _poc_sherpa_dir(self):
         """模型根目錄。打包後優先用 userData/models/poc-sherpa（首次下載的位置），
-        否則用程式旁的 poc-sherpa（開發 / 後備）。"""
+        否則用程式旁的 poc-sherpa（開發 / 後備）。回傳前轉成 ASCII 安全路徑。"""
+        result = None
         # 1) 首次下載的位置（userData/models）優先
         user_data = os.environ.get("ELECTRON_USER_DATA")
         if user_data:
             cand = os.path.join(user_data, "models", "poc-sherpa")
             if os.path.isdir(cand):
-                return cand
+                result = cand
         # 2) 打包的 exe：模型放在 exe 旁的 poc-sherpa（隨安裝檔附帶）
-        if getattr(sys, "frozen", False):
+        if result is None and getattr(sys, "frozen", False):
             cand = os.path.join(os.path.dirname(sys.executable), "poc-sherpa")
             if os.path.isdir(cand):
-                return cand
+                result = cand
         # 3) 開發 / 後備：程式旁的 poc-sherpa
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        return os.path.join(script_dir, "poc-sherpa")
+        if result is None:
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            result = os.path.join(script_dir, "poc-sherpa")
+        return self._to_ascii_path(result)
 
     def _find_model_dir(self):
         """尋找 sherpa-onnx 離線模型目錄 (Paraformer)"""
