@@ -17,14 +17,16 @@ import wave
 import numpy as np
 
 # 簡轉繁轉換器
+logger_init = logging.getLogger(__name__)
 try:
     from opencc import OpenCC
-    _opencc_converter = OpenCC('s2tw')  # 簡體→繁體（台灣標準字，吃不會變喫）
-    logger_init = logging.getLogger(__name__)
-except ImportError:
+    try:
+        _opencc_converter = OpenCC('s2tw')  # 簡體→繁體（台灣標準字，吃不會變喫）
+    except Exception:
+        _opencc_converter = OpenCC('s2t')   # 沒有 s2tw 配置時退回 s2t
+except Exception as _e:
     _opencc_converter = None
-    logger_init = logging.getLogger(__name__)
-    logger_init.warning("OpenCC 未安裝，將不進行簡轉繁轉換")
+    logger_init.warning(f"OpenCC 不可用，將不進行簡轉繁轉換: {_e}")
 
 def to_traditional(text):
     """將簡體中文轉換為繁體中文"""
