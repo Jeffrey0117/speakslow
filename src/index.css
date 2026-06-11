@@ -126,7 +126,7 @@ html, body {
 .brand-title {
   font-family: 'GenWan', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', serif;
   font-weight: 500;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.1em;
 }
 
 /* 中文内容文本优化 - 使用 jf open 粉圓（次字體） */
@@ -512,7 +512,8 @@ html, body {
     letter-spacing: 0.06em;
   }
   
-  .chinese-title {
+  .chinese-title,
+  .brand-title {
     font-size: 18px;
     line-height: 1.3;
   }
@@ -529,7 +530,8 @@ html, body {
     letter-spacing: 0.07em;
   }
   
-  .chinese-title {
+  .chinese-title,
+  .brand-title {
     font-size: 20px;
     line-height: 1.35;
   }
@@ -546,7 +548,8 @@ html, body {
     letter-spacing: 0.08em;
   }
   
-  .chinese-title {
+  .chinese-title,
+  .brand-title {
     font-size: 24px;
     line-height: 1.4;
   }
