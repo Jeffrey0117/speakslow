@@ -190,15 +190,27 @@ const SettingsPage = () => {
     }
   };
 
-  // 应用推荐配置（阿里云国内版）
-  const applyRecommendedConfig = () => {
+  // Gemini（OpenAI 相容端點）
+  const applyGeminiConfig = () => {
     setSettings(prev => ({
       ...prev,
-      ai_base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1",
-      ai_model: "qwen-plus"
+      ai_base_url: "https://generativelanguage.googleapis.com/v1beta/openai",
+      ai_model: "gemini-2.0-flash"
     }));
-    setCustomModel(false);
-    toast.info(t('settings.configApplied', { provider: t('settings.alibabaConfig') }));
+    setCustomModel(true);
+    toast.info(t('settings.configApplied', { provider: 'Gemini' }));
+  };
+
+  // Ollama（本地 LLM，免 API key、全離線）
+  const applyOllamaConfig = () => {
+    setSettings(prev => ({
+      ...prev,
+      ai_base_url: "http://localhost:11434/v1",
+      ai_api_key: prev.ai_api_key || "ollama",
+      ai_model: "qwen2.5"
+    }));
+    setCustomModel(true);
+    toast.info(t('settings.configApplied', { provider: 'Ollama（本地）' }));
   };
 
   // 重置为OpenAI配置
@@ -788,13 +800,20 @@ const SettingsPage = () => {
                     <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
                       {t('settings.aiModel')}
                     </label>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <button
                         type="button"
-                        onClick={applyRecommendedConfig}
-                        className="text-xs px-2 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
+                        onClick={applyDeepSeekConfig}
+                        className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 rounded hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors"
                       >
-                        {t('settings.aliRecommend')}
+                        DeepSeek
+                      </button>
+                      <button
+                        type="button"
+                        onClick={applyGeminiConfig}
+                        className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 rounded hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
+                      >
+                        Gemini
                       </button>
                       <button
                         type="button"
@@ -805,10 +824,10 @@ const SettingsPage = () => {
                       </button>
                       <button
                         type="button"
-                        onClick={applyDeepSeekConfig}
-                        className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 rounded hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors"
+                        onClick={applyOllamaConfig}
+                        className="text-xs px-2 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
                       >
-                        DeepSeek
+                        Ollama（本地）
                       </button>
                     </div>
                   </div>
