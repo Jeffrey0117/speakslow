@@ -1114,6 +1114,9 @@ class SherpaServer:
             segments = self._vad_segment_list(speech_samples) if duration > LONG_AUDIO_SEC else None
 
             if segments and len(segments) > 1:
+                # 逐段解碼。實測過 decode_streams 批次反而慢 2 倍：
+                # 批次會把所有段 padding 到最長段（浪費算力），且單段解碼的
+                # intra-op 8 執行緒已吃滿核心，沒有閒置算力可平行。
                 logger.info(f"長音訊分段辨識：{duration:.1f}s -> {len(segments)} 段")
                 raw_parts = [self._transcribe_samples(seg, sample_rate, recognizer) for seg in segments]
                 text = "".join(p for p in raw_parts if p)
