@@ -2,11 +2,13 @@ import { useState, useEffect, useCallback, createContext, useContext } from 'rea
 import * as OpenCC from 'opencc-js';
 import zhCN from './zh-CN';
 import zhTW from './zh-TW';
+import en from './en';
 
 // 翻译资源
 const resources = {
   'zh-CN': zhCN,
-  'zh-TW': zhTW
+  'zh-TW': zhTW,
+  'en': en
 };
 
 // 创建简体转繁体转换器
@@ -53,6 +55,7 @@ export const convertText = (text, targetLang) => {
     return t2sConverter(text);
   }
 
+  // 其他语言（如 'en'）不做简繁转换，直接返回原文
   return text;
 };
 

@@ -424,13 +424,17 @@ const SettingsPage = () => {
                       }
                       window.dispatchEvent(new Event('language-changed'));
                       // 使用新語言顯示通知，避免異步狀態更新導致顯示舊語言
-                      const message = newLang === 'zh-TW' ? '語言已切換' : '语言已切换';
+                      const message =
+                        newLang === 'zh-TW' ? '語言已切換' :
+                        newLang === 'zh-CN' ? '语言已切换' :
+                        'Language changed';
                       toast.success(message);
                     }}
                     className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   >
                     <option value="zh-TW">繁體中文</option>
                     <option value="zh-CN">简体中文</option>
+                    <option value="en">English</option>
                   </select>
                 </div>
 
