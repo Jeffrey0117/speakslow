@@ -426,20 +426,44 @@ class SherpaServer:
     def _apply_pause_breaks(self, result, break_gap=1.1):
         """用逐字時間戳的「停頓」插入換行：字間隔 >= break_gap 秒視為一次斷句，插入 \\n。
         連續講話約 0.1~0.2s，真正停頓 0.5~2.7s，分得很開。
-        token 對齊不到（含英文 subword）時放棄斷行，回傳原文字。"""
+        英文 token 是 BPE 子詞（如 eng@@ / li@@ / sh）：@@ 表「接續」，
+        重組時須去掉 @@ 並只在「完整單詞之間」補空格，否則輸出會漏出 @ 符號。
+        重組結果與 result.text 差太多時放棄斷行，回傳原文字。"""
         text = (getattr(result, "text", "") or "").strip()
         tokens = list(getattr(result, "tokens", []) or [])
         ts = list(getattr(result, "timestamps", []) or [])
         if not tokens or len(ts) != len(tokens) or len(tokens) < 2:
             return text
-        out = [tokens[0]]
-        for i in range(1, len(tokens)):
-            if ts[i] - ts[i - 1] >= break_gap:
-                out.append("\n")
-            out.append(tokens[i])
-        rebuilt = "".join(out)
-        # 重建文字（去 \n）若與 result.text 差太多（多半是英文 subword 標記），放棄斷行
-        if abs(len(rebuilt.replace("\n", "")) - len(text)) > max(3, int(len(text) * 0.15)):
+
+        def _is_ascii_alnum(ch):
+            return ch.isascii() and ch.isalnum()
+
+        pieces = []
+        prev_end_ascii = False   # 前一個 token 以英數結尾
+        prev_continues = False   # 前一個 token 帶 @@（子詞未完）
+        for i, tok in enumerate(tokens):
+            if i > 0 and ts[i] - ts[i - 1] >= break_gap:
+                pieces.append("\n")
+                prev_end_ascii = False
+                prev_continues = False
+            t = tok
+            continues = t.endswith("@@")
+            if continues:
+                t = t[:-2]
+            if not t:
+                prev_continues = continues
+                continue
+            # 兩個獨立英文單詞之間補空格（子詞接續中不補）
+            if (_is_ascii_alnum(t[0]) and prev_end_ascii and not prev_continues):
+                pieces.append(" ")
+            pieces.append(t)
+            prev_end_ascii = _is_ascii_alnum(t[-1])
+            prev_continues = continues
+        rebuilt = "".join(pieces)
+        # 與 result.text（去空白比較）差太多 → 對齊失敗，放棄斷行
+        plain_rebuilt = rebuilt.replace("\n", "").replace(" ", "")
+        plain_text = text.replace(" ", "")
+        if abs(len(plain_rebuilt) - len(plain_text)) > max(3, int(len(plain_text) * 0.15)):
             return text
         return rebuilt.strip()
 
