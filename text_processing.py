@@ -197,6 +197,12 @@ def apply_punct_rules(text):
             ep = re.escape(p)
             text = re.sub(ep + r'[。，！？]', p + mark, text)
             text = re.sub(ep + r'$', p + mark, text)
+
+    # 3) 台灣語尾「吼/齁」常被辨識成「哈」。
+    # 判斷依據：吼永遠是「單獨一個 + 在句尾」（對吼、好吼），
+    # 真正的哈幾乎都是疊字（哈哈）或詞組（哈囉/哈密瓜）。
+    # 故：前後都不是哈、後面接標點或行尾的單獨哈 → 還原成吼。
+    text = re.sub(r'(?<!哈)哈(?=[。！？，、]|$)', '吼', text, flags=re.M)
     return text
 
 
