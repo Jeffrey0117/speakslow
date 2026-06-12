@@ -167,7 +167,8 @@
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "shortcutName": "聲聲慢"
+      "shortcutName": "聲聲慢",
+      "include": "build/installer.nsh"
     },
     "linux": {
       "icon": "assets/icon.png",
