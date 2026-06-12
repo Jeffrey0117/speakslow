@@ -1,11 +1,13 @@
 import { Github, Download } from 'lucide-react'
 import screenshot from '../assets/screenshot.png'
+import Nav from '../components/Nav'
 
 const REPO = 'https://github.com/Jeffrey0117/speakslow'
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <Nav />
       <div className="container mx-auto px-4 py-16">
         <div className="text-center max-w-3xl mx-auto">
           {/* Title */}
