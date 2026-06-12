@@ -103,6 +103,7 @@
       "main.js",
       "preload.js",
       "sherpa_server.py",
+      "text_processing.py",
       "package.json",
       "node_modules/**/*",
       "src/dist/**/*",
@@ -114,6 +115,7 @@
     ],
     "asarUnpack": [
       "sherpa_server.py",
+      "text_processing.py",
       "node_modules/**/*better-sqlite3*/**/*"
     ],
     "extraResources": [
