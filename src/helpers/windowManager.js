@@ -328,6 +328,17 @@ class WindowManager {
       );
     }
 
+    // 指示器視窗 console 轉發到主程序 log（除錯透明視窗「沒出現」問題）
+    this.typelessIndicatorWindow.webContents.on("console-message", (e, level, message) => {
+      if (level >= 2) console.log('[typeless-indicator] ' + message);
+    });
+    this.typelessIndicatorWindow.webContents.on("did-fail-load", (e, code, desc) => {
+      console.log('[typeless-indicator] did-fail-load ' + code + ' ' + desc);
+      // 自癒：載入失敗的視窗會被快取重用成「隱形膠囊」，直接銷毀讓下次重建
+      try { this.typelessIndicatorWindow.destroy(); } catch (err) { /* ignore */ }
+      this.typelessIndicatorWindow = null;
+    });
+
     this.typelessIndicatorWindow.on("closed", () => {
       this.typelessIndicatorWindow = null;
     });
