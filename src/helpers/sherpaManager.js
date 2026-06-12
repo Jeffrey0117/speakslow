@@ -3,8 +3,6 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const os = require("os");
-const PythonInstaller = require("./pythonInstaller");
-const { runCommand, TIMEOUTS } = require("../utils/process");
 
 // 簡單的全局緩存，避免頻繁檢查
 let globalModelCheckCache = null;
@@ -17,7 +15,6 @@ class SherpaManager {
     this.pythonCmd = null;
     this.sherpaInstalled = null;
     this.isInitialized = false;
-    this.pythonInstaller = new PythonInstaller();
     this.modelsInitialized = false;
     this.initializationPromise = null;
     this.serverProcess = null;
@@ -803,30 +800,6 @@ class SherpaManager {
     return version && version.major === 3;
   }
 
-  async installPython(progressCallback = null) {
-    try {
-      this.pythonCmd = null;
-
-      const result = await this.pythonInstaller.installPython(progressCallback);
-
-      try {
-        await this.findPythonExecutable();
-        return result;
-      } catch (findError) {
-        throw new Error(
-          "Python 已安裝但在 PATH 中未找到。請重啟應用程序。"
-        );
-      }
-    } catch (error) {
-      this.logger.error && this.logger.error("Python 安裝失敗:", error);
-      throw error;
-    }
-  }
-
-  async checkPythonInstallation() {
-    return await this.pythonInstaller.isPythonInstalled();
-  }
-
   async checkSherpaInstallation() {
     // 如果有緩存結果則返回
     if (this.sherpaInstalled !== null) {
@@ -899,77 +872,6 @@ class SherpaManager {
       this.sherpaInstalled = errorResult;
       return errorResult;
     }
-  }
-
-  async upgradePip(pythonCmd) {
-    return runCommand(pythonCmd, ["-m", "pip", "install", "--upgrade", "pip"], {
-      timeout: TIMEOUTS.PIP_UPGRADE,
-    });
-  }
-
-  async installSherpa(progressCallback = null) {
-    const pythonCmd = await this.findPythonExecutable();
-
-    if (progressCallback) {
-      progressCallback({ stage: "升級 pip...", percentage: 10 });
-    }
-
-    try {
-      await this.upgradePip(pythonCmd);
-    } catch (error) {
-      this.logger.warn && this.logger.warn("pip 升級失敗:", error.message);
-    }
-
-    if (progressCallback) {
-      progressCallback({ stage: "安裝 sherpa-onnx...", percentage: 30 });
-    }
-
-    try {
-      // sherpa-onnx 安裝很簡單，只需要一個包
-      await runCommand(pythonCmd, ["-m", "pip", "install", "-U", "sherpa-onnx"], {
-        timeout: TIMEOUTS.DOWNLOAD,
-      });
-
-      if (progressCallback) {
-        progressCallback({ stage: "安裝完成！", percentage: 100 });
-      }
-
-      this.sherpaInstalled = null;
-      return { success: true, message: "Sherpa-ONNX 安裝成功" };
-    } catch (error) {
-      if (
-        error.message.includes("Permission denied") ||
-        error.message.includes("access is denied")
-      ) {
-        try {
-          await runCommand(
-            pythonCmd,
-            ["-m", "pip", "install", "--user", "-U", "sherpa-onnx"],
-            { timeout: TIMEOUTS.DOWNLOAD }
-          );
-
-          if (progressCallback) {
-            progressCallback({ stage: "安裝完成！", percentage: 100 });
-          }
-
-          this.sherpaInstalled = null;
-          return { success: true, message: "Sherpa-ONNX 安裝成功（用戶模式）" };
-        } catch (userError) {
-          throw new Error(`Sherpa-ONNX 安裝失敗: ${userError.message}`);
-        }
-      }
-
-      throw new Error(error.message);
-    }
-  }
-
-  // 保持與 FunASRManager 相同的 API 接口，方便前端調用
-  async installFunASR(progressCallback = null) {
-    return this.installSherpa(progressCallback);
-  }
-
-  async checkFunASRInstallation() {
-    return this.checkSherpaInstallation();
   }
 
   async transcribeAudio(audioBlob, options = {}) {

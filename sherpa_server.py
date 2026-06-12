@@ -647,60 +647,6 @@ class SherpaServer:
             logger.warning(f"Silero VAD 初始化失敗: {e}，將跳過 VAD")
             self.vad = None
 
-    def _extract_speech_segments(self, samples, sample_rate):
-        """使用 VAD 提取語音段，跳過靜音"""
-        if self.vad is None:
-            return samples, 0.0  # 無 VAD，返回原始音頻
-
-        try:
-            # 重置 VAD 狀態
-            self.vad.reset()
-
-            # 餵入音頻數據
-            window_size = 512
-            for i in range(0, len(samples), window_size):
-                chunk = samples[i:i + window_size]
-                if len(chunk) < window_size:
-                    # 補零到窗口大小
-                    chunk = np.pad(chunk, (0, window_size - len(chunk)), 'constant')
-                self.vad.accept_waveform(chunk)
-
-            # 標記輸入結束
-            self.vad.flush()
-
-            # 獲取語音段
-            speech_segments = []
-            while not self.vad.empty():
-                segment = self.vad.front
-                speech_segments.append(segment)
-                self.vad.pop()
-
-            if not speech_segments:
-                logger.warning("VAD 未檢測到語音段")
-                return samples, 0.0
-
-            # 合併所有語音段
-            speech_samples = []
-            total_speech_samples = 0
-            for seg in speech_segments:
-                speech_samples.extend(seg.samples)
-                total_speech_samples += len(seg.samples)
-
-            speech_samples = np.array(speech_samples, dtype=np.float32)
-
-            # 計算跳過的靜音時長
-            original_duration = len(samples) / sample_rate
-            speech_duration = len(speech_samples) / sample_rate
-            skipped_duration = original_duration - speech_duration
-
-            logger.info(f"VAD: 原始 {original_duration:.2f}s -> 語音 {speech_duration:.2f}s，跳過 {skipped_duration:.2f}s ({len(speech_segments)} 段)")
-
-            return speech_samples, skipped_duration
-
-        except Exception as e:
-            logger.warning(f"VAD 處理失敗: {e}，使用原始音頻")
-            return samples, 0.0
-
     def _transcribe_samples(self, samples, sample_rate, recognizer=None):
         """辨識單一段音訊樣本，回傳原始文字（不含標點/繁簡轉換）。
         可指定 recognizer（如 Whisper），預設用 Paraformer。"""
