@@ -1812,13 +1812,15 @@ ${text}
         requestData
       });
 
+      // 60 秒逾時：AI 端點掛住時不能讓整個潤飾流程永遠卡死
       const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(requestData)
+        body: JSON.stringify(requestData),
+        signal: AbortSignal.timeout(60000)
       });
 
       if (!response.ok) {
@@ -1869,24 +1871,14 @@ ${text}
         name: error.name
       });
 
-      let errorMessage = '文本处理失败';
-      if (error.response) {
-        // API错误响应
-        if (error.response.status === 401) {
-          errorMessage = 'API密钥无效，请检查配置';
-        } else if (error.response.status === 429) {
-          errorMessage = 'API调用频率超限，请稍后重试';
-        } else if (error.response.status === 500) {
-          errorMessage = 'AI服务器错误，请稍后重试';
-        } else {
-          errorMessage = `API错误: ${error.response.status}`;
-        }
-      } else if (error.code === 'ECONNABORTED') {
-        errorMessage = '请求超时，请检查网络连接';
-      } else if (error.code === 'ENOTFOUND') {
-        errorMessage = '无法连接到AI服务器，请检查网络';
+      // 注意：這裡用的是原生 fetch，沒有 axios 的 error.response/error.code
+      let errorMessage;
+      if (error.name === 'TimeoutError' || error.name === 'AbortError') {
+        errorMessage = 'AI 請求逾時，請檢查網路或服務狀態';
+      } else if (/ENOTFOUND|ECONNREFUSED|fetch failed/i.test(error.message || '')) {
+        errorMessage = '無法連線到 AI 服務，請檢查網路與 API 端點';
       } else {
-        errorMessage = error.message || '未知错误';
+        errorMessage = error.message || '文字處理失敗';
       }
 
       return {
@@ -1962,7 +1954,8 @@ ${text}
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(requestData)
+        body: JSON.stringify(requestData),
+        signal: AbortSignal.timeout(20000) // 連線測試 20 秒逾時
       });
 
       this.logger.info('AI API响应状态:', response.status);
