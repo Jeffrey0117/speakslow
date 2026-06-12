@@ -1,6 +1,6 @@
 {
   "name": "speakslow",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "聲聲慢 - 基於 FunASR 和可配置 AI 模型的繁體中文語音轉文字應用",
   "main": "main.js",
   "private": true,

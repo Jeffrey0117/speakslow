@@ -833,6 +833,15 @@ class SherpaManager {
       return this.sherpaInstalled;
     }
 
+    // 打包版自帶 sherpa_server.exe（內含 sherpa-onnx），不需要也不該檢查 Python。
+    // 注意：transcribeAudio 每次都會呼叫這裡 — 漏了這個分支會讓乾淨機器
+    // （沒有 Python）的每一次辨識都誤報「Sherpa-ONNX 未安裝」。
+    const bundledExe = this.getBundledServerExe();
+    if (bundledExe && fs.existsSync(bundledExe)) {
+      this.sherpaInstalled = { installed: true, version: "bundled" };
+      return this.sherpaInstalled;
+    }
+
     try {
       const pythonCmd = await this.findPythonExecutable();
 
