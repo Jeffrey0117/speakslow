@@ -71,14 +71,11 @@ class TrayManager {
   }
 
   getTrayIconPath() {
-    const isDev = process.env.NODE_ENV === "development";
-    
-    if (isDev) {
-      return path.join(__dirname, "..", "..", "assets", "icon.png");
-    } else {
-      // 生产环境路径
-      return path.join(process.resourcesPath, "assets", "icon.png");
-    }
+    // assets 打包在 app.asar 內，fs/nativeImage 可透明讀取 asar 路徑，
+    // 因此 dev 與打包都用 __dirname 相對路徑（舊版指向 resources/assets
+    // 在打包後不存在 → 托盤變成空白圖示）。Windows 用 .ico（各 DPI 清晰）。
+    const file = process.platform === "win32" ? "icon.ico" : "icon.png";
+    return path.join(__dirname, "..", "..", "assets", file);
   }
 
   updateContextMenu() {
@@ -91,21 +88,6 @@ class TrayManager {
           if (this.mainWindow) {
             this.mainWindow.show();
             this.mainWindow.focus();
-          }
-        }
-      },
-      {
-        label: "控制面板",
-        click: () => {
-          if (this.controlPanelWindow) {
-            this.controlPanelWindow.show();
-            this.controlPanelWindow.focus();
-          } else if (this.createControlPanelCallback) {
-            this.createControlPanelCallback().then(() => {
-              if (this.controlPanelWindow) {
-                this.controlPanelWindow.show();
-              }
-            });
           }
         }
       },

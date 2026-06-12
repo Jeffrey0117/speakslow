@@ -11,7 +11,7 @@ import { useTextProcessing } from "./hooks/useTextProcessing";
 import { useModelStatus } from "./hooks/useModelStatus";
 import { usePermissions } from "./hooks/usePermissions";
 import { useTranslation } from "./i18n";
-import { Mic, MicOff, Settings, Copy, Download, X, Pin, Minus, Sparkles, Minimize2, Maximize2 } from "lucide-react";
+import { Mic, MicOff, Settings, Copy, Download, X, Pin, Minus, Sparkles } from "lucide-react";
 import SettingsPanel from "./components/SettingsPanel";
 import { ModelDownloadProgress } from "./components/ui/model-status-indicator";
 
@@ -278,7 +278,6 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(true); // 視窗置頂狀態
-  const [miniMode, setMiniMode] = useState(false); // 迷你模式（右下角小膠囊）
   const [aiOptimizationEnabled, setAiOptimizationEnabled] = useState(false); // AI 優化狀態
 
   // 錄音完成後動作設定
@@ -1070,58 +1069,6 @@ export default function App() {
 
   const micProps = getMicButtonProps();
 
-  const toggleMiniMode = async (enabled) => {
-    setMiniMode(enabled);
-    try {
-      await window.electronAPI?.setMiniMode?.(enabled);
-    } catch (e) { /* ignore */ }
-  };
-
-  // 迷你模式：右下角小膠囊（類似系統媒體浮窗），錄音功能照常
-  if (miniMode) {
-    const miniStatus = isRecording
-      ? t('panel.recordingIndicator')
-      : (isProcessing || isOptimizing)
-        ? t('app.processing')
-        : t('panel.miniIdle');
-    const lastText = processedText || originalText;
-    return (
-      <div
-        className="h-screen w-screen flex items-center gap-3 px-3.5 bg-white/95 dark:bg-gray-800/95 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden select-none"
-        style={{ WebkitAppRegion: 'drag' }}
-      >
-        <button
-          onClick={() => { if (!micProps.disabled) handleClickRecording(); }}
-          disabled={micProps.disabled}
-          style={{ WebkitAppRegion: 'no-drag' }}
-          className={`shrink-0 w-11 h-11 rounded-full flex items-center justify-center transition-colors shadow ${
-            isRecording
-              ? 'bg-red-500 animate-pulse'
-              : 'bg-emerald-500 hover:bg-emerald-600'
-          }`}
-        >
-          <Mic className="w-5 h-5 text-white" />
-        </button>
-        <div className="flex-1 min-w-0">
-          <div className={`text-xs font-semibold ${isRecording ? 'text-red-500' : 'text-gray-700 dark:text-gray-200'}`}>
-            {miniStatus}
-          </div>
-          <div className="text-[11px] text-gray-400 dark:text-gray-500 truncate">
-            {lastText || t('appName')}
-          </div>
-        </div>
-        <button
-          onClick={() => toggleMiniMode(false)}
-          style={{ WebkitAppRegion: 'no-drag' }}
-          title={t('panel.miniExpand')}
-          className="shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-        >
-          <Maximize2 className="w-4 h-4" />
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="h-screen w-screen p-8">
       {/* 卡片：透明外層留足夠邊距，讓柔和陰影完整顯示、不被視窗裁成硬邊方塊 */}
@@ -1160,14 +1107,6 @@ export default function App() {
                 }`}
               >
                 ✨AI
-              </button>
-            </Tooltip>
-            <Tooltip content={t('panel.miniMode')} position="bottom">
-              <button
-                onClick={() => toggleMiniMode(true)}
-                className="p-1.5 hover:bg-white/70 dark:hover:bg-gray-700/70 rounded-lg transition-colors non-draggable"
-              >
-                <Minimize2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               </button>
             </Tooltip>
             <Tooltip content={t('app.settings')} position="bottom">

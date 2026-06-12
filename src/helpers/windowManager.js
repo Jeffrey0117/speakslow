@@ -346,33 +346,6 @@ class WindowManager {
     return this.typelessIndicatorWindow;
   }
 
-  // 迷你模式：主面板縮成右下角小膠囊（類似系統媒體浮窗）；關閉時還原位置與大小
-  setMiniMode(enabled) {
-    if (!this.mainWindow || this.mainWindow.isDestroyed()) return { success: false };
-    const { screen } = require("electron");
-    if (enabled) {
-      this._preMiniBounds = this.mainWindow.getBounds();
-      const wa = screen.getPrimaryDisplay().workArea;
-      const w = 320;
-      const h = 96;
-      this.mainWindow.setMinimumSize(w, h);
-      this.mainWindow.setBounds({
-        x: wa.x + wa.width - w - 16,
-        y: wa.y + wa.height - h - 16,
-        width: w,
-        height: h,
-      });
-      this.mainWindow.setAlwaysOnTop(true);
-    } else {
-      const prev = this._preMiniBounds;
-      if (prev) {
-        this.mainWindow.setMinimumSize(472, 470);
-        this.mainWindow.setBounds(prev);
-      }
-    }
-    return { success: true, mini: enabled };
-  }
-
   showTypelessIndicator() {
     if (this.typelessIndicatorWindow && !this.typelessIndicatorWindow.isDestroyed()) {
       this.typelessIndicatorWindow.show();
