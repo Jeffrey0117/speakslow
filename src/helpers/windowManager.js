@@ -346,64 +346,32 @@ class WindowManager {
     return this.typelessIndicatorWindow;
   }
 
-  // 迷你模式 v2：獨立的扁平小視窗（媒體浮窗風格），主面板隱藏、迷你常駐右下角。
-  async openMiniMode() {
+  // 迷你模式：主面板「原地變身」成扁平媒體浮窗（同一個視窗，只改大小位置）。
+  // 重要：主視窗是 resizable:false，Windows 會忽略 setBounds 的尺寸但照樣移動位置
+  // （v1 因此把視窗移出螢幕外「消失」）。必須先暫時開啟 resizable 再改 bounds。
+  setMiniMode(enabled) {
+    if (!this.mainWindow || this.mainWindow.isDestroyed()) return { success: false };
     const { screen } = require("electron");
-    if (this.miniWindow && !this.miniWindow.isDestroyed()) {
-      this.miniWindow.show();
-      if (this.mainWindow && !this.mainWindow.isDestroyed()) this.mainWindow.hide();
-      return { success: true };
+    this.mainWindow.setResizable(true);
+    if (enabled) {
+      this._preMiniBounds = this.mainWindow.getBounds();
+      const wa = screen.getPrimaryDisplay().workArea;
+      const w = 384;
+      const h = 64;
+      this.mainWindow.setMinimumSize(w, h);
+      this.mainWindow.setBounds({
+        x: wa.x + wa.width - w - 16,
+        y: wa.y + wa.height - h - 16,
+        width: w,
+        height: h,
+      });
+    } else if (this._preMiniBounds) {
+      this.mainWindow.setMinimumSize(472, 470);
+      this.mainWindow.setBounds(this._preMiniBounds);
     }
-    const wa = screen.getPrimaryDisplay().workArea;
-    const w = 384;
-    const h = 64;
-    this.miniWindow = new BrowserWindow({
-      width: w,
-      height: h,
-      x: wa.x + wa.width - w - 16,
-      y: wa.y + wa.height - h - 16,
-      frame: false,
-      transparent: true,
-      alwaysOnTop: true,
-      resizable: false,
-      skipTaskbar: true,
-      show: false,
-      webPreferences: {
-        nodeIntegration: false,
-        contextIsolation: true,
-        preload: path.join(__dirname, "..", "..", "preload.js"),
-      },
-    });
-    this.miniWindow.webContents.on("did-fail-load", () => {
-      try { this.miniWindow.destroy(); } catch (e) { /* ignore */ }
-      this.miniWindow = null;
-    });
-    this.miniWindow.on("closed", () => { this.miniWindow = null; });
-
-    const isDev = process.env.NODE_ENV === "development";
-    if (isDev) {
-      await this.miniWindow.loadURL("http://localhost:5173?page=mini");
-    } else {
-      await this.miniWindow.loadFile(
-        path.join(__dirname, "..", "dist", "index.html"),
-        { query: { page: "mini" } }
-      );
-    }
-    this.miniWindow.show();
-    if (this.mainWindow && !this.mainWindow.isDestroyed()) this.mainWindow.hide();
-    return { success: true };
-  }
-
-  closeMiniMode() {
-    if (this.miniWindow && !this.miniWindow.isDestroyed()) {
-      this.miniWindow.close();
-      this.miniWindow = null;
-    }
-    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-      this.mainWindow.show();
-      this.mainWindow.focus();
-    }
-    return { success: true };
+    this.mainWindow.setResizable(false);
+    this.mainWindow.show();
+    return { success: true, mini: enabled };
   }
 
   showTypelessIndicator() {

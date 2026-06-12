@@ -178,13 +178,8 @@ module.exports = function register(ctx) {
   // =====================================================
 
   // 設置主視窗置頂狀態
-  ipcMain.handle("open-mini-mode", async () => {
-    try { return await ctx.windowManager.openMiniMode(); }
-    catch (error) { return { success: false, error: error.message }; }
-  });
-
-  ipcMain.handle("close-mini-mode", async () => {
-    try { return ctx.windowManager.closeMiniMode(); }
+  ipcMain.handle("set-mini-mode", async (event, enabled) => {
+    try { return ctx.windowManager.setMiniMode(enabled); }
     catch (error) { return { success: false, error: error.message }; }
   });
 

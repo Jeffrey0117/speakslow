@@ -11,7 +11,7 @@ import { useTextProcessing } from "./hooks/useTextProcessing";
 import { useModelStatus } from "./hooks/useModelStatus";
 import { usePermissions } from "./hooks/usePermissions";
 import { useTranslation } from "./i18n";
-import { Mic, MicOff, Settings, Copy, Download, X, Pin, Minus, Sparkles, Minimize2 } from "lucide-react";
+import { Mic, MicOff, Settings, Copy, Download, X, Pin, Minus, Sparkles, Minimize2, Maximize2 } from "lucide-react";
 import SettingsPanel from "./components/SettingsPanel";
 import { ModelDownloadProgress } from "./components/ui/model-status-indicator";
 
@@ -21,8 +21,6 @@ const SettingsPage = React.lazy(() => import('./settings.jsx').then(module => ({
 // 动态导入 TypeLess 指示器组件
 const TypelessIndicator = React.lazy(() => import('./components/TypelessIndicator'));
 
-// 迷你模式（獨立扁平小視窗）
-const MiniBar = React.lazy(() => import('./components/MiniBar'));
 
 // 声波图标组件（空闲/悬停状态）- 使用 React.memo 優化
 const SoundWaveIcon = React.memo(({ size = 16, isActive = false }) => {
@@ -273,15 +271,6 @@ export default function App() {
     );
   }
 
-  // 迷你模式頁面（獨立小視窗）
-  if (page === 'mini') {
-    return (
-      <React.Suspense fallback={<div className="w-full h-full" />}>
-        <MiniBar />
-      </React.Suspense>
-    );
-  }
-
   const [isHovered, setIsHovered] = useState(false);
   const [originalText, setOriginalText] = useState("");
   const [processedText, setProcessedText] = useState("");
@@ -290,6 +279,7 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(true); // 視窗置頂狀態
+  const [miniMode, setMiniMode] = useState(false); // 迷你模式（原地變身扁平浮窗）
   const [aiOptimizationEnabled, setAiOptimizationEnabled] = useState(false); // AI 優化狀態
 
   // 錄音完成後動作設定
@@ -1081,6 +1071,45 @@ export default function App() {
 
   const micProps = getMicButtonProps();
 
+  const toggleMiniMode = async (enabled) => {
+    // 先讓視窗變形，再切版面（同一個視窗、不會消失）
+    try { await window.electronAPI?.setMiniMode?.(enabled); } catch (e) { /* ignore */ }
+    setMiniMode(enabled);
+  };
+
+  // 迷你模式：扁平媒體浮窗版面（與主面板同一視窗，原地變身）
+  if (miniMode) {
+    const lastText = processedText || originalText;
+    return (
+      <div
+        className="h-screen w-screen flex items-center gap-3 px-3 bg-gray-900/95 rounded-xl border border-gray-700/70 shadow-2xl overflow-hidden select-none"
+        style={{ WebkitAppRegion: 'drag' }}
+      >
+        <div className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+          isRecording ? 'bg-red-500 animate-pulse' : 'bg-gray-800'
+        }`}>
+          <img src="./icon.png" alt="" className="w-7 h-7 rounded-md" draggable="false" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className={`text-[13px] font-semibold leading-tight ${isRecording ? 'text-red-400' : 'text-white'}`}>
+            {isRecording ? t('panel.recordingIndicator') : (isProcessing || isOptimizing) ? t('app.processing') : t('panel.miniIdle')}
+          </div>
+          <div className="text-[11px] text-gray-400 truncate leading-tight mt-0.5">
+            {lastText || t('appName')}
+          </div>
+        </div>
+        <button
+          onClick={() => toggleMiniMode(false)}
+          title={t('panel.miniExpand')}
+          style={{ WebkitAppRegion: 'no-drag' }}
+          className="shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700/80 transition-colors"
+        >
+          <Maximize2 className="w-4 h-4" />
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen w-screen p-8">
       {/* 卡片：透明外層留足夠邊距，讓柔和陰影完整顯示、不被視窗裁成硬邊方塊 */}
@@ -1123,7 +1152,7 @@ export default function App() {
             </Tooltip>
             <Tooltip content={t('panel.miniMode')} position="bottom">
               <button
-                onClick={() => window.electronAPI?.openMiniMode?.()}
+                onClick={() => toggleMiniMode(true)}
                 className="p-1.5 hover:bg-white/70 dark:hover:bg-gray-700/70 rounded-lg transition-colors non-draggable"
               >
                 <Minimize2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
