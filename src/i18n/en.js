@@ -23,6 +23,8 @@ export default {
     accessibilityPermission: 'Accessibility Permission',
     accessibilityPermissionDesc: 'Required for pasting text automatically',
     testPermission: 'Test Permission',
+    granted: 'Granted',
+    grantPermission: 'Grant Permission',
 
     aiConfig: 'AI Settings',
     aiConfigDesc: 'Configure an AI model to refine and enhance speech recognition results. If the API key is invalid or missing, enhancement will be disabled automatically.',
@@ -43,6 +45,19 @@ export default {
     configApplied: 'Applied recommended {provider} configuration',
     configIncomplete: 'Incomplete Configuration',
     configIncompleteDesc: 'Please enter an API key first',
+    ollamaLocal: 'Ollama (local)',
+    providerEndpointSet: '{provider} API endpoint set automatically',
+    modelGroups: {
+      deepseek: 'DeepSeek (recommended)',
+      ollama: 'Ollama (local, free)'
+    },
+    modelOptions: {
+      deepseekChat: 'DeepSeek Chat (best value)',
+      geminiFlash: 'Gemini 2.0 Flash (fast, cheap)',
+      geminiPro: 'Gemini 1.5 Pro (high quality)',
+      qwen: 'Qwen2.5 (best for Chinese)',
+      qwenFast: 'Qwen2.5 3B (faster)'
+    },
 
     testConfig: 'Test Settings',
     testConfigDesc: 'Test the settings you are editing (no need to save)',
@@ -60,11 +75,110 @@ export default {
 
     about: 'About SpeakSlow',
     aboutDesc: 'A Traditional Chinese speech-to-text app powered by Sherpa-ONNX and AI',
+    brandFull: 'SpeakSlow',
     features: {
       recognition: 'High-accuracy Chinese speech recognition',
       ai: 'AI-powered text enhancement',
       realtime: 'Real-time speech processing',
       privacy: 'Privacy-first design'
+    },
+
+    // Settings window sidebar tabs
+    tabs: {
+      general: 'General',
+      history: 'History',
+      ai: 'AI Enhancement',
+      hotkeys: 'Hotkeys',
+      hotwords: 'Hotwords',
+      dictionary: 'Dictionary',
+      permissions: 'Permissions',
+      about: 'About'
+    },
+
+    // Streaming recognition mode
+    streamingMode: 'Streaming Recognition Mode',
+    streamingModeDesc: '⚠️ Experimental: slower and less accurate in CPU mode; the standard mode is recommended',
+    streamingEnabled: 'Streaming recognition mode enabled',
+    streamingDisabled: 'Streaming recognition mode disabled',
+    streamingPreloading: 'Preloading the streaming model, please wait...',
+    streamingModelReady: 'Streaming model is ready',
+    streamingPreloadComplete: 'Streaming model preloaded',
+    streamingPreloadFailed: 'Failed to preload streaming model: {error}',
+    streamingPreloadFailedSlow: 'Failed to preload the streaming model; the first recording may be slower',
+
+    // Window controls
+    windowControl: '🪟 Window Controls',
+    windowControlDesc: 'Configure always-on-top and system tray behavior',
+    alwaysOnTop: 'Always on Top',
+    alwaysOnTopDesc: 'Keep the app window above other windows',
+    alwaysOnTopEnabled: 'Always on top enabled',
+    alwaysOnTopDisabled: 'Always on top disabled',
+    minimizeToTray: 'Minimize to System Tray',
+    minimizeToTrayDesc: 'Hide to the system tray when minimizing the window',
+    minimizeToTrayEnabled: 'Minimize to tray enabled',
+    minimizeToTrayDisabled: 'Minimize to tray disabled',
+    closeToTray: 'Close to System Tray',
+    closeToTrayDesc: 'Hide to the tray instead of quitting when closing the window',
+    closeToTrayEnabled: 'Close to tray enabled',
+    closeToTrayDisabled: 'Close to tray disabled',
+
+    // Actions after recording
+    afterRecording: '📋 After Recording',
+    afterRecordingDesc: 'Choose what happens automatically after transcription completes',
+    autoPaste: 'Auto-paste Transcription',
+    autoPasteDesc: 'Paste the result at your cursor when transcription completes, then restore your original clipboard',
+    alwaysOn: 'Always on',
+    autoEnter: 'Auto-send After Paste (Enter)',
+    autoEnterDesc: '⚠️ Full-trust mode: presses Enter automatically after pasting; great for instant messaging apps',
+
+    // About tab
+    aboutTab: {
+      brandSub: '聲聲慢',
+      logoAlt: 'SpeakSlow logo',
+      tagline: 'The fastest local voice input, built for Chinese · Free & private',
+      authorTitle: 'Author',
+      authorPrefix: 'Developed and maintained by ',
+      authorName: 'TailwindMaster',
+      authorSuffix: '.',
+      acknowledgements: 'Acknowledgements',
+      ackQuqu: 'The original project; this app builds on it with the sherpa-onnx engine and a reworked UI and interactions.',
+      ackSherpa: 'On-device speech recognition engine.',
+      ackWispr: 'Product concept inspiration.'
+    },
+
+    // Hotkeys tab
+    hotkeysTab: {
+      title: 'Hotkey Settings',
+      description: 'Customize the app hotkeys. Click "Record" and press the combination you want.',
+      resetAll: 'Reset All',
+      resetToDefault: 'Reset to default',
+      resetDone: 'Reset to the default hotkey',
+      resetAllDone: 'All hotkeys reset to defaults',
+      resetFailed: 'Reset failed',
+      pressHotkeyFirst: 'Press a hotkey first',
+      pressHotkey: 'Press a hotkey...',
+      notSet: 'Not set',
+      record: 'Record',
+      updated: 'Hotkey updated to {hotkey}',
+      setFailed: 'Failed to set hotkey',
+      typelessFixed: 'Right Alt / Right Ctrl (single press to toggle)',
+      spaceKey: 'Space',
+      tipLabel: 'Tip: ',
+      tipContent: 'Some hotkeys may be taken by the system or other apps. If there is a conflict, try a different combination.',
+      actions: {
+        typelessRecording: {
+          name: 'TypeLess Mode',
+          description: 'Press Right Alt or Right Ctrl once to start recording, press again to stop and paste at the cursor. In browsers, Right Ctrl is recommended (Right Alt opens the browser menu). Press Esc while recording to cancel (fixed)'
+        },
+        showWindow: {
+          name: 'Show Main Window',
+          description: 'Show or hide the app window'
+        },
+        copyLast: {
+          name: 'Copy Last Result',
+          description: 'Copy the most recent transcription result'
+        }
+      }
     },
 
     // Hotword settings
@@ -117,7 +231,22 @@ export default {
       empty: 'No dictionary entries yet. Click "Add" to create your first replacement rule',
       total: 'Total',
       items: ' entries',
-      enabled: ' enabled'
+      enabled: ' enabled',
+      fillBoth: 'Please fill in both the original and replacement terms',
+      addFailed: 'Failed to add: {error}',
+      updateFailed: 'Failed to update: {error}',
+      confirmDelete: 'Delete this entry?',
+      exportSuccess: 'Exported {count} entries',
+      exportFailed: 'Export failed: {error}',
+      importSuccess: 'Imported {count} entries',
+      importSkipped: ', skipped {count}',
+      importFailed: 'Import failed: {error}',
+      importHint: 'Existing entries are skipped during import',
+      originalPlaceholder: 'e.g. Elon Mask',
+      replacementPlaceholder: 'e.g. Elon Musk',
+      categoryPlaceholder: 'e.g. Names',
+      enable: 'Enable',
+      disable: 'Disable'
     }
   },
 
@@ -149,6 +278,50 @@ export default {
     export: 'Export Text'
   },
 
+  // Main panel (recording window)
+  panel: {
+    processingMessages: [
+      'Listening to your rambling...',
+      "Easy there, that's a lot of words...",
+      'You said one sentence, the next makes two...',
+      'Taking your nonsense very seriously...',
+      'Trying hard to figure out what you said...',
+      'Decoding your sound waves...',
+      'Assembling the words...',
+      'Casting speech magic...',
+      'Recognizing as fast as I can...',
+      'Mm-hmm, got it, I heard you...',
+      'Let me think about what you said...',
+      'Just a sec...'
+    ],
+    idleMessages: [
+      'Press Right Alt or Right Ctrl to start recording 🎤',
+      'In browsers, Right Ctrl works better (avoids the menu)',
+      'Pastes at your cursor when you finish ✨',
+      'Press Esc while recording to cancel',
+      'On-device recognition — nothing leaves your machine 🔒'
+    ],
+    cancelledRecording: 'Recording cancelled',
+    levelUnlocked: 'New level unlocked · {title}',
+    aiTooltipOn: 'AI polish: ON (click to pause and save API costs)',
+    aiTooltipOff: 'AI polish: OFF (click to enable)',
+    aiEnabledBadge: 'AI enhancement enabled',
+    pinOn: 'Pin window on top',
+    pinOff: 'Unpin window',
+    minimize: 'Minimize',
+    copiedLastResult: 'Last result copied',
+    copiedOriginal: 'Original text copied',
+    nothingToCopy: 'Nothing to copy yet',
+    statsUses: 'Used {n} times',
+    statsChars: '{n} chars',
+    streamingStart: 'Start live recognition ({hotkey})',
+    streamingClickToStart: 'Click to start live recognition ({hotkey})',
+    streamingInitializing: 'Starting stream...',
+    streamingRecognizing: 'Streaming recognition...',
+    recordingIndicator: 'Recording...',
+    hotkeyName: 'Right Alt / Right Ctrl'
+  },
+
   // History page
   history: {
     title: 'History',
@@ -163,7 +336,122 @@ export default {
     loadFailed: 'Failed to load history',
     aiOptimized: 'AI Enhanced',
     total: 'Total ',
-    records: ' records'
+    records: ' records',
+    bannerMessages: [
+      "Don't be shy, say something!",
+      "We just met — can't wait to hear more!",
+      "You're warming up nicely!",
+      'Looks like you have plenty to say!',
+      'You speak more than you type — your fingers thank you',
+      'So chatty! But I love listening',
+      "That's enough words for a thesis",
+      'Are you a philosopher? So many thoughts',
+      'Time to publish a book titled "Stuff I Said"',
+      'You have more quotes than Confucius',
+      'The legendary chatterbox — respect!'
+    ],
+    banner: {
+      recognizedPrefix: 'Transcribed',
+      recognizedSuffix: 'characters for you',
+      countRecognitions: '{n} transcriptions',
+      totalMinutes: '{n} min in total'
+    },
+    shareCard: {
+      totalTime: 'Total Dictation Time',
+      chars: 'Dictated Characters',
+      savedTime: 'Time Saved',
+      speed: 'Average Dictation Speed',
+      unitMin: 'min',
+      unitMinShort: 'min',
+      unitChars: 'chars',
+      unitSpeed: 'chars/min',
+      hourUnit: 'h',
+      localOnly: '🔒 Data stays on your device · SpeakSlow'
+    },
+    dailyChart: {
+      title: 'Daily Characters · Last 14 Days',
+      total: '{n} chars total',
+      tooltip: '{date}: {n} chars'
+    },
+    time: {
+      yesterday: 'Yesterday {time}',
+      daysAgo: '{n} days ago'
+    },
+    retranscribe: {
+      fast: 'Quick re-transcribe (Paraformer)',
+      accurate: 'Accurate re-transcribe (Whisper, slower, better for English/tricky speech)',
+      doneSame: 'Re-transcribed (same result)',
+      doneUpdated: 'Re-transcribed and updated',
+      failed: 'Re-transcription failed'
+    }
+  },
+
+  // Model status
+  model: {
+    checking: 'Checking model status...',
+    needDownload: 'Model download required',
+    downloading: 'Downloading model...',
+    loading: 'Loading model...',
+    ready: 'Model ready',
+    error: 'Model error',
+    unknown: 'Model status unknown',
+    download: 'Download',
+    tooltipChecking: '🔍 Checking model status...',
+    tooltipNeedDownload: '📥 AI model files need to be downloaded',
+    tooltipDownloading: '⬇️ Downloading model files... {progress}%',
+    tooltipLoading: '🤖 AI model loading, please wait...',
+    tooltipReady: '✅ AI model ready — you can start speech recognition',
+    tooltipError: '❌ Model error: {error}',
+    tooltipUnknown: '⏳ Model status unknown',
+    needDownloadTitle: 'AI Model Download Required',
+    needDownloadDesc: 'Model files must be downloaded on first use',
+    preparingDownload: 'Preparing download...',
+    startDownload: 'Start Download',
+    downloadingTitle: 'Downloading Model Files',
+    downloadingDesc: 'Please stay connected; this may take a few minutes',
+    downloadProgress: 'Download progress'
+  },
+
+  // Permission tests
+  permissions: {
+    micTestSuccessTitle: '✅ Microphone permission test passed',
+    micTestSuccessDesc: 'The microphone works! You can record speech now.',
+    micNeededTitle: '❌ Microphone permission required',
+    micNeededDesc: 'Please grant microphone access to use voice transcription.',
+    accTestSuccessTitle: '✅ Accessibility permission test passed',
+    accTestSuccessDesc: 'Accessibility permission works! Check whether the test text appeared in another app.',
+    accNeededTitle: '❌ Accessibility permission required',
+    accNeededDesc: 'Please grant accessibility permission in system settings to enable automatic text pasting.',
+    testText: 'SpeakSlow accessibility test'
+  },
+
+  // Error messages
+  errors: {
+    asrStarting: 'The speech recognition service is starting, please wait...',
+    asrNotReady: 'The speech recognition service is not ready; please check the configuration',
+    asrPreparing: 'Preparing the speech recognition service, please wait...',
+    browserNoRecording: 'Your browser does not support audio recording',
+    cannotStartRecording: 'Could not start recording: {error}',
+    emptyRecording: 'The recording is empty; please record again',
+    recordingTooShort: 'The recording is too short; please speak before stopping',
+    audioProcessingFailed: 'Audio processing failed: {error}',
+    transcriptionFailed: 'Speech recognition failed',
+    cannotStartStreamingSession: 'Could not start streaming recognition',
+    cannotStartStreaming: 'Could not start streaming recording: {error}',
+    stopStreamingFailed: 'Failed to stop streaming recording: {error}',
+    emptyTranscriptionText: 'Transcription text cannot be empty',
+    aiOptimizeFailed: 'AI text enhancement failed',
+    aiUnknownError: 'An unknown error occurred during AI processing',
+    saveUnknownError: 'An unknown error occurred while saving the transcription',
+    apiKeyMissing: 'Please configure an AI API key in Settings first',
+    apiRequestFailed: 'API request failed: {status}',
+    apiBadResponse: 'The API returned data in an unexpected format',
+    electronApiUnavailable: 'Electron API unavailable',
+    checkModelFilesFailed: 'Failed to check model files',
+    modelStatusCheckFailed: 'Model status check failed',
+    restartServerFailed: 'Failed to restart server: {error}',
+    downloadFailed: 'Download failed',
+    downloadModelsFailed: 'Failed to download models'
   },
 
   // Notification messages
@@ -207,6 +495,7 @@ export default {
     cancel: 'Cancel',
     close: 'Close',
     save: 'Save',
+    add: 'Add',
     delete: 'Delete',
     edit: 'Edit',
     loading: 'Loading...',

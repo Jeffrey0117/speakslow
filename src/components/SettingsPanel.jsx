@@ -4,8 +4,10 @@ import { usePermissions } from "../hooks/usePermissions";
 import PermissionCard from "./ui/permission-card";
 import HotkeySettings from "./HotkeySettings";
 import { toast } from "sonner";
+import { useTranslation } from "../i18n";
 
 const SettingsPanel = ({ onClose }) => {
+  const { t } = useTranslation();
   const showAlert = (alert) => {
     toast(alert.title, {
       description: alert.description,
@@ -28,7 +30,7 @@ const SettingsPanel = ({ onClose }) => {
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
             <Settings className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 chinese-title">設定</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 chinese-title">{t('settings.title')}</h2>
           </div>
           <button
             onClick={onClose}
@@ -43,29 +45,29 @@ const SettingsPanel = ({ onClose }) => {
           {/* 权限部分 */}
           <div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 chinese-title">
-              權限管理
+              {t('settings.permissions')}
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-              測試和管理應用程式權限，確保麥克風和輔助功能正常運作。
+              {t('settings.permissionsDesc')}
             </p>
-            
+
             <div className="space-y-4">
               <PermissionCard
                 icon={Mic}
-                title="麥克風權限"
-                description="錄製語音所需的權限"
+                title={t('settings.micPermission')}
+                description={t('settings.micPermissionDesc')}
                 granted={micPermissionGranted}
                 onRequest={requestMicPermission}
-                buttonText="測試麥克風"
+                buttonText={t('settings.testMic')}
               />
 
               <PermissionCard
                 icon={Shield}
-                title="輔助功能權限"
-                description="自動貼上文字所需的權限"
+                title={t('settings.accessibilityPermission')}
+                description={t('settings.accessibilityPermissionDesc')}
                 granted={accessibilityPermissionGranted}
                 onRequest={testAccessibilityPermission}
-                buttonText="測試權限"
+                buttonText={t('settings.testPermission')}
               />
             </div>
           </div>
@@ -78,17 +80,17 @@ const SettingsPanel = ({ onClose }) => {
           {/* 应用信息部分 */}
           <div className="border-t border-gray-200 dark:border-gray-700 pt-8">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 chinese-title">
-              關於聲聲慢
+              {t('settings.about')}
             </h3>
             <div className="bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/30 dark:to-green-900/30 p-4 rounded-lg">
               <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-                <strong>聲聲慢 (SpeakSlow)</strong> - 基於 Sherpa-ONNX 和 AI 的中文語音轉文字應用
+                <strong>{t('settings.brandFull')}</strong> - {t('settings.aboutDesc')}
               </p>
               <p className="text-xs text-gray-600 dark:text-gray-400">
-                • 高精度中文語音辨識<br/>
-                • AI 智慧文字優化<br/>
-                • 即時語音處理<br/>
-                • 隱私保護設計
+                • {t('settings.features.recognition')}<br/>
+                • {t('settings.features.ai')}<br/>
+                • {t('settings.features.realtime')}<br/>
+                • {t('settings.features.privacy')}
               </p>
             </div>
           </div>

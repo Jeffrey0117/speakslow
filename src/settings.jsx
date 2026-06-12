@@ -13,14 +13,14 @@ import { useTranslation, LanguageProvider } from "./i18n";
 
 // 設定面板左側分頁（依重要性排序）
 const SETTINGS_TABS = [
-  { id: 'general', label: '一般設定', icon: Settings },
-  { id: 'history', label: '歷史紀錄', icon: History },
-  { id: 'ai', label: 'AI 文字優化', icon: Sparkles },
-  { id: 'hotkeys', label: '快捷鍵', icon: Keyboard },
-  { id: 'hotwords', label: '熱詞', icon: Tag },
-  { id: 'dictionary', label: '字典', icon: BookText },
-  { id: 'permissions', label: '權限管理', icon: Shield },
-  { id: 'about', label: '關於', icon: Info },
+  { id: 'general', labelKey: 'settings.tabs.general', icon: Settings },
+  { id: 'history', labelKey: 'settings.tabs.history', icon: History },
+  { id: 'ai', labelKey: 'settings.tabs.ai', icon: Sparkles },
+  { id: 'hotkeys', labelKey: 'settings.tabs.hotkeys', icon: Keyboard },
+  { id: 'hotwords', labelKey: 'settings.tabs.hotwords', icon: Tag },
+  { id: 'dictionary', labelKey: 'settings.tabs.dictionary', icon: BookText },
+  { id: 'permissions', labelKey: 'settings.tabs.permissions', icon: Shield },
+  { id: 'about', labelKey: 'settings.tabs.about', icon: Info },
 ];
 
 const SettingsPage = () => {
@@ -153,35 +153,35 @@ const SettingsPage = () => {
         } else if (key === 'enable_notifications') {
           toast.success(value ? t('notifications.enabled') : t('notifications.disabled'));
         } else if (key === 'enable_streaming_mode') {
-          toast.success(value ? '串流辨識模式已開啟' : '串流辨識模式已關閉');
+          toast.success(value ? t('settings.streamingEnabled') : t('settings.streamingDisabled'));
           // 當啟用串流模式時，預載串流模型以減少首次錄音延遲
           if (value) {
-            toast.info('正在預載串流模型，請稍候...');
+            toast.info(t('settings.streamingPreloading'));
             window.electronAPI.preloadStreamingModel()
               .then(result => {
                 if (result.success) {
                   if (result.already_loaded) {
-                    toast.success('串流模型已就緒');
+                    toast.success(t('settings.streamingModelReady'));
                   } else {
-                    toast.success('串流模型預載完成');
+                    toast.success(t('settings.streamingPreloadComplete'));
                   }
                 } else {
-                  toast.error(`串流模型預載失敗: ${result.error || '未知錯誤'}`);
+                  toast.error(t('settings.streamingPreloadFailed', { error: result.error || t('settings.testFailedDesc') }));
                 }
               })
               .catch(err => {
                 console.error('預載串流模型失敗:', err);
-                toast.error('串流模型預載失敗，首次錄音可能會較慢');
+                toast.error(t('settings.streamingPreloadFailedSlow'));
               });
           }
         } else if (key === 'window_always_on_top') {
           // 視窗置頂需要即時應用
           await window.electronAPI.setAlwaysOnTop(value);
-          toast.success(value ? '視窗置頂已開啟' : '視窗置頂已關閉');
+          toast.success(value ? t('settings.alwaysOnTopEnabled') : t('settings.alwaysOnTopDisabled'));
         } else if (key === 'minimize_to_tray') {
-          toast.success(value ? '縮小到托盤已開啟' : '縮小到托盤已關閉');
+          toast.success(value ? t('settings.minimizeToTrayEnabled') : t('settings.minimizeToTrayDisabled'));
         } else if (key === 'close_to_tray') {
-          toast.success(value ? '關閉到托盤已開啟' : '關閉到托盤已關閉');
+          toast.success(value ? t('settings.closeToTrayEnabled') : t('settings.closeToTrayDisabled'));
         }
         // 設定變更會透過 IPC 自動廣播到所有視窗
       }
@@ -211,7 +211,7 @@ const SettingsPage = () => {
       ai_model: "qwen2.5"
     }));
     setCustomModel(true);
-    toast.info(t('settings.configApplied', { provider: 'Ollama（本地）' }));
+    toast.info(t('settings.configApplied', { provider: t('settings.ollamaLocal') }));
   };
 
   // 重置为OpenAI配置
@@ -343,7 +343,7 @@ const SettingsPage = () => {
                 }`}
               >
                 <Icon className="w-4 h-4 flex-shrink-0" />
-                {tab.label}
+                {t(tab.labelKey)}
               </button>
             );
           })}
@@ -498,10 +498,10 @@ const SettingsPage = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <label htmlFor="streaming-toggle" className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                      串流辨識模式
+                      {t('settings.streamingMode')}
                     </label>
                     <p className="text-xs text-orange-500 dark:text-orange-400 mt-0.5">
-                      ⚠️ 實驗功能：CPU 模式下辨識較慢且準確度較低，建議使用傳統模式
+                      {t('settings.streamingModeDesc')}
                     </p>
                   </div>
                   <button
@@ -531,10 +531,10 @@ const SettingsPage = () => {
             <div className="p-6">
               <div className="mb-4">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 chinese-title">
-                  🪟 視窗控制
+                  {t('settings.windowControl')}
                 </h2>
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                  設定視窗置頂與系統托盤行為
+                  {t('settings.windowControlDesc')}
                 </p>
               </div>
 
@@ -543,10 +543,10 @@ const SettingsPage = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <label className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                      視窗置頂
+                      {t('settings.alwaysOnTop')}
                     </label>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                      讓應用程式視窗保持在其他視窗之上
+                      {t('settings.alwaysOnTopDesc')}
                     </p>
                   </div>
                   <button
@@ -571,10 +571,10 @@ const SettingsPage = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <label className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                      縮小到系統托盤
+                      {t('settings.minimizeToTray')}
                     </label>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                      縮小視窗時隱藏到系統托盤
+                      {t('settings.minimizeToTrayDesc')}
                     </p>
                   </div>
                   <button
@@ -599,10 +599,10 @@ const SettingsPage = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <label className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                      關閉到系統托盤
+                      {t('settings.closeToTray')}
                     </label>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                      關閉視窗時隱藏到托盤而非退出應用程式
+                      {t('settings.closeToTrayDesc')}
                     </p>
                   </div>
                   <button
@@ -631,10 +631,10 @@ const SettingsPage = () => {
             <div className="p-6">
               <div className="mb-4">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 chinese-title">
-                  📋 錄音完成後動作
+                  {t('settings.afterRecording')}
                 </h2>
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                  設定辨識完成後要自動執行的動作
+                  {t('settings.afterRecordingDesc')}
                 </p>
               </div>
 
@@ -643,23 +643,23 @@ const SettingsPage = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <label className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                      自動貼上辨識結果
+                      {t('settings.autoPaste')}
                     </label>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                      辨識完成後自動貼到目前游標位置，並還原你原本的剪貼簿內容
+                      {t('settings.autoPasteDesc')}
                     </p>
                   </div>
-                  <span className="text-xs font-medium text-green-600 dark:text-green-400 whitespace-nowrap">永遠開啟</span>
+                  <span className="text-xs font-medium text-green-600 dark:text-green-400 whitespace-nowrap">{t('settings.alwaysOn')}</span>
                 </div>
 
                 {/* 貼上後自動送出開關（完全信任模式） */}
                 <div className="flex items-center justify-between">
                   <div>
                     <label className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                      貼上後自動送出 (Enter)
+                      {t('settings.autoEnter')}
                     </label>
                     <p className="text-xs text-orange-500 dark:text-orange-400 mt-0.5">
-                      ⚠️ 完全信任模式：貼上後自動按 Enter 送出，適用於即時通訊軟體
+                      {t('settings.autoEnterDesc')}
                     </p>
                   </div>
                   <button
@@ -832,7 +832,7 @@ const SettingsPage = () => {
                         onClick={applyOllamaConfig}
                         className="text-xs px-2 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
                       >
-                        Ollama（本地）
+                        {t('settings.ollamaLocal')}
                       </button>
                     </div>
                   </div>
@@ -872,7 +872,7 @@ const SettingsPage = () => {
                             providerName = 'Gemini';
                           } else if (model.startsWith('qwen') || model.startsWith('llama') || model.startsWith('gemma')) {
                             baseUrl = 'http://localhost:11434/v1';
-                            providerName = 'Ollama（本地）';
+                            providerName = t('settings.ollamaLocal');
                           }
 
                           setSettings(prev => ({
@@ -882,13 +882,13 @@ const SettingsPage = () => {
                           }));
 
                           if (providerName) {
-                            toast.info(`已自動設定 ${providerName} API 端點`);
+                            toast.info(t('settings.providerEndpointSet', { provider: providerName }));
                           }
                         }}
                         className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                       >
-                        <optgroup label="DeepSeek (推薦)">
-                          <option value="deepseek-chat">DeepSeek Chat (最划算)</option>
+                        <optgroup label={t('settings.modelGroups.deepseek')}>
+                          <option value="deepseek-chat">{t('settings.modelOptions.deepseekChat')}</option>
                           <option value="deepseek-reasoner">DeepSeek Reasoner (R1)</option>
                         </optgroup>
                         <optgroup label="OpenAI">
@@ -899,12 +899,12 @@ const SettingsPage = () => {
                           <option value="gpt-4o-mini">GPT-4o Mini</option>
                         </optgroup>
                         <optgroup label="Gemini">
-                          <option value="gemini-2.0-flash">Gemini 2.0 Flash (快、便宜)</option>
-                          <option value="gemini-1.5-pro">Gemini 1.5 Pro (高品質)</option>
+                          <option value="gemini-2.0-flash">{t('settings.modelOptions.geminiFlash')}</option>
+                          <option value="gemini-1.5-pro">{t('settings.modelOptions.geminiPro')}</option>
                         </optgroup>
-                        <optgroup label="Ollama（本地、免費）">
-                          <option value="qwen2.5">Qwen2.5 (中文推薦)</option>
-                          <option value="qwen2.5:3b">Qwen2.5 3B (更快)</option>
+                        <optgroup label={t('settings.modelGroups.ollama')}>
+                          <option value="qwen2.5">{t('settings.modelOptions.qwen')}</option>
+                          <option value="qwen2.5:3b">{t('settings.modelOptions.qwenFast')}</option>
                           <option value="llama3.2">Llama 3.2</option>
                         </optgroup>
                       </select>
@@ -1049,21 +1049,21 @@ const SettingsPage = () => {
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-5 text-center">
                 <img
                   src="./icon.png"
-                  alt="聲聲慢 logo"
+                  alt={t('settings.aboutTab.logoAlt')}
                   className="w-20 h-20 mx-auto mb-3 rounded-2xl shadow-md"
                   draggable="false"
                 />
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 brand-title">
-                  聲聲慢 <span className="text-base font-normal text-gray-400">SpeakSlow</span>
+                  {t('appName')} <span className="text-base font-normal text-gray-400">{t('settings.aboutTab.brandSub')}</span>
                 </h2>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">專為中文打造、最快的本地語音輸入 · 免費、隱私</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('settings.aboutTab.tagline')}</p>
                 <p className="text-[11px] text-gray-400 mt-2">v1.0.1 · Apache License 2.0</p>
               </div>
 
               {/* 作者 */}
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-5">
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">作者</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">由 <strong>切版職人</strong> 開發維護。</p>
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">{t('settings.aboutTab.authorTitle')}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('settings.aboutTab.authorPrefix')}<strong>{t('settings.aboutTab.authorName')}</strong>{t('settings.aboutTab.authorSuffix')}</p>
                 <a href="https://github.com/Jeffrey0117/SpeakSlow" target="_blank" rel="noreferrer"
                    className="inline-block text-xs text-blue-500 hover:underline mt-2">
                   GitHub · Jeffrey0117/speakslow
@@ -1073,12 +1073,12 @@ const SettingsPage = () => {
               {/* 致謝 */}
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-5">
                 <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-1.5">
-                  <Heart className="w-4 h-4 text-red-400" /> 致謝
+                  <Heart className="w-4 h-4 text-red-400" /> {t('settings.aboutTab.acknowledgements')}
                 </h3>
                 <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-2 leading-relaxed">
-                  <li>• <a href="https://github.com/yan5xu/ququ" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">ququ (yan5xu)</a> — 原始專案，本專案在其基礎上改用 sherpa-onnx 引擎並重做 UI 與互動。</li>
-                  <li>• <a href="https://github.com/k2-fsa/sherpa-onnx" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">sherpa-onnx (k2-fsa)</a> — 本地語音辨識引擎。</li>
-                  <li>• <a href="https://wisprflow.ai/" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">Wispr Flow</a> — 產品概念啟發。</li>
+                  <li>• <a href="https://github.com/yan5xu/ququ" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">ququ (yan5xu)</a> — {t('settings.aboutTab.ackQuqu')}</li>
+                  <li>• <a href="https://github.com/k2-fsa/sherpa-onnx" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">sherpa-onnx (k2-fsa)</a> — {t('settings.aboutTab.ackSherpa')}</li>
+                  <li>• <a href="https://wisprflow.ai/" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">Wispr Flow</a> — {t('settings.aboutTab.ackWispr')}</li>
                 </ul>
               </div>
             </div>

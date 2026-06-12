@@ -1,10 +1,12 @@
 import { useState, useCallback, useRef } from 'react';
+import { useTranslation } from '../i18n';
 
 /**
  * 热键管理Hook
  * 处理全局快捷键功能，包括F2双击功能
  */
 export const useHotkey = () => {
+  const { t } = useTranslation();
   // 錄音熱鍵已統一為 TypeLess「右 Alt / 右 Ctrl」（單擊切換），由 TypelessManager 處理
   const [hotkey, setHotkey] = useState('右 Alt / 右 Ctrl');
   const [isRegistered, setIsRegistered] = useState(false);
@@ -77,14 +79,14 @@ export const useHotkey = () => {
       .replace('CommandOrControl', navigator.platform.includes('Mac') ? '⌘' : 'Ctrl')
       .replace('Shift', '⇧')
       .replace('Alt', '⌥')
-      .replace('Space', '空格')
+      .replace('Space', t('settings.hotkeysTab.spaceKey'))
       .replace('F2', 'F2')
       .replace('+', ' + ');
   };
 
   return {
     // 已固定為中文鍵名（右 Alt / 右 Ctrl），直接顯示（不經過 Mac 取向的 formatHotkey）
-    hotkey: hotkey.includes('右') ? hotkey : formatHotkey(hotkey),
+    hotkey: hotkey.includes('右') ? t('panel.hotkeyName') : formatHotkey(hotkey),
     rawHotkey: hotkey,
     isRegistered,
     registerHotkey,

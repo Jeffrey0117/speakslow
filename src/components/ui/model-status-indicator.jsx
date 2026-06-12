@@ -1,11 +1,13 @@
 import React from 'react';
 import { CheckCircle, AlertCircle, Loader2, Download, Clock } from 'lucide-react';
+import { useTranslation } from '../../i18n';
 
 /**
  * 模型狀態指示器元件
  * 顯示 Sherpa ASR 模型的下載、載入狀態
  */
 export const ModelStatusIndicator = ({ modelStatus, className = "", onDownload = null }) => {
+  const { t } = useTranslation();
   const getStatusIcon = () => {
     switch (modelStatus.stage) {
       case 'checking':
@@ -28,19 +30,19 @@ export const ModelStatusIndicator = ({ modelStatus, className = "", onDownload =
   const getStatusText = () => {
     switch (modelStatus.stage) {
       case 'checking':
-        return "檢查模型狀態...";
+        return t('model.checking');
       case 'need_download':
-        return "需要下載模型";
+        return t('model.needDownload');
       case 'downloading':
-        return "正在下載模型...";
+        return t('model.downloading');
       case 'loading':
-        return "模型載入中...";
+        return t('model.loading');
       case 'ready':
-        return "模型已就緒";
+        return t('model.ready');
       case 'error':
-        return "模型錯誤";
+        return t('model.error');
       default:
-        return "模型狀態未知";
+        return t('model.unknown');
     }
   };
 
@@ -87,7 +89,7 @@ export const ModelStatusIndicator = ({ modelStatus, className = "", onDownload =
           onClick={onDownload}
           className="ml-2 px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
         >
-          下載
+          {t('model.download')}
         </button>
       )}
     </div>
@@ -99,6 +101,7 @@ export const ModelStatusIndicator = ({ modelStatus, className = "", onDownload =
  * 僅顯示圖示，用於空間受限的地方
  */
 export const ModelStatusIcon = ({ modelStatus, size = "w-5 h-5", showTooltip = true }) => {
+  const { t } = useTranslation();
   const getStatusIcon = () => {
     switch (modelStatus.stage) {
       case 'checking':
@@ -121,19 +124,19 @@ export const ModelStatusIcon = ({ modelStatus, size = "w-5 h-5", showTooltip = t
   const getTooltipText = () => {
     switch (modelStatus.stage) {
       case 'checking':
-        return "🔍 正在檢查模型狀態...";
+        return t('model.tooltipChecking');
       case 'need_download':
-        return "📥 需要下載 AI 模型檔案";
+        return t('model.tooltipNeedDownload');
       case 'downloading':
-        return `⬇️ 正在下載模型檔案... ${modelStatus.downloadProgress || 0}%`;
+        return t('model.tooltipDownloading', { progress: modelStatus.downloadProgress || 0 });
       case 'loading':
-        return "🤖 AI 模型載入中，請稍候...";
+        return t('model.tooltipLoading');
       case 'ready':
-        return "✅ AI 模型已就緒，可以開始語音辨識";
+        return t('model.tooltipReady');
       case 'error':
-        return `❌ 模型錯誤: ${modelStatus.error || '未知錯誤'}`;
+        return t('model.tooltipError', { error: modelStatus.error || t('settings.testFailedDesc') });
       default:
-        return "⏳ 模型狀態未知";
+        return t('model.tooltipUnknown');
     }
   };
 
@@ -159,6 +162,7 @@ export const ModelStatusIcon = ({ modelStatus, size = "w-5 h-5", showTooltip = t
  * 顯示詳細的下載進度資訊
  */
 export const ModelDownloadProgress = ({ modelStatus, onDownload, onCancel }) => {
+  const { t } = useTranslation();
   if (modelStatus.stage === 'need_download') {
     return (
       <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-lg p-4">
@@ -167,10 +171,10 @@ export const ModelDownloadProgress = ({ modelStatus, onDownload, onCancel }) => 
             <Download className="w-5 h-5 text-orange-500" />
             <div>
               <h3 className="text-sm font-medium text-orange-800 dark:text-orange-200">
-                需要下載 AI 模型
+                {t('model.needDownloadTitle')}
               </h3>
               <p className="text-xs text-orange-600 dark:text-orange-300">
-                首次使用需要下載模型檔案
+                {t('model.needDownloadDesc')}
               </p>
             </div>
           </div>
@@ -183,7 +187,7 @@ export const ModelDownloadProgress = ({ modelStatus, onDownload, onCancel }) => 
                 : 'bg-orange-500 hover:bg-orange-600'
             }`}
           >
-            {modelStatus.isDownloading ? '準備下載...' : '開始下載'}
+            {modelStatus.isDownloading ? t('model.preparingDownload') : t('model.startDownload')}
           </button>
         </div>
       </div>
@@ -199,10 +203,10 @@ export const ModelDownloadProgress = ({ modelStatus, onDownload, onCancel }) => 
               <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
               <div>
                 <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                  正在下載模型檔案
+                  {t('model.downloadingTitle')}
                 </h3>
                 <p className="text-xs text-blue-600 dark:text-blue-300">
-                  請保持網路連線，下載可能需要幾分鐘
+                  {t('model.downloadingDesc')}
                 </p>
               </div>
             </div>
@@ -211,7 +215,7 @@ export const ModelDownloadProgress = ({ modelStatus, onDownload, onCancel }) => 
                 onClick={onCancel}
                 className="px-3 py-1 text-xs text-blue-600 hover:text-blue-800 transition-colors"
               >
-                取消
+                {t('common.cancel')}
               </button>
             )}
           </div>
@@ -219,7 +223,7 @@ export const ModelDownloadProgress = ({ modelStatus, onDownload, onCancel }) => 
           {/* 進度條 */}
           <div className="space-y-2">
             <div className="flex justify-between text-xs text-blue-600 dark:text-blue-300">
-              <span>下載進度</span>
+              <span>{t('model.downloadProgress')}</span>
               <span>{modelStatus.downloadProgress || 0}%</span>
             </div>
             <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">

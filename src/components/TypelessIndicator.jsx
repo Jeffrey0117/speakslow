@@ -1,10 +1,12 @@
 import React from "react";
+import { useTranslation } from "../i18n";
 
 /**
  * TypeLess 錄音指示器組件
  * 顯示一個小型的錄音狀態指示器，出現在螢幕右上角
  */
 const TypelessIndicator = () => {
+  const { t } = useTranslation();
   return (
     <div className="w-full h-full flex items-center justify-center">
       <div className="pill-bounce bg-red-500 backdrop-blur-sm rounded-full px-5 py-2 flex items-center gap-2.5 border border-red-400/60">
@@ -13,7 +15,7 @@ const TypelessIndicator = () => {
 
         {/* 文字 */}
         <span className="text-white font-semibold text-[15px] whitespace-nowrap tracking-wide">
-          錄音中...
+          {t('panel.recordingIndicator')}
         </span>
 
         {/* 聲波動畫 */}

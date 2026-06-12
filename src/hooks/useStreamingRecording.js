@@ -1,12 +1,13 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useModelStatus } from './useModelStatus';
-import { convertText } from '../i18n';
+import { convertText, useTranslation } from '../i18n';
 
 /**
  * 串流錄音功能 Hook
  * 提供邊錄音邊辨識、即時顯示文字的功能
  */
 export const useStreamingRecording = () => {
+  const { t } = useTranslation();
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
@@ -105,15 +106,15 @@ export const useStreamingRecording = () => {
       // 檢查 Sherpa 是否就緒
       if (!modelStatus.isReady) {
         if (modelStatus.isLoading) {
-          throw new Error('語音識別服務正在啟動中，請稍候...');
+          throw new Error(t('errors.asrStarting'));
         } else {
-          throw new Error('語音識別服務未就緒，請檢查配置');
+          throw new Error(t('errors.asrNotReady'));
         }
       }
 
       // 檢查瀏覽器支援
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('您的瀏覽器不支援錄音功能');
+        throw new Error(t('errors.browserNoRecording'));
       }
 
       // ⚡ 立即設定錄音狀態，讓 UI 馬上反應
@@ -199,7 +200,7 @@ export const useStreamingRecording = () => {
       if (window.electronAPI) {
         const startResult = await window.electronAPI.streamingStart();
         if (!startResult.success) {
-          throw new Error(startResult.error || '無法開始串流辨識');
+          throw new Error(startResult.error || t('errors.cannotStartStreamingSession'));
         }
       }
 
@@ -268,12 +269,12 @@ export const useStreamingRecording = () => {
       }, 250);  // 平衡模式：250ms 間隔
 
     } catch (err) {
-      setError(`無法開始串流錄音: ${err.message}`);
+      setError(t('errors.cannotStartStreaming', { error: err.message }));
       setIsRecording(false);
       setIsInitializing(false);
       cleanup();
     }
-  }, [modelStatus.isReady, modelStatus.isLoading, cleanup]);
+  }, [modelStatus.isReady, modelStatus.isLoading, cleanup, t]);
 
   // 停止串流錄音
   const stopStreaming = useCallback(async () => {
@@ -343,13 +344,13 @@ export const useStreamingRecording = () => {
         }
       }
     } catch (err) {
-      setError(`停止串流錄音失敗: ${err.message}`);
+      setError(t('errors.stopStreamingFailed', { error: err.message }));
     } finally {
       cleanup();
       setIsRecording(false);
       setIsProcessing(false);
     }
-  }, [cleanup]);
+  }, [cleanup, t]);
 
   // 取消串流錄音
   const cancelStreaming = useCallback(() => {

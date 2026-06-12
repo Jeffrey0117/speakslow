@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { convertText } from '../i18n';
+import { convertText, useTranslation } from '../i18n';
 
 /**
  * 录音功能Hook
@@ -8,6 +8,7 @@ import { convertText } from '../i18n';
  *   不在這裡自建，避免兩套 3 秒輪詢與重複事件訂閱同時跑。
  */
 export const useRecording = (modelStatus) => {
+  const { t } = useTranslation();
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
@@ -114,17 +115,17 @@ export const useRecording = (modelStatus) => {
       // 检查 Sherpa 是否就绪
       if (!modelStatus.isReady) {
         if (modelStatus.isLoading) {
-          throw new Error('語音識別服務正在啟動中，請稍候...');
+          throw new Error(t('errors.asrStarting'));
         } else if (modelStatus.error) {
-          throw new Error('語音識別服務未就緒，請檢查配置');
+          throw new Error(t('errors.asrNotReady'));
         } else {
-          throw new Error('正在準備語音識別服務，請稍候...');
+          throw new Error(t('errors.asrPreparing'));
         }
       }
 
       // 检查浏览器支持
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('您的浏览器不支持录音功能');
+        throw new Error(t('errors.browserNoRecording'));
       }
 
       // ⚡ 立即設定錄音狀態，讓 UI 馬上反應
@@ -229,11 +230,11 @@ export const useRecording = (modelStatus) => {
       }, 1000);
 
     } catch (err) {
-      setError(`无法开始录音: ${err.message}`);
+      setError(t('errors.cannotStartRecording', { error: err.message }));
       setIsRecording(false);
       cleanup();
     }
-  }, [modelStatus.isReady, modelStatus.isLoading, modelStatus.error, cleanup]);
+  }, [modelStatus.isReady, modelStatus.isLoading, modelStatus.error, cleanup, t]);
 
   // 停止录音
   const stopRecording = useCallback(async () => {
@@ -245,7 +246,7 @@ export const useRecording = (modelStatus) => {
     try {
       // 檢查是否有錄音數據
       if (pcmBufferRef.current.length === 0) {
-        throw new Error('錄音數據為空，請重新錄音');
+        throw new Error(t('errors.emptyRecording'));
       }
 
       // 獲取原始採樣率
@@ -255,7 +256,7 @@ export const useRecording = (modelStatus) => {
       const totalLength = pcmBufferRef.current.reduce((sum, arr) => sum + arr.length, 0);
 
       if (totalLength < 1600) { // 小於 0.1 秒的錄音
-        throw new Error('錄音時間太短，請說話後再停止錄音');
+        throw new Error(t('errors.recordingTooShort'));
       }
 
       const mergedBuffer = new Float32Array(totalLength);
@@ -292,12 +293,12 @@ export const useRecording = (modelStatus) => {
       // 處理音頻
       await processAudio(wavBlob, { use_precog: precogActive });
     } catch (err) {
-      setError(`音频处理失败: ${err.message}`);
+      setError(t('errors.audioProcessingFailed', { error: err.message }));
       cleanup();
     } finally {
       setIsProcessing(false);
     }
-  }, [isRecording, cleanup]);
+  }, [isRecording, cleanup, t]);
 
   // 处理音频（接收已經是 WAV 格式的 blob）
   const processAudio = useCallback(async (wavBlob, transcribeOptions = {}) => {
@@ -445,7 +446,7 @@ export const useRecording = (modelStatus) => {
 
           return { ...transcriptionResult, enhanced_by_ai: false };
         } else {
-          throw new Error(transcriptionResult.error || '语音识别失败');
+          throw new Error(transcriptionResult.error || t('errors.transcriptionFailed'));
         }
       } else {
         // Web环境模拟
@@ -454,11 +455,11 @@ export const useRecording = (modelStatus) => {
         return mockResult;
       }
     } catch (err) {
-      throw new Error(`音频处理失败: ${err.message}`);
+      throw new Error(t('errors.audioProcessingFailed', { error: err.message }));
     } finally {
       processingRef.current.isProcessingAudio = false;
     }
-  }, []);
+  }, [t]);
 
   // PCM 數據直接轉 WAV（帶重採樣）- 不需要 decodeAudioData
   const pcmToWav = (pcmData, sourceSampleRate, targetSampleRate) => {

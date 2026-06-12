@@ -90,21 +90,7 @@ const ProcessingProgressBar = React.memo(() => {
   );
 });
 
-// 有趣的處理中訊息列表（幽默版）
-const PROCESSING_MESSAGES = [
-  '正在聽你的幹話...',
-  '話不要說太多啊...',
-  '你講了一句話，下一句就是第二句...',
-  '認真聽你唬爛中...',
-  '努力理解你在說啥...',
-  '解碼你的聲波中...',
-  '文字正在組裝...',
-  '啟動語音魔法...',
-  '正在努力辨識...',
-  '嗯嗯好我聽到了...',
-  '讓我想想你說啥...',
-  '等我一下喔...',
-];
+// 有趣的處理中訊息列表（幽默版）— 內容放在語系檔 panel.processingMessages
 
 // Fisher-Yates shuffle 演算法
 const shuffleArray = (array) => {
@@ -219,23 +205,18 @@ const TextDisplay = React.memo(({ originalText, processedText, scrollRef, t }) =
 });
 
 // 空閒/錄音時的趣味輪播文字：重用使用者手寫的白爛句 + 幾句操作提示
-const IDLE_MESSAGES = [
-  ...PROCESSING_MESSAGES,
-  "按右 Alt 或右 Ctrl 開始錄音 🎤",
-  "瀏覽器裡用右 Ctrl 比較順（避開選單）",
-  "講完自動貼到游標處 ✨",
-  "錄音中按 Esc 可以取消喔",
-  "本地辨識，講什麼都不外流 🔒",
-];
+// 內容放在語系檔 panel.processingMessages + panel.idleMessages
 
 const IdlePlaceholder = React.memo(() => {
+  const { t } = useTranslation();
+  const idleMessages = [...t('panel.processingMessages'), ...t('panel.idleMessages')];
   const [idx, setIdx] = useState(0);
   const [show, setShow] = useState(true);
   useEffect(() => {
     const iv = setInterval(() => {
       setShow(false);
       setTimeout(() => {
-        setIdx((i) => (i + 1) % IDLE_MESSAGES.length);
+        setIdx((i) => (i + 1) % idleMessages.length);
         setShow(true);
       }, 300);
     }, 3500);
@@ -248,7 +229,7 @@ const IdlePlaceholder = React.memo(() => {
           show ? "opacity-100" : "opacity-0"
         }`}
       >
-        {IDLE_MESSAGES[idx]}
+        {idleMessages[idx]}
       </p>
     </div>
   );
@@ -366,10 +347,10 @@ export default function App() {
     toast.custom(() => (
       <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-900/92 backdrop-blur-sm text-gray-100 rounded-2xl shadow-xl border border-white/10">
         <X className="w-4 h-4 text-red-400" />
-        <span className="text-sm font-medium">已取消錄音</span>
+        <span className="text-sm font-medium">{t('panel.cancelledRecording')}</span>
       </div>
     ), { duration: 1400 });
-  }, []);
+  }, [t]);
 
   // 字數成就：突破新等級時慶祝一下（不干擾使用）
   const checkLevelUp = useCallback(async () => {
@@ -385,7 +366,7 @@ export default function App() {
           <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/40 dark:to-orange-900/40 rounded-2xl shadow-xl border border-amber-200 dark:border-amber-700/50">
             <span className="text-2xl">{lv.emoji}</span>
             <div>
-              <div className="text-sm font-bold text-amber-700 dark:text-amber-300">解鎖新等級・{lv.title}</div>
+              <div className="text-sm font-bold text-amber-700 dark:text-amber-300">{t('panel.levelUnlocked', { title: lv.title })}</div>
               <div className="text-xs text-amber-600/90 dark:text-amber-400/90">{lv.message}</div>
             </div>
           </div>
@@ -395,7 +376,7 @@ export default function App() {
     } catch (e) {
       /* 統計失敗不影響主流程 */
     }
-  }, []);
+  }, [t]);
   
   const { isDragging, handleMouseDown, handleMouseMove, handleMouseUp, handleClick } = useWindowDrag();
   const modelStatus = useModelStatus();
@@ -803,7 +784,7 @@ export default function App() {
       const newValue = !isAlwaysOnTop;
       setIsAlwaysOnTop(newValue);
       await window.electronAPI.setAlwaysOnTop(newValue);
-      toast.success(newValue ? '視窗置頂已開啟' : '視窗置頂已關閉');
+      toast.success(newValue ? t('settings.alwaysOnTopEnabled') : t('settings.alwaysOnTopDisabled'));
     }
   };
 
@@ -853,27 +834,27 @@ export default function App() {
     if (processedText) {
       try {
         await navigator.clipboard.writeText(processedText);
-        showNotification('success', '已複製上次結果');
+        showNotification('success', t('panel.copiedLastResult'));
       } catch (err) {
         if (window.electronAPI) {
           await window.electronAPI.copyText(processedText);
-          showNotification('success', '已複製上次結果');
+          showNotification('success', t('panel.copiedLastResult'));
         }
       }
     } else if (originalText) {
       try {
         await navigator.clipboard.writeText(originalText);
-        showNotification('success', '已複製原始文字');
+        showNotification('success', t('panel.copiedOriginal'));
       } catch (err) {
         if (window.electronAPI) {
           await window.electronAPI.copyText(originalText);
-          showNotification('success', '已複製原始文字');
+          showNotification('success', t('panel.copiedOriginal'));
         }
       }
     } else {
-      showNotification('warning', '沒有可複製的結果');
+      showNotification('warning', t('panel.nothingToCopy'));
     }
-  }, [processedText, originalText, showNotification]);
+  }, [processedText, originalText, showNotification, t]);
 
   // 监听全局热键触发事件
   useEffect(() => {
@@ -1013,7 +994,7 @@ export default function App() {
   // 隨機處理中訊息（processing 和 optimizing 都用同一組）
   const processingMessage = useRandomMessage(
     micState === "processing" || micState === "optimizing",
-    PROCESSING_MESSAGES
+    t('panel.processingMessages')
   );
 
   // 获取麦克风按钮属性
@@ -1044,19 +1025,19 @@ export default function App() {
       case "idle":
         return {
           className: `${buttonStyle} cursor-pointer`,
-          tooltip: streamingMode ? `開始即時辨識 (${hotkey})` : t('app.startRecording', { hotkey }),
+          tooltip: streamingMode ? t('panel.streamingStart', { hotkey }) : t('app.startRecording', { hotkey }),
           disabled: false
         };
       case "hover":
         return {
           className: `${buttonStyle} scale-105 shadow-2xl cursor-pointer`,
-          tooltip: streamingMode ? `開始即時辨識 (${hotkey})` : t('app.startRecording', { hotkey }),
+          tooltip: streamingMode ? t('panel.streamingStart', { hotkey }) : t('app.startRecording', { hotkey }),
           disabled: false
         };
       case "initializing":
         return {
           className: `${buttonStyle} processing-shimmer cursor-not-allowed opacity-80`,
-          tooltip: '串流啟動中...',
+          tooltip: t('panel.streamingInitializing'),
           disabled: true
         };
       case "recording":
@@ -1080,7 +1061,7 @@ export default function App() {
       default:
         return {
           className: `${buttonStyle} cursor-pointer`,
-          tooltip: streamingMode ? `開始即時辨識 (${hotkey})` : t('app.clickToRecord', { hotkey }),
+          tooltip: streamingMode ? t('panel.streamingStart', { hotkey }) : t('app.clickToRecord', { hotkey }),
           disabled: false
         };
     }
@@ -1107,7 +1088,7 @@ export default function App() {
             </h1>
           <div className="flex items-center space-x-1 non-draggable">
             {(originalText || processedText) && (
-              <Tooltip content={t('app.copy') || '複製'} position="bottom">
+              <Tooltip content={t('app.copy')} position="bottom">
                 <button
                   onClick={() => handleCopyText(processedText || originalText)}
                   className="p-1.5 hover:bg-white/70 dark:hover:bg-gray-700/70 rounded-lg transition-colors"
@@ -1116,7 +1097,7 @@ export default function App() {
                 </button>
               </Tooltip>
             )}
-            <Tooltip content={aiOptimizationEnabled ? 'AI 潤飾：開（點擊暫時關閉、省 API）' : 'AI 潤飾：關（點擊開啟）'} position="bottom">
+            <Tooltip content={aiOptimizationEnabled ? t('panel.aiTooltipOn') : t('panel.aiTooltipOff')} position="bottom">
               <button
                 onClick={toggleAiOptimization}
                 className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition-colors non-draggable ${
@@ -1136,7 +1117,7 @@ export default function App() {
                 <Settings className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               </button>
             </Tooltip>
-            <Tooltip content={isAlwaysOnTop ? '取消置頂' : '視窗置頂'} position="bottom">
+            <Tooltip content={isAlwaysOnTop ? t('panel.pinOff') : t('panel.pinOn')} position="bottom">
               <button
                 onClick={handleToggleAlwaysOnTop}
                 className={`p-1.5 rounded-lg transition-colors ${
@@ -1152,7 +1133,7 @@ export default function App() {
                 }`} />
               </button>
             </Tooltip>
-            <Tooltip content="縮小" position="bottom">
+            <Tooltip content={t('panel.minimize')} position="bottom">
               <button
                 onClick={handleMinimize}
                 className="p-1.5 hover:bg-white/70 dark:hover:bg-gray-700/70 rounded-lg transition-colors"
@@ -1160,7 +1141,7 @@ export default function App() {
                 <Minus className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               </button>
             </Tooltip>
-            <Tooltip content={t('app.close') || '關閉'} position="bottom">
+            <Tooltip content={t('app.close')} position="bottom">
               <button
                 onClick={handleClose}
                 className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
@@ -1175,7 +1156,7 @@ export default function App() {
             <div className="mt-2">
               <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-900/40 rounded-full">
                 <Sparkles className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400" />
-                <span className="text-xs font-medium text-purple-600 dark:text-purple-300">AI 優化已啟用</span>
+                <span className="text-xs font-medium text-purple-600 dark:text-purple-300">{t('panel.aiEnabledBadge')}</span>
               </div>
             </div>
           )}
@@ -1236,15 +1217,15 @@ export default function App() {
             ) : !modelStatus.isReady ? (
               t('app.modelNotReady')
             ) : waitingForTarget ? (
-              t('app.waitingForTarget') || '請點擊目標位置後按熱鍵'
+              t('app.waitingForTarget')
             ) : micState === "initializing" ? (
-              '串流啟動中...'
+              t('panel.streamingInitializing')
             ) : micState === "recording" ? (
-              streamingMode ? '串流辨識中...' : t('app.recording')
+              streamingMode ? t('panel.streamingRecognizing') : t('app.recording')
             ) : (micState === "processing" || micState === "optimizing") ? (
               processingMessage || t('app.processing')
             ) : streamingMode ? (
-              `點擊開始即時辨識 (${hotkey})`
+              t('panel.streamingClickToStart', { hotkey })
             ) : (
               t('app.clickToRecord', { hotkey })
             )}
@@ -1296,8 +1277,8 @@ export default function App() {
 
         {/* 底部列：左=次數、中=署名、右=字數（mt-auto 推到最底）*/}
         <div className="mt-auto flex-shrink-0 flex items-center justify-between gap-2 px-1 pt-1.5 text-[11px] select-none">
-          <span className="tabular-nums text-sky-500/80 dark:text-sky-400/70">用了 {stats?.total || 0} 次</span>
-          <span className="tabular-nums text-sky-500/80 dark:text-sky-400/70">{(stats?.totalChars || 0).toLocaleString()} 字</span>
+          <span className="tabular-nums text-sky-500/80 dark:text-sky-400/70">{t('panel.statsUses', { n: stats?.total || 0 })}</span>
+          <span className="tabular-nums text-sky-500/80 dark:text-sky-400/70">{t('panel.statsChars', { n: (stats?.totalChars || 0).toLocaleString() })}</span>
         </div>
       </div>
       </div>

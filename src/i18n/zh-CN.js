@@ -23,6 +23,8 @@ export default {
     accessibilityPermission: '辅助功能权限',
     accessibilityPermissionDesc: '自动粘贴文本所需的权限',
     testPermission: '测试权限',
+    granted: '已授予',
+    grantPermission: '授予权限',
 
     aiConfig: 'AI设置',
     aiConfigDesc: '设置AI模型以优化和增强语音识别结果。如果API Key无效或未填写，优化功能将自动停用。',
@@ -43,6 +45,19 @@ export default {
     configApplied: '已应用{provider}推荐配置',
     configIncomplete: '配置不完整',
     configIncompleteDesc: '请先输入API密钥',
+    ollamaLocal: 'Ollama（本地）',
+    providerEndpointSet: '已自动设置 {provider} API 端点',
+    modelGroups: {
+      deepseek: 'DeepSeek (推荐)',
+      ollama: 'Ollama（本地、免费）'
+    },
+    modelOptions: {
+      deepseekChat: 'DeepSeek Chat (最划算)',
+      geminiFlash: 'Gemini 2.0 Flash (快、便宜)',
+      geminiPro: 'Gemini 1.5 Pro (高质量)',
+      qwen: 'Qwen2.5 (中文推荐)',
+      qwenFast: 'Qwen2.5 3B (更快)'
+    },
 
     testConfig: '测试设置',
     testConfigDesc: '测试当前编辑的设置（无需保存）',
@@ -60,11 +75,110 @@ export default {
 
     about: '关于声声慢',
     aboutDesc: '基于 Sherpa-ONNX 和 AI 的简体中文语音转文字应用',
+    brandFull: '声声慢 (SpeakSlow)',
     features: {
       recognition: '高精度中文语音识别',
       ai: 'AI智能文本优化',
       realtime: '实时语音处理',
       privacy: '隐私保护设计'
+    },
+
+    // 设置窗口左侧分页
+    tabs: {
+      general: '一般设置',
+      history: '历史记录',
+      ai: 'AI 文本优化',
+      hotkeys: '快捷键',
+      hotwords: '热词',
+      dictionary: '字典',
+      permissions: '权限管理',
+      about: '关于'
+    },
+
+    // 流式识别模式
+    streamingMode: '流式识别模式',
+    streamingModeDesc: '⚠️ 实验功能：CPU 模式下识别较慢且准确度较低，建议使用传统模式',
+    streamingEnabled: '流式识别模式已开启',
+    streamingDisabled: '流式识别模式已关闭',
+    streamingPreloading: '正在预加载流式模型，请稍候...',
+    streamingModelReady: '流式模型已就绪',
+    streamingPreloadComplete: '流式模型预加载完成',
+    streamingPreloadFailed: '流式模型预加载失败: {error}',
+    streamingPreloadFailedSlow: '流式模型预加载失败，首次录音可能会较慢',
+
+    // 窗口控制
+    windowControl: '🪟 窗口控制',
+    windowControlDesc: '设置窗口置顶与系统托盘行为',
+    alwaysOnTop: '窗口置顶',
+    alwaysOnTopDesc: '让应用程序窗口保持在其他窗口之上',
+    alwaysOnTopEnabled: '窗口置顶已开启',
+    alwaysOnTopDisabled: '窗口置顶已关闭',
+    minimizeToTray: '最小化到系统托盘',
+    minimizeToTrayDesc: '最小化窗口时隐藏到系统托盘',
+    minimizeToTrayEnabled: '最小化到托盘已开启',
+    minimizeToTrayDisabled: '最小化到托盘已关闭',
+    closeToTray: '关闭到系统托盘',
+    closeToTrayDesc: '关闭窗口时隐藏到托盘而非退出应用程序',
+    closeToTrayEnabled: '关闭到托盘已开启',
+    closeToTrayDisabled: '关闭到托盘已关闭',
+
+    // 录音完成后动作
+    afterRecording: '📋 录音完成后动作',
+    afterRecordingDesc: '设置识别完成后要自动执行的动作',
+    autoPaste: '自动粘贴识别结果',
+    autoPasteDesc: '识别完成后自动粘贴到当前光标位置，并还原你原本的剪贴板内容',
+    alwaysOn: '永远开启',
+    autoEnter: '粘贴后自动发送 (Enter)',
+    autoEnterDesc: '⚠️ 完全信任模式：粘贴后自动按 Enter 发送，适用于即时通讯软件',
+
+    // 关于分页
+    aboutTab: {
+      brandSub: 'SpeakSlow',
+      logoAlt: '声声慢 logo',
+      tagline: '专为中文打造、最快的本地语音输入 · 免费、隐私',
+      authorTitle: '作者',
+      authorPrefix: '由 ',
+      authorName: '切版职人',
+      authorSuffix: ' 开发维护。',
+      acknowledgements: '致谢',
+      ackQuqu: '原始项目，本项目在其基础上改用 sherpa-onnx 引擎并重做 UI 与交互。',
+      ackSherpa: '本地语音识别引擎。',
+      ackWispr: '产品概念启发。'
+    },
+
+    // 快捷键分页
+    hotkeysTab: {
+      title: '快捷键设置',
+      description: '自定义应用程序的快捷键。点击「录制」后按下想要的快捷键组合。',
+      resetAll: '重置全部',
+      resetToDefault: '重置为默认',
+      resetDone: '已重置为默认快捷键',
+      resetAllDone: '所有快捷键已重置为默认值',
+      resetFailed: '重置失败',
+      pressHotkeyFirst: '请先按下快捷键',
+      pressHotkey: '请按下快捷键...',
+      notSet: '未设置',
+      record: '录制',
+      updated: '快捷键已更新为 {hotkey}',
+      setFailed: '设置失败',
+      typelessFixed: '右 Alt / 右 Ctrl（单击切换）',
+      spaceKey: '空格',
+      tipLabel: '提示：',
+      tipContent: '某些快捷键可能被系统或其他应用程序占用，如遇冲突请尝试其他组合。',
+      actions: {
+        typelessRecording: {
+          name: 'TypeLess 模式',
+          description: '右 Alt 或右 Ctrl 单击开始录音，再按一次停止并粘贴到光标处。浏览器里建议用右 Ctrl（右 Alt 会触发浏览器菜单）。录音中按 Esc 可取消（固定）'
+        },
+        showWindow: {
+          name: '显示主窗口',
+          description: '显示或隐藏应用窗口'
+        },
+        copyLast: {
+          name: '复制上次结果',
+          description: '复制最近一次识别结果'
+        }
+      }
     },
 
     // 热词设置
@@ -102,7 +216,7 @@ export default {
     dictionary: {
       title: '字典管理',
       description: '设定词汇替换规则，自动校正语音识别结果中的专有名词（人名、地名、术语等）',
-      search: '搜寻...',
+      search: '搜索...',
       allCategories: '所有分类',
       add: '新增',
       import: '导入',
@@ -117,7 +231,22 @@ export default {
       empty: '尚无字典项目，点击「新增」建立第一个替换规则',
       total: '共',
       items: '个项目',
-      enabled: '个启用'
+      enabled: '个启用',
+      fillBoth: '请填写原始词汇和替换词汇',
+      addFailed: '新增失败: {error}',
+      updateFailed: '更新失败: {error}',
+      confirmDelete: '确定要删除此项目吗？',
+      exportSuccess: '成功导出 {count} 个项目',
+      exportFailed: '导出失败: {error}',
+      importSuccess: '成功导入 {count} 个项目',
+      importSkipped: '，跳过 {count} 个',
+      importFailed: '导入失败: {error}',
+      importHint: '导入时会跳过已存在的项目',
+      originalPlaceholder: '例：郭太明',
+      replacementPlaceholder: '例：郭台铭',
+      categoryPlaceholder: '例：人名',
+      enable: '启用',
+      disable: '停用'
     }
   },
 
@@ -149,6 +278,50 @@ export default {
     export: '导出文本'
   },
 
+  // 主面板（录音窗口）
+  panel: {
+    processingMessages: [
+      '正在听你的胡侃...',
+      '话不要说太多啊...',
+      '你讲了一句话，下一句就是第二句...',
+      '认真听你瞎扯中...',
+      '努力理解你在说啥...',
+      '解码你的声波中...',
+      '文字正在组装...',
+      '启动语音魔法...',
+      '正在努力识别...',
+      '嗯嗯好我听到了...',
+      '让我想想你说啥...',
+      '等我一下哦...'
+    ],
+    idleMessages: [
+      '按右 Alt 或右 Ctrl 开始录音 🎤',
+      '浏览器里用右 Ctrl 更顺手（避开菜单）',
+      '说完自动粘贴到光标处 ✨',
+      '录音中按 Esc 可以取消哦',
+      '本地识别，说什么都不外流 🔒'
+    ],
+    cancelledRecording: '已取消录音',
+    levelUnlocked: '解锁新等级・{title}',
+    aiTooltipOn: 'AI 润色：开（点击暂时关闭、省 API）',
+    aiTooltipOff: 'AI 润色：关（点击开启）',
+    aiEnabledBadge: 'AI 优化已启用',
+    pinOn: '窗口置顶',
+    pinOff: '取消置顶',
+    minimize: '最小化',
+    copiedLastResult: '已复制上次结果',
+    copiedOriginal: '已复制原始文本',
+    nothingToCopy: '没有可复制的结果',
+    statsUses: '用了 {n} 次',
+    statsChars: '{n} 字',
+    streamingStart: '开始实时识别 ({hotkey})',
+    streamingClickToStart: '点击开始实时识别 ({hotkey})',
+    streamingInitializing: '流式启动中...',
+    streamingRecognizing: '流式识别中...',
+    recordingIndicator: '录音中...',
+    hotkeyName: '右 Alt / 右 Ctrl'
+  },
+
   // 历史记录页面
   history: {
     title: '历史记录',
@@ -163,7 +336,122 @@ export default {
     loadFailed: '加载历史记录失败',
     aiOptimized: 'AI优化',
     total: '共 ',
-    records: ' 条'
+    records: ' 条',
+    bannerMessages: [
+      '别害羞，说点什么吧～',
+      '才刚认识你，期待听更多！',
+      '话匣子慢慢打开了～',
+      '看来你挺有话说的嘛！',
+      '你说的比写的多，手指感谢你',
+      '话真多呀！但我喜欢听',
+      '这些字够写一篇论文了',
+      '你是不是哲学大师？思想真多',
+      '可以出书了，书名就叫《我说的》',
+      '你的语录比孔子还多',
+      '传说中的话痨本痨，致敬！'
+    ],
+    banner: {
+      recognizedPrefix: '已经帮你识别了',
+      recognizedSuffix: '个字',
+      countRecognitions: '{n} 次识别',
+      totalMinutes: '累计 {n} 分钟'
+    },
+    shareCard: {
+      totalTime: '总口述时间',
+      chars: '口述字数',
+      savedTime: '节省时间',
+      speed: '平均口述速度',
+      unitMin: '分钟',
+      unitMinShort: '分',
+      unitChars: '字',
+      unitSpeed: '字/分',
+      hourUnit: '时',
+      localOnly: '🔒 数据只存在本机 · 声声慢 SpeakSlow'
+    },
+    dailyChart: {
+      title: '每日字数・近 14 天',
+      total: '合计 {n} 字',
+      tooltip: '{date}：{n} 字'
+    },
+    time: {
+      yesterday: '昨天 {time}',
+      daysAgo: '{n}天前'
+    },
+    retranscribe: {
+      fast: '快速重识（Paraformer）',
+      accurate: '精准重识（Whisper，较慢，对英文/难句更好）',
+      doneSame: '已重新识别（结果相同）',
+      doneUpdated: '已重新识别并更新',
+      failed: '重新识别失败'
+    }
+  },
+
+  // 模型状态
+  model: {
+    checking: '检查模型状态...',
+    needDownload: '需要下载模型',
+    downloading: '正在下载模型...',
+    loading: '模型加载中...',
+    ready: '模型已就绪',
+    error: '模型错误',
+    unknown: '模型状态未知',
+    download: '下载',
+    tooltipChecking: '🔍 正在检查模型状态...',
+    tooltipNeedDownload: '📥 需要下载 AI 模型文件',
+    tooltipDownloading: '⬇️ 正在下载模型文件... {progress}%',
+    tooltipLoading: '🤖 AI 模型加载中，请稍候...',
+    tooltipReady: '✅ AI 模型已就绪，可以开始语音识别',
+    tooltipError: '❌ 模型错误: {error}',
+    tooltipUnknown: '⏳ 模型状态未知',
+    needDownloadTitle: '需要下载 AI 模型',
+    needDownloadDesc: '首次使用需要下载模型文件',
+    preparingDownload: '准备下载...',
+    startDownload: '开始下载',
+    downloadingTitle: '正在下载模型文件',
+    downloadingDesc: '请保持网络连接，下载可能需要几分钟',
+    downloadProgress: '下载进度'
+  },
+
+  // 权限测试
+  permissions: {
+    micTestSuccessTitle: '✅ 麦克风权限测试成功',
+    micTestSuccessDesc: '麦克风权限正常工作！现在可以进行语音录制了。',
+    micNeededTitle: '❌ 需要麦克风权限',
+    micNeededDesc: '请授予麦克风权限以使用语音转录功能。',
+    accTestSuccessTitle: '✅ 辅助功能权限测试成功',
+    accTestSuccessDesc: '辅助功能权限正常工作！请检查测试文本是否出现在其他应用中。',
+    accNeededTitle: '❌ 需要辅助功能权限',
+    accNeededDesc: '请在系统设置中授予辅助功能权限，以启用自动文本粘贴功能。',
+    testText: '声声慢辅助功能测试'
+  },
+
+  // 错误消息
+  errors: {
+    asrStarting: '语音识别服务正在启动中，请稍候...',
+    asrNotReady: '语音识别服务未就绪，请检查配置',
+    asrPreparing: '正在准备语音识别服务，请稍候...',
+    browserNoRecording: '您的浏览器不支持录音功能',
+    cannotStartRecording: '无法开始录音: {error}',
+    emptyRecording: '录音数据为空，请重新录音',
+    recordingTooShort: '录音时间太短，请说话后再停止录音',
+    audioProcessingFailed: '音频处理失败: {error}',
+    transcriptionFailed: '语音识别失败',
+    cannotStartStreamingSession: '无法开始流式识别',
+    cannotStartStreaming: '无法开始流式录音: {error}',
+    stopStreamingFailed: '停止流式录音失败: {error}',
+    emptyTranscriptionText: '转录文本内容不能为空',
+    aiOptimizeFailed: 'AI文本优化失败',
+    aiUnknownError: 'AI处理过程中发生未知错误',
+    saveUnknownError: '保存转录数据时发生未知错误',
+    apiKeyMissing: '请先在设置页面配置AI API密钥',
+    apiRequestFailed: 'API请求失败: {status}',
+    apiBadResponse: 'API返回数据格式错误',
+    electronApiUnavailable: 'Electron API 不可用',
+    checkModelFilesFailed: '检查模型文件失败',
+    modelStatusCheckFailed: '模型状态检查失败',
+    restartServerFailed: '重启服务器失败: {error}',
+    downloadFailed: '下载失败',
+    downloadModelsFailed: '下载模型失败'
   },
 
   // 通知消息
@@ -207,6 +495,7 @@ export default {
     cancel: '取消',
     close: '关闭',
     save: '保存',
+    add: '新增',
     delete: '删除',
     edit: '编辑',
     loading: '加载中...',

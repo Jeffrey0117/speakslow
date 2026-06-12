@@ -1,10 +1,12 @@
 import { useState, useCallback } from 'react';
+import { useTranslation } from '../i18n';
 
 /**
  * 文本处理Hook
  * 使用可配置的AI模型进行文本处理
  */
 export const useTextProcessing = () => {
+  const { t } = useTranslation();
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
 
@@ -30,7 +32,7 @@ export const useTextProcessing = () => {
     const { raw_text, duration, file_size } = transcriptionData;
 
     if (!raw_text || raw_text.trim().length === 0) {
-      setError('转录文本内容不能为空');
+      setError(t('errors.emptyTranscriptionText'));
       return null;
     }
 
@@ -66,10 +68,10 @@ export const useTextProcessing = () => {
           if (window.electronAPI && window.electronAPI.log) {
             window.electronAPI.log('error', 'AI文本优化失败:', result);
           }
-          setError(result?.error || 'AI文本优化失败');
+          setError(result?.error || t('errors.aiOptimizeFailed'));
         }
       } catch (err) {
-        const errorMessage = err.message || 'AI处理过程中发生未知错误';
+        const errorMessage = err.message || t('errors.aiUnknownError');
         setError(errorMessage);
         if (window.electronAPI && window.electronAPI.log) {
           window.electronAPI.log('error', 'AI文本优化捕获到错误:', err);
@@ -89,7 +91,7 @@ export const useTextProcessing = () => {
         return { ...finalData, id: savedResult.lastInsertRowid };
       }
     } catch (err) {
-      const errorMessage = err.message || '保存转录数据时发生未知错误';
+      const errorMessage = err.message || t('errors.saveUnknownError');
       setError(errorMessage);
       if (window.electronAPI && window.electronAPI.log) {
         window.electronAPI.log('error', '保存转录数据失败:', err);
@@ -98,7 +100,7 @@ export const useTextProcessing = () => {
     } finally {
       setIsProcessing(false);
     }
-  }, [determineProcessingMode]);
+  }, [determineProcessingMode, t]);
 
   // 直接调用AI API
   const callAIAPI = useCallback(async (text, mode) => {
@@ -124,7 +126,7 @@ export const useTextProcessing = () => {
     }
     
     if (!apiKey) {
-      throw new Error('请先在设置页面配置AI API密钥');
+      throw new Error(t('errors.apiKeyMissing'));
     }
 
     const prompts = {
@@ -254,7 +256,7 @@ ${text}
           errorData
         });
       }
-      throw new Error(errorData.error?.message || `API请求失败: ${response.status}`);
+      throw new Error(errorData.error?.message || t('errors.apiRequestFailed', { status: response.status }));
     }
 
     const data = await response.json();
@@ -287,9 +289,9 @@ ${text}
       if (window.electronAPI && window.electronAPI.log) {
         window.electronAPI.log('error', '前端AI API返回数据格式错误:', data);
       }
-      throw new Error('API返回数据格式错误');
+      throw new Error(t('errors.apiBadResponse'));
     }
-  }, []);
+  }, [t]);
 
   return {
     handleTranscription,

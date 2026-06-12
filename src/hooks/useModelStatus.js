@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from '../i18n';
 
 // 检查是否为控制面板或设置页面
 const isControlPanelOrSettings = () => {
@@ -11,6 +12,7 @@ const isControlPanelOrSettings = () => {
  * 监控 Sherpa ASR 模型的下载、加载状态
  */
 export const useModelStatus = () => {
+  const { t } = useTranslation();
   const [modelStatus, setModelStatus] = useState({
     isLoading: true,
     isReady: false,
@@ -63,7 +65,7 @@ export const useModelStatus = () => {
         setModelStatus(prev => ({
           ...prev,
           isLoading: false,
-          error: 'Electron API 不可用',
+          error: t('errors.electronApiUnavailable'),
           stage: 'error'
         }));
         return;
@@ -85,7 +87,7 @@ export const useModelStatus = () => {
         setModelStatus(prev => ({
           ...prev,
           isLoading: false,
-          error: '检查模型文件失败',
+          error: t('errors.checkModelFilesFailed'),
           stage: 'error'
         }));
         return;
@@ -153,18 +155,18 @@ export const useModelStatus = () => {
         ...prev,
         isLoading: false,
         isReady: false,
-        error: error.message || '模型状态检查失败',
+        error: error.message || t('errors.modelStatusCheckFailed'),
         progress: 0,
         stage: 'error'
       }));
     }
-  }, [checkModelFiles]);
+  }, [checkModelFiles, t]);
 
   // 下载模型
   const downloadModels = useCallback(async () => {
     try {
       if (!window.electronAPI) {
-        throw new Error('Electron API 不可用');
+        throw new Error(t('errors.electronApiUnavailable'));
       }
 
       // 设置下载状态，并阻止定时器干扰
@@ -206,14 +208,14 @@ export const useModelStatus = () => {
           setModelStatus(prev => ({
             ...prev,
             isLoading: false,
-            error: '重启服务器失败: ' + restartError.message,
+            error: t('errors.restartServerFailed', { error: restartError.message }),
             stage: 'error'
           }));
         }
         
         return { success: true };
       } else {
-        throw new Error(result.error || '下载失败');
+        throw new Error(result.error || t('errors.downloadFailed'));
       }
       
     } catch (error) {
@@ -222,12 +224,12 @@ export const useModelStatus = () => {
         ...prev,
         isDownloading: false,
         isLoading: false,
-        error: error.message || '下载模型失败',
+        error: error.message || t('errors.downloadModelsFailed'),
         stage: 'error'
       }));
       return { success: false, error: error.message };
     }
-  }, [checkModelStatus]);
+  }, [checkModelStatus, t]);
 
   // 获取下载进度
   const getDownloadProgress = useCallback(async () => {

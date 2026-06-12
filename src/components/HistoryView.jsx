@@ -3,18 +3,20 @@ import { useTranslation } from "../i18n";
 
 // 統計橫幅組件 - 用幽默方式展示成就
 const StatsBanner = ({ stats }) => {
+  const { t } = useTranslation();
+  const msgs = t('history.bannerMessages');
   const getLevelInfo = (chars) => {
-    if (chars === 0) return { emoji: '🤫', message: '別害羞，說點什麼吧～', color: 'gray', borderClass: 'border-gray-300 dark:border-gray-600' };
-    if (chars < 100) return { emoji: '👋', message: '才剛認識你，期待聽更多！', color: 'gray', borderClass: 'border-gray-300 dark:border-gray-600' };
-    if (chars < 500) return { emoji: '🗣️', message: '話匣子慢慢打開了～', color: 'green', borderClass: 'border-green-400 dark:border-green-500' };
-    if (chars < 1000) return { emoji: '💬', message: '看來你蠻有話說的嘛！', color: 'green', borderClass: 'border-green-400 dark:border-green-500' };
-    if (chars < 2000) return { emoji: '📢', message: '你說的比寫的多，手指感謝你', color: 'blue', borderClass: 'border-blue-400 dark:border-blue-500' };
-    if (chars < 5000) return { emoji: '🎙️', message: '話很多欸！但我喜歡聽', color: 'blue', borderClass: 'border-blue-400 dark:border-blue-500' };
-    if (chars < 10000) return { emoji: '📚', message: '這些字夠寫一篇論文了', color: 'purple', borderClass: 'border-purple-400 dark:border-purple-500' };
-    if (chars < 30000) return { emoji: '🎓', message: '你是不是哲學大師？思想真多', color: 'purple', borderClass: 'border-purple-400 dark:border-purple-500' };
-    if (chars < 50000) return { emoji: '✍️', message: '可以出書了，書名就叫《我說的》', color: 'orange', borderClass: 'border-orange-400 dark:border-orange-500' };
-    if (chars < 100000) return { emoji: '🏛️', message: '你的語錄比孔子還多', color: 'orange', borderClass: 'border-orange-400 dark:border-orange-500' };
-    return { emoji: '🌟', message: '傳說中的話癆本癆，致敬！', color: 'amber', borderClass: 'border-amber-400 dark:border-amber-500' };
+    if (chars === 0) return { emoji: '🤫', message: msgs[0], color: 'gray', borderClass: 'border-gray-300 dark:border-gray-600' };
+    if (chars < 100) return { emoji: '👋', message: msgs[1], color: 'gray', borderClass: 'border-gray-300 dark:border-gray-600' };
+    if (chars < 500) return { emoji: '🗣️', message: msgs[2], color: 'green', borderClass: 'border-green-400 dark:border-green-500' };
+    if (chars < 1000) return { emoji: '💬', message: msgs[3], color: 'green', borderClass: 'border-green-400 dark:border-green-500' };
+    if (chars < 2000) return { emoji: '📢', message: msgs[4], color: 'blue', borderClass: 'border-blue-400 dark:border-blue-500' };
+    if (chars < 5000) return { emoji: '🎙️', message: msgs[5], color: 'blue', borderClass: 'border-blue-400 dark:border-blue-500' };
+    if (chars < 10000) return { emoji: '📚', message: msgs[6], color: 'purple', borderClass: 'border-purple-400 dark:border-purple-500' };
+    if (chars < 30000) return { emoji: '🎓', message: msgs[7], color: 'purple', borderClass: 'border-purple-400 dark:border-purple-500' };
+    if (chars < 50000) return { emoji: '✍️', message: msgs[8], color: 'orange', borderClass: 'border-orange-400 dark:border-orange-500' };
+    if (chars < 100000) return { emoji: '🏛️', message: msgs[9], color: 'orange', borderClass: 'border-orange-400 dark:border-orange-500' };
+    return { emoji: '🌟', message: msgs[10], color: 'amber', borderClass: 'border-amber-400 dark:border-amber-500' };
   };
 
   const getNumberColorClass = (color) => {
@@ -43,19 +45,19 @@ const StatsBanner = ({ stats }) => {
             <span className="text-2xl">{emoji}</span>
             <div>
               <div className="flex items-baseline space-x-1 flex-wrap">
-                <span className="text-xs text-gray-600 dark:text-gray-400">已經幫你辨識了</span>
+                <span className="text-xs text-gray-600 dark:text-gray-400">{t('history.banner.recognizedPrefix')}</span>
                 <span className={`text-lg font-bold ${getNumberColorClass(color)}`}>
                   {(stats.totalChars || 0).toLocaleString()}
                 </span>
-                <span className="text-xs text-gray-600 dark:text-gray-400">個字</span>
+                <span className="text-xs text-gray-600 dark:text-gray-400">{t('history.banner.recognizedSuffix')}</span>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-500 mt-0.5">{message}</p>
             </div>
           </div>
           <div className="text-right text-xs text-gray-500 dark:text-gray-400">
-            <div>{stats.total || 0} 次辨識</div>
+            <div>{t('history.banner.countRecognitions', { n: stats.total || 0 })}</div>
             {(stats.totalDuration || 0) > 0 && (
-              <div>累計 {Math.round((stats.totalDuration || 0) / 60)} 分鐘</div>
+              <div>{t('history.banner.totalMinutes', { n: Math.round((stats.totalDuration || 0) / 60) })}</div>
             )}
           </div>
         </div>
@@ -66,6 +68,7 @@ const StatsBanner = ({ stats }) => {
 
 // 可分享的數據儀表板（讓使用者想截圖炫耀）
 const ShareStats = ({ stats }) => {
+  const { t } = useTranslation();
   const totalChars = stats?.totalChars || 0;
   const totalSec = stats?.totalDuration || 0;
   const dictMin = totalSec / 60;
@@ -76,15 +79,15 @@ const ShareStats = ({ stats }) => {
   const fmtDur = (min) => {
     const h = Math.floor(min / 60);
     const m = Math.round(min % 60);
-    return h > 0 ? `${h}<span class="text-base font-normal"> 時 </span>${m}` : `${m}`;
+    return h > 0 ? `${h}<span class="text-base font-normal"> ${t('history.shareCard.hourUnit')} </span>${m}` : `${m}`;
   };
   const fmtChars = totalChars >= 1000 ? (totalChars / 1000).toFixed(1) + 'K' : String(totalChars);
 
   const cards = [
-    { icon: '⏱️', valueHtml: fmtDur(dictMin), unit: dictMin >= 60 ? '分' : '分鐘', label: '總口述時間' },
-    { icon: '🎙️', valueHtml: fmtChars, unit: '字', label: '口述字數' },
-    { icon: '⏳', valueHtml: fmtDur(savedMin), unit: savedMin >= 60 ? '分' : '分鐘', label: '節省時間' },
-    { icon: '⚡', valueHtml: String(wpm), unit: '字/分', label: '平均口述速度' },
+    { icon: '⏱️', valueHtml: fmtDur(dictMin), unit: dictMin >= 60 ? t('history.shareCard.unitMinShort') : t('history.shareCard.unitMin'), label: t('history.shareCard.totalTime') },
+    { icon: '🎙️', valueHtml: fmtChars, unit: t('history.shareCard.unitChars'), label: t('history.shareCard.chars') },
+    { icon: '⏳', valueHtml: fmtDur(savedMin), unit: savedMin >= 60 ? t('history.shareCard.unitMinShort') : t('history.shareCard.unitMin'), label: t('history.shareCard.savedTime') },
+    { icon: '⚡', valueHtml: String(wpm), unit: t('history.shareCard.unitSpeed'), label: t('history.shareCard.speed') },
   ];
 
   return (
@@ -102,7 +105,7 @@ const ShareStats = ({ stats }) => {
         ))}
       </div>
       <div className="text-[10px] text-gray-400 dark:text-gray-500 text-center mt-3 select-none">
-        🔒 資料只存在本機 · 聲聲慢 SpeakSlow
+        {t('history.shareCard.localOnly')}
       </div>
     </div>
   );
@@ -110,6 +113,7 @@ const ShareStats = ({ stats }) => {
 
 // 每日字數趨勢圖（近 14 天）
 const DailyChart = ({ data }) => {
+  const { t } = useTranslation();
   const today = new Date();
   const days = [];
   for (let i = 13; i >= 0; i--) {
@@ -125,15 +129,15 @@ const DailyChart = ({ data }) => {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl p-3.5 shadow-sm border border-gray-200 dark:border-gray-700 mb-3">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-medium text-gray-600 dark:text-gray-300">每日字數・近 14 天</span>
-        <span className="text-[11px] text-gray-400">合計 {totalRange.toLocaleString()} 字</span>
+        <span className="text-xs font-medium text-gray-600 dark:text-gray-300">{t('history.dailyChart.title')}</span>
+        <span className="text-[11px] text-gray-400">{t('history.dailyChart.total', { n: totalRange.toLocaleString() })}</span>
       </div>
       <div className="flex items-end gap-[3px] h-20">
         {days.map((d, i) => (
           <div
             key={i}
             className="flex-1 flex flex-col justify-end h-full group relative"
-            title={`${d.label}：${d.chars.toLocaleString()} 字`}
+            title={t('history.dailyChart.tooltip', { date: d.label, n: d.chars.toLocaleString() })}
           >
             <div
               className="w-full rounded-t bg-sky-400/80 dark:bg-sky-500/70 group-hover:bg-sky-500 transition-colors"
@@ -248,14 +252,14 @@ export const HistoryView = () => {
         const same = (res.text || '').trim() === prevText.trim();
         const prefix = model === 'whisper' ? 'Whisper ' : '';
         const tip = document.createElement('div');
-        tip.textContent = prefix + (same ? '已重新辨識（結果相同）' : '已重新辨識並更新');
+        tip.textContent = prefix + (same ? t('history.retranscribe.doneSame') : t('history.retranscribe.doneUpdated'));
         tip.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#10b981;color:#fff;padding:8px 16px;border-radius:9999px;font-size:13px;z-index:9999';
         document.body.appendChild(tip);
         setTimeout(() => tip.remove(), 2200);
       } else {
         console.warn("重新辨識失敗:", res?.error);
         const tip = document.createElement('div');
-        tip.textContent = res?.error || '重新辨識失敗';
+        tip.textContent = res?.error || t('history.retranscribe.failed');
         tip.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#ef4444;color:#fff;padding:8px 16px;border-radius:9999px;font-size:13px;z-index:9999';
         document.body.appendChild(tip);
         setTimeout(() => tip.remove(), 2500);
@@ -282,8 +286,8 @@ export const HistoryView = () => {
     const timeStr = date.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
 
     if (isToday) return timeStr;
-    if (isYesterday) return `昨天 ${timeStr}`;
-    if (diffDays < 7) return `${diffDays}天前`;
+    if (isYesterday) return t('history.time.yesterday', { time: timeStr });
+    if (diffDays < 7) return t('history.time.daysAgo', { n: diffDays });
     return date.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' }) + ' ' + timeStr;
   };
 
@@ -362,7 +366,7 @@ export const HistoryView = () => {
                           onClick={() => handleRetranscribe(item.id, 'paraformer')}
                           disabled={retranscribingId === item.id}
                           className="p-2 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors disabled:opacity-50"
-                          title="快速重辨（Paraformer）"
+                          title={t('history.retranscribe.fast')}
                         >
                           <svg
                             className={`w-4 h-4 text-blue-500 dark:text-blue-400 ${retranscribingId === item.id && retranscribingModel === 'paraformer' ? 'animate-spin' : ''}`}
@@ -375,7 +379,7 @@ export const HistoryView = () => {
                           onClick={() => handleRetranscribe(item.id, 'whisper')}
                           disabled={retranscribingId === item.id}
                           className="p-2 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded-lg transition-colors disabled:opacity-50"
-                          title="精準重辨（Whisper，較慢，對英文/難句更好）"
+                          title={t('history.retranscribe.accurate')}
                         >
                           <svg
                             className={`w-4 h-4 text-purple-500 dark:text-purple-400 ${retranscribingId === item.id && retranscribingModel === 'whisper' ? 'animate-spin' : ''}`}

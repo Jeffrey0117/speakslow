@@ -66,7 +66,7 @@ const DictionaryManager = ({ t }) => {
   // 新增項目
   const handleAdd = async () => {
     if (!formData.original.trim() || !formData.replacement.trim()) {
-      alert("請填寫原始詞彙和替換詞彙");
+      alert(t?.("settings.dictionary.fillBoth") || "請填寫原始詞彙和替換詞彙");
       return;
     }
 
@@ -82,7 +82,7 @@ const DictionaryManager = ({ t }) => {
       await loadCategories();
     } catch (error) {
       console.error("新增字典項目失敗:", error);
-      alert("新增失敗: " + error.message);
+      alert(t?.("settings.dictionary.addFailed", { error: error.message }) || "新增失敗: " + error.message);
     }
   };
 
@@ -102,13 +102,13 @@ const DictionaryManager = ({ t }) => {
       await loadCategories();
     } catch (error) {
       console.error("更新字典項目失敗:", error);
-      alert("更新失敗: " + error.message);
+      alert(t?.("settings.dictionary.updateFailed", { error: error.message }) || "更新失敗: " + error.message);
     }
   };
 
   // 刪除項目
   const handleDelete = async (id) => {
-    if (!confirm("確定要刪除此項目嗎？")) return;
+    if (!confirm(t?.("settings.dictionary.confirmDelete") || "確定要刪除此項目嗎？")) return;
 
     try {
       await window.electronAPI.deleteDictionaryEntry(id);
@@ -152,13 +152,13 @@ const DictionaryManager = ({ t }) => {
     try {
       const result = await window.electronAPI.exportDictionary();
       if (result.success) {
-        alert(`成功匯出 ${result.count} 個項目`);
+        alert(t?.("settings.dictionary.exportSuccess", { count: result.count }) || `成功匯出 ${result.count} 個項目`);
       } else if (!result.canceled) {
-        alert("匯出失敗: " + result.error);
+        alert(t?.("settings.dictionary.exportFailed", { error: result.error }) || "匯出失敗: " + result.error);
       }
     } catch (error) {
       console.error("匯出字典失敗:", error);
-      alert("匯出失敗: " + error.message);
+      alert(t?.("settings.dictionary.exportFailed", { error: error.message }) || "匯出失敗: " + error.message);
     }
   };
 
@@ -168,19 +168,19 @@ const DictionaryManager = ({ t }) => {
     try {
       const result = await window.electronAPI.importDictionary(mode);
       if (result.success) {
-        let message = `成功匯入 ${result.imported} 個項目`;
+        let message = t?.("settings.dictionary.importSuccess", { count: result.imported }) || `成功匯入 ${result.imported} 個項目`;
         if (result.skipped > 0) {
-          message += `，跳過 ${result.skipped} 個`;
+          message += t?.("settings.dictionary.importSkipped", { count: result.skipped }) || `，跳過 ${result.skipped} 個`;
         }
         alert(message);
         await loadEntries();
         await loadCategories();
       } else if (!result.canceled) {
-        alert("匯入失敗: " + result.error);
+        alert(t?.("settings.dictionary.importFailed", { error: result.error }) || "匯入失敗: " + result.error);
       }
     } catch (error) {
       console.error("匯入字典失敗:", error);
-      alert("匯入失敗: " + error.message);
+      alert(t?.("settings.dictionary.importFailed", { error: error.message }) || "匯入失敗: " + error.message);
     }
   };
 
@@ -239,7 +239,7 @@ const DictionaryManager = ({ t }) => {
           <button
             onClick={() => handleImport('merge')}
             className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm transition-colors"
-            title="匯入時會跳過已存在的項目"
+            title={t?.("settings.dictionary.importHint") || "匯入時會跳過已存在的項目"}
           >
             <Upload className="w-4 h-4" />
             {t?.("settings.dictionary.import") || "匯入"}
@@ -270,7 +270,7 @@ const DictionaryManager = ({ t }) => {
                 type="text"
                 value={formData.original}
                 onChange={(e) => setFormData({ ...formData, original: e.target.value })}
-                placeholder="例：郭太明"
+                placeholder={t?.("settings.dictionary.originalPlaceholder") || "例：郭太明"}
                 className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg"
               />
             </div>
@@ -283,7 +283,7 @@ const DictionaryManager = ({ t }) => {
                 type="text"
                 value={formData.replacement}
                 onChange={(e) => setFormData({ ...formData, replacement: e.target.value })}
-                placeholder="例：郭台銘"
+                placeholder={t?.("settings.dictionary.replacementPlaceholder") || "例：郭台銘"}
                 className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg"
               />
             </div>
@@ -296,7 +296,7 @@ const DictionaryManager = ({ t }) => {
                 type="text"
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                placeholder="例：人名"
+                placeholder={t?.("settings.dictionary.categoryPlaceholder") || "例：人名"}
                 list="category-list"
                 className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg"
               />
@@ -389,21 +389,21 @@ const DictionaryManager = ({ t }) => {
                             ? 'text-green-500 hover:bg-green-100 dark:hover:bg-green-900/30'
                             : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
                         }`}
-                        title={entry.enabled ? "停用" : "啟用"}
+                        title={entry.enabled ? (t?.("settings.dictionary.disable") || "停用") : (t?.("settings.dictionary.enable") || "啟用")}
                       >
                         {entry.enabled ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
                       </button>
                       <button
                         onClick={() => startEdit(entry)}
                         className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
-                        title="編輯"
+                        title={t?.("common.edit") || "編輯"}
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(entry.id)}
                         className="p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors"
-                        title="刪除"
+                        title={t?.("common.delete") || "刪除"}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

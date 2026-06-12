@@ -92,7 +92,7 @@ const HotwordsManager = ({ t }) => {
           setNewWord("");
           toast.success(t?.("settings.hotwords.added") || `已新增熱詞：${word}`);
         } else {
-          toast.error(result.error || "新增失敗");
+          toast.error(result.error || t?.("settings.hotwords.addFailed") || "新增失敗");
         }
       } else {
         // 本地模式（無 Electron API）
@@ -114,7 +114,7 @@ const HotwordsManager = ({ t }) => {
           setHotwords(result.words || hotwords.filter((w) => w !== word));
           toast.success(t?.("settings.hotwords.removed") || `已移除熱詞：${word}`);
         } else {
-          toast.error(result.error || "刪除失敗");
+          toast.error(result.error || t?.("settings.hotwords.removeFailed") || "刪除失敗");
         }
       } else {
         // 本地模式

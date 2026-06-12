@@ -1,6 +1,8 @@
 import { useState, useCallback } from "react";
+import { useTranslation } from "../i18n";
 
 export const usePermissions = (showAlertDialog) => {
+  const { t } = useTranslation();
   const [micPermissionGranted, setMicPermissionGranted] = useState(false);
   const [accessibilityPermissionGranted, setAccessibilityPermissionGranted] = useState(false);
 
@@ -10,11 +12,11 @@ export const usePermissions = (showAlertDialog) => {
       setMicPermissionGranted(true);
       if (showAlertDialog) {
         showAlertDialog({
-          title: "✅ 麦克风权限测试成功",
-          description: "麦克风权限正常工作！现在可以进行语音录制了。"
+          title: t('permissions.micTestSuccessTitle'),
+          description: t('permissions.micTestSuccessDesc')
         });
       } else {
-        alert("✅ 麦克风权限正常工作！现在可以进行语音录制了。");
+        alert(t('permissions.micTestSuccessDesc'));
       }
     } catch (err) {
       if (window.electronAPI && window.electronAPI.log) {
@@ -23,26 +25,26 @@ export const usePermissions = (showAlertDialog) => {
       setMicPermissionGranted(false);
       if (showAlertDialog) {
         showAlertDialog({
-          title: "❌ 需要麦克风权限",
-          description: "请授予麦克风权限以使用语音转录功能。"
+          title: t('permissions.micNeededTitle'),
+          description: t('permissions.micNeededDesc')
         });
       } else {
-        alert("❌ 需要麦克风权限！请授予麦克风权限以使用语音转录功能。");
+        alert(t('permissions.micNeededDesc'));
       }
     }
-  }, [showAlertDialog]);
+  }, [showAlertDialog, t]);
 
   const testAccessibilityPermission = useCallback(async () => {
     try {
-      await window.electronAPI.pasteText("聲聲慢輔助功能測試");
+      await window.electronAPI.pasteText(t('permissions.testText'));
       setAccessibilityPermissionGranted(true);
       if (showAlertDialog) {
         showAlertDialog({
-          title: "✅ 辅助功能权限测试成功",
-          description: "辅助功能权限正常工作！请检查测试文本是否出现在其他应用中。"
+          title: t('permissions.accTestSuccessTitle'),
+          description: t('permissions.accTestSuccessDesc')
         });
       } else {
-        alert("✅ 辅助功能权限正常工作！请检查测试文本是否出现在其他应用中。");
+        alert(t('permissions.accTestSuccessDesc'));
       }
     } catch (err) {
       if (window.electronAPI && window.electronAPI.log) {
@@ -51,14 +53,14 @@ export const usePermissions = (showAlertDialog) => {
       setAccessibilityPermissionGranted(false);
       if (showAlertDialog) {
         showAlertDialog({
-          title: "❌ 需要辅助功能权限",
-          description: "请在系统设置中授予辅助功能权限，以启用自动文本粘贴功能。"
+          title: t('permissions.accNeededTitle'),
+          description: t('permissions.accNeededDesc')
         });
       } else {
-        alert("❌ 需要辅助功能权限！请在系统设置中授予权限。");
+        alert(t('permissions.accNeededDesc'));
       }
     }
-  }, [showAlertDialog]);
+  }, [showAlertDialog, t]);
 
   return {
     micPermissionGranted,

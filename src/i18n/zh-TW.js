@@ -23,6 +23,8 @@ export default {
     accessibilityPermission: '輔助功能權限',
     accessibilityPermissionDesc: '自動貼上文字所需的權限',
     testPermission: '測試權限',
+    granted: '已授予',
+    grantPermission: '授予權限',
 
     aiConfig: 'AI設定',
     aiConfigDesc: '設定AI模型以優化和增強語音辨識結果。如果API Key無效或未填寫，優化功能將自動停用。',
@@ -43,6 +45,19 @@ export default {
     configApplied: '已套用{provider}推薦配置',
     configIncomplete: '配置不完整',
     configIncompleteDesc: '請先輸入API金鑰',
+    ollamaLocal: 'Ollama（本地）',
+    providerEndpointSet: '已自動設定 {provider} API 端點',
+    modelGroups: {
+      deepseek: 'DeepSeek (推薦)',
+      ollama: 'Ollama（本地、免費）'
+    },
+    modelOptions: {
+      deepseekChat: 'DeepSeek Chat (最划算)',
+      geminiFlash: 'Gemini 2.0 Flash (快、便宜)',
+      geminiPro: 'Gemini 1.5 Pro (高品質)',
+      qwen: 'Qwen2.5 (中文推薦)',
+      qwenFast: 'Qwen2.5 3B (更快)'
+    },
 
     testConfig: '測試設定',
     testConfigDesc: '測試當前編輯的設定（無需儲存）',
@@ -60,11 +75,110 @@ export default {
 
     about: '關於聲聲慢',
     aboutDesc: '基於 Sherpa-ONNX 和 AI 的繁體中文語音轉文字應用',
+    brandFull: '聲聲慢 (SpeakSlow)',
     features: {
       recognition: '高精度中文語音辨識',
       ai: 'AI智慧文字優化',
       realtime: '即時語音處理',
       privacy: '隱私保護設計'
+    },
+
+    // 設定視窗左側分頁
+    tabs: {
+      general: '一般設定',
+      history: '歷史紀錄',
+      ai: 'AI 文字優化',
+      hotkeys: '快捷鍵',
+      hotwords: '熱詞',
+      dictionary: '字典',
+      permissions: '權限管理',
+      about: '關於'
+    },
+
+    // 串流辨識模式
+    streamingMode: '串流辨識模式',
+    streamingModeDesc: '⚠️ 實驗功能：CPU 模式下辨識較慢且準確度較低，建議使用傳統模式',
+    streamingEnabled: '串流辨識模式已開啟',
+    streamingDisabled: '串流辨識模式已關閉',
+    streamingPreloading: '正在預載串流模型，請稍候...',
+    streamingModelReady: '串流模型已就緒',
+    streamingPreloadComplete: '串流模型預載完成',
+    streamingPreloadFailed: '串流模型預載失敗: {error}',
+    streamingPreloadFailedSlow: '串流模型預載失敗，首次錄音可能會較慢',
+
+    // 視窗控制
+    windowControl: '🪟 視窗控制',
+    windowControlDesc: '設定視窗置頂與系統托盤行為',
+    alwaysOnTop: '視窗置頂',
+    alwaysOnTopDesc: '讓應用程式視窗保持在其他視窗之上',
+    alwaysOnTopEnabled: '視窗置頂已開啟',
+    alwaysOnTopDisabled: '視窗置頂已關閉',
+    minimizeToTray: '縮小到系統托盤',
+    minimizeToTrayDesc: '縮小視窗時隱藏到系統托盤',
+    minimizeToTrayEnabled: '縮小到托盤已開啟',
+    minimizeToTrayDisabled: '縮小到托盤已關閉',
+    closeToTray: '關閉到系統托盤',
+    closeToTrayDesc: '關閉視窗時隱藏到托盤而非退出應用程式',
+    closeToTrayEnabled: '關閉到托盤已開啟',
+    closeToTrayDisabled: '關閉到托盤已關閉',
+
+    // 錄音完成後動作
+    afterRecording: '📋 錄音完成後動作',
+    afterRecordingDesc: '設定辨識完成後要自動執行的動作',
+    autoPaste: '自動貼上辨識結果',
+    autoPasteDesc: '辨識完成後自動貼到目前游標位置，並還原你原本的剪貼簿內容',
+    alwaysOn: '永遠開啟',
+    autoEnter: '貼上後自動送出 (Enter)',
+    autoEnterDesc: '⚠️ 完全信任模式：貼上後自動按 Enter 送出，適用於即時通訊軟體',
+
+    // 關於分頁
+    aboutTab: {
+      brandSub: 'SpeakSlow',
+      logoAlt: '聲聲慢 logo',
+      tagline: '專為中文打造、最快的本地語音輸入 · 免費、隱私',
+      authorTitle: '作者',
+      authorPrefix: '由 ',
+      authorName: '切版職人',
+      authorSuffix: ' 開發維護。',
+      acknowledgements: '致謝',
+      ackQuqu: '原始專案，本專案在其基礎上改用 sherpa-onnx 引擎並重做 UI 與互動。',
+      ackSherpa: '本地語音辨識引擎。',
+      ackWispr: '產品概念啟發。'
+    },
+
+    // 快捷鍵分頁
+    hotkeysTab: {
+      title: '快捷鍵設定',
+      description: '自定義應用程式的快捷鍵。點擊「錄製」後按下想要的快捷鍵組合。',
+      resetAll: '重設全部',
+      resetToDefault: '重設為預設',
+      resetDone: '已重設為預設快捷鍵',
+      resetAllDone: '所有快捷鍵已重設為預設值',
+      resetFailed: '重設失敗',
+      pressHotkeyFirst: '請先按下快捷鍵',
+      pressHotkey: '請按下快捷鍵...',
+      notSet: '未設置',
+      record: '錄製',
+      updated: '快捷鍵已更新為 {hotkey}',
+      setFailed: '設置失敗',
+      typelessFixed: '右 Alt / 右 Ctrl（單擊切換）',
+      spaceKey: '空格',
+      tipLabel: '提示：',
+      tipContent: '某些快捷鍵可能被系統或其他應用程式佔用，如遇衝突請嘗試其他組合。',
+      actions: {
+        typelessRecording: {
+          name: 'TypeLess 模式',
+          description: '右 Alt 或右 Ctrl 單擊開始錄音，再按一次停止並貼到游標處。瀏覽器裡建議用右 Ctrl（右 Alt 會觸發瀏覽器選單）。錄音中按 Esc 可取消（固定）'
+        },
+        showWindow: {
+          name: '顯示主視窗',
+          description: '顯示或隱藏應用視窗'
+        },
+        copyLast: {
+          name: '複製上次結果',
+          description: '複製最近一次辨識結果'
+        }
+      }
     },
 
     // 熱詞設定
@@ -117,7 +231,22 @@ export default {
       empty: '尚無字典項目，點擊「新增」建立第一個替換規則',
       total: '共',
       items: '個項目',
-      enabled: '個啟用'
+      enabled: '個啟用',
+      fillBoth: '請填寫原始詞彙和替換詞彙',
+      addFailed: '新增失敗: {error}',
+      updateFailed: '更新失敗: {error}',
+      confirmDelete: '確定要刪除此項目嗎？',
+      exportSuccess: '成功匯出 {count} 個項目',
+      exportFailed: '匯出失敗: {error}',
+      importSuccess: '成功匯入 {count} 個項目',
+      importSkipped: '，跳過 {count} 個',
+      importFailed: '匯入失敗: {error}',
+      importHint: '匯入時會跳過已存在的項目',
+      originalPlaceholder: '例：郭太明',
+      replacementPlaceholder: '例：郭台銘',
+      categoryPlaceholder: '例：人名',
+      enable: '啟用',
+      disable: '停用'
     }
   },
 
@@ -149,6 +278,50 @@ export default {
     export: '匯出文字'
   },
 
+  // 主面板（錄音視窗）
+  panel: {
+    processingMessages: [
+      '正在聽你的幹話...',
+      '話不要說太多啊...',
+      '你講了一句話，下一句就是第二句...',
+      '認真聽你唬爛中...',
+      '努力理解你在說啥...',
+      '解碼你的聲波中...',
+      '文字正在組裝...',
+      '啟動語音魔法...',
+      '正在努力辨識...',
+      '嗯嗯好我聽到了...',
+      '讓我想想你說啥...',
+      '等我一下喔...'
+    ],
+    idleMessages: [
+      '按右 Alt 或右 Ctrl 開始錄音 🎤',
+      '瀏覽器裡用右 Ctrl 比較順（避開選單）',
+      '講完自動貼到游標處 ✨',
+      '錄音中按 Esc 可以取消喔',
+      '本地辨識，講什麼都不外流 🔒'
+    ],
+    cancelledRecording: '已取消錄音',
+    levelUnlocked: '解鎖新等級・{title}',
+    aiTooltipOn: 'AI 潤飾：開（點擊暫時關閉、省 API）',
+    aiTooltipOff: 'AI 潤飾：關（點擊開啟）',
+    aiEnabledBadge: 'AI 優化已啟用',
+    pinOn: '視窗置頂',
+    pinOff: '取消置頂',
+    minimize: '縮小',
+    copiedLastResult: '已複製上次結果',
+    copiedOriginal: '已複製原始文字',
+    nothingToCopy: '沒有可複製的結果',
+    statsUses: '用了 {n} 次',
+    statsChars: '{n} 字',
+    streamingStart: '開始即時辨識 ({hotkey})',
+    streamingClickToStart: '點擊開始即時辨識 ({hotkey})',
+    streamingInitializing: '串流啟動中...',
+    streamingRecognizing: '串流辨識中...',
+    recordingIndicator: '錄音中...',
+    hotkeyName: '右 Alt / 右 Ctrl'
+  },
+
   // 歷史紀錄頁面
   history: {
     title: '歷史紀錄',
@@ -163,7 +336,122 @@ export default {
     loadFailed: '載入歷史紀錄失敗',
     aiOptimized: 'AI優化',
     total: '共 ',
-    records: ' 筆'
+    records: ' 筆',
+    bannerMessages: [
+      '別害羞，說點什麼吧～',
+      '才剛認識你，期待聽更多！',
+      '話匣子慢慢打開了～',
+      '看來你蠻有話說的嘛！',
+      '你說的比寫的多，手指感謝你',
+      '話很多欸！但我喜歡聽',
+      '這些字夠寫一篇論文了',
+      '你是不是哲學大師？思想真多',
+      '可以出書了，書名就叫《我說的》',
+      '你的語錄比孔子還多',
+      '傳說中的話癆本癆，致敬！'
+    ],
+    banner: {
+      recognizedPrefix: '已經幫你辨識了',
+      recognizedSuffix: '個字',
+      countRecognitions: '{n} 次辨識',
+      totalMinutes: '累計 {n} 分鐘'
+    },
+    shareCard: {
+      totalTime: '總口述時間',
+      chars: '口述字數',
+      savedTime: '節省時間',
+      speed: '平均口述速度',
+      unitMin: '分鐘',
+      unitMinShort: '分',
+      unitChars: '字',
+      unitSpeed: '字/分',
+      hourUnit: '時',
+      localOnly: '🔒 資料只存在本機 · 聲聲慢 SpeakSlow'
+    },
+    dailyChart: {
+      title: '每日字數・近 14 天',
+      total: '合計 {n} 字',
+      tooltip: '{date}：{n} 字'
+    },
+    time: {
+      yesterday: '昨天 {time}',
+      daysAgo: '{n}天前'
+    },
+    retranscribe: {
+      fast: '快速重辨（Paraformer）',
+      accurate: '精準重辨（Whisper，較慢，對英文/難句更好）',
+      doneSame: '已重新辨識（結果相同）',
+      doneUpdated: '已重新辨識並更新',
+      failed: '重新辨識失敗'
+    }
+  },
+
+  // 模型狀態
+  model: {
+    checking: '檢查模型狀態...',
+    needDownload: '需要下載模型',
+    downloading: '正在下載模型...',
+    loading: '模型載入中...',
+    ready: '模型已就緒',
+    error: '模型錯誤',
+    unknown: '模型狀態未知',
+    download: '下載',
+    tooltipChecking: '🔍 正在檢查模型狀態...',
+    tooltipNeedDownload: '📥 需要下載 AI 模型檔案',
+    tooltipDownloading: '⬇️ 正在下載模型檔案... {progress}%',
+    tooltipLoading: '🤖 AI 模型載入中，請稍候...',
+    tooltipReady: '✅ AI 模型已就緒，可以開始語音辨識',
+    tooltipError: '❌ 模型錯誤: {error}',
+    tooltipUnknown: '⏳ 模型狀態未知',
+    needDownloadTitle: '需要下載 AI 模型',
+    needDownloadDesc: '首次使用需要下載模型檔案',
+    preparingDownload: '準備下載...',
+    startDownload: '開始下載',
+    downloadingTitle: '正在下載模型檔案',
+    downloadingDesc: '請保持網路連線，下載可能需要幾分鐘',
+    downloadProgress: '下載進度'
+  },
+
+  // 權限測試
+  permissions: {
+    micTestSuccessTitle: '✅ 麥克風權限測試成功',
+    micTestSuccessDesc: '麥克風權限正常運作！現在可以進行語音錄製了。',
+    micNeededTitle: '❌ 需要麥克風權限',
+    micNeededDesc: '請授予麥克風權限以使用語音轉錄功能。',
+    accTestSuccessTitle: '✅ 輔助功能權限測試成功',
+    accTestSuccessDesc: '輔助功能權限正常運作！請檢查測試文字是否出現在其他應用中。',
+    accNeededTitle: '❌ 需要輔助功能權限',
+    accNeededDesc: '請在系統設定中授予輔助功能權限，以啟用自動文字貼上功能。',
+    testText: '聲聲慢輔助功能測試'
+  },
+
+  // 錯誤訊息
+  errors: {
+    asrStarting: '語音辨識服務正在啟動中，請稍候...',
+    asrNotReady: '語音辨識服務未就緒，請檢查配置',
+    asrPreparing: '正在準備語音辨識服務，請稍候...',
+    browserNoRecording: '您的瀏覽器不支援錄音功能',
+    cannotStartRecording: '無法開始錄音: {error}',
+    emptyRecording: '錄音數據為空，請重新錄音',
+    recordingTooShort: '錄音時間太短，請說話後再停止錄音',
+    audioProcessingFailed: '音訊處理失敗: {error}',
+    transcriptionFailed: '語音辨識失敗',
+    cannotStartStreamingSession: '無法開始串流辨識',
+    cannotStartStreaming: '無法開始串流錄音: {error}',
+    stopStreamingFailed: '停止串流錄音失敗: {error}',
+    emptyTranscriptionText: '轉錄文字內容不能為空',
+    aiOptimizeFailed: 'AI文字優化失敗',
+    aiUnknownError: 'AI處理過程中發生未知錯誤',
+    saveUnknownError: '儲存轉錄資料時發生未知錯誤',
+    apiKeyMissing: '請先在設定頁面配置AI API金鑰',
+    apiRequestFailed: 'API請求失敗: {status}',
+    apiBadResponse: 'API返回資料格式錯誤',
+    electronApiUnavailable: 'Electron API 不可用',
+    checkModelFilesFailed: '檢查模型檔案失敗',
+    modelStatusCheckFailed: '模型狀態檢查失敗',
+    restartServerFailed: '重啟伺服器失敗: {error}',
+    downloadFailed: '下載失敗',
+    downloadModelsFailed: '下載模型失敗'
   },
 
   // 通知訊息
@@ -207,6 +495,7 @@ export default {
     cancel: '取消',
     close: '關閉',
     save: '儲存',
+    add: '新增',
     delete: '刪除',
     edit: '編輯',
     loading: '載入中...',

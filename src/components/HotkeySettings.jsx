@@ -1,25 +1,26 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Keyboard, RotateCcw, Check, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "../i18n";
 
-// 快捷鍵操作定義
+// 快捷鍵操作定義（文案放在語系檔 settings.hotkeysTab.actions）
 const HOTKEY_ACTIONS = {
   'typeless-recording': {
-    name: 'TypeLess 模式',
-    description: '右 Alt 或右 Ctrl 單擊開始錄音，再按一次停止並貼到游標處。瀏覽器裡建議用右 Ctrl（右 Alt 會觸發瀏覽器選單）。錄音中按 Esc 可取消（固定）',
+    nameKey: 'settings.hotkeysTab.actions.typelessRecording.name',
+    descriptionKey: 'settings.hotkeysTab.actions.typelessRecording.description',
   },
   'show-window': {
-    name: '顯示主視窗',
-    description: '顯示或隱藏應用視窗',
+    nameKey: 'settings.hotkeysTab.actions.showWindow.name',
+    descriptionKey: 'settings.hotkeysTab.actions.showWindow.description',
   },
   'copy-last': {
-    name: '複製上次結果',
-    description: '複製最近一次辨識結果',
+    nameKey: 'settings.hotkeysTab.actions.copyLast.name',
+    descriptionKey: 'settings.hotkeysTab.actions.copyLast.description',
   },
 };
 
 // 格式化快捷鍵顯示
-const formatHotkey = (accelerator) => {
+const formatHotkey = (accelerator, spaceLabel = 'Space') => {
   if (!accelerator) return '';
 
   const isMac = navigator.platform.includes('Mac');
@@ -33,7 +34,7 @@ const formatHotkey = (accelerator) => {
     .replace(/Alt/g, isMac ? '⌥' : 'Alt')
     .replace(/Option/g, '⌥')
     .replace(/Meta/g, isMac ? '⌘' : 'Win')
-    .replace(/Space/g, '空格')
+    .replace(/Space/g, spaceLabel)
     .replace(/\+/g, ' + ');
 };
 
@@ -91,6 +92,8 @@ const keyEventToAccelerator = (e) => {
 
 // 單個快捷鍵設定項
 const HotkeyItem = ({ actionId, actionInfo, currentHotkey, defaultHotkey, onUpdate, onReset }) => {
+  const { t } = useTranslation();
+  const spaceLabel = t('settings.hotkeysTab.spaceKey');
   const [isRecording, setIsRecording] = useState(false);
   const [tempHotkey, setTempHotkey] = useState('');
   const [error, setError] = useState(null);
@@ -122,7 +125,7 @@ const HotkeyItem = ({ actionId, actionInfo, currentHotkey, defaultHotkey, onUpda
 
   const handleSaveHotkey = async () => {
     if (!tempHotkey) {
-      setError('請先按下快捷鍵');
+      setError(t('settings.hotkeysTab.pressHotkeyFirst'));
       return;
     }
 
@@ -141,7 +144,7 @@ const HotkeyItem = ({ actionId, actionInfo, currentHotkey, defaultHotkey, onUpda
           onUpdate(actionId, tempHotkey);
           setIsRecording(false);
           setTempHotkey('');
-          toast.success(`快捷鍵已更新為 ${formatHotkey(tempHotkey)}`);
+          toast.success(t('settings.hotkeysTab.updated', { hotkey: formatHotkey(tempHotkey, spaceLabel) }));
 
           // 通知其他組件快捷鍵已變更
           if (actionId === 'toggle-recording' || actionId === 'typeless-recording') {
@@ -150,11 +153,11 @@ const HotkeyItem = ({ actionId, actionInfo, currentHotkey, defaultHotkey, onUpda
             }));
           }
         } else {
-          setError(result.error || '設置失敗');
+          setError(result.error || t('settings.hotkeysTab.setFailed'));
         }
       }
     } catch (err) {
-      setError(err.message || '設置失敗');
+      setError(err.message || t('settings.hotkeysTab.setFailed'));
     }
   };
 
@@ -164,11 +167,11 @@ const HotkeyItem = ({ actionId, actionInfo, currentHotkey, defaultHotkey, onUpda
         const result = await window.electronAPI.resetHotkeys(actionId);
         if (result.success) {
           onReset(actionId, defaultHotkey);
-          toast.success('已重設為預設快捷鍵');
+          toast.success(t('settings.hotkeysTab.resetDone'));
         }
       }
     } catch (err) {
-      toast.error('重設失敗');
+      toast.error(t('settings.hotkeysTab.resetFailed'));
     }
   };
 
@@ -180,14 +183,14 @@ const HotkeyItem = ({ actionId, actionInfo, currentHotkey, defaultHotkey, onUpda
     <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
       <div className="flex items-center justify-between mb-2">
         <div>
-          <h4 className="font-medium text-gray-900 dark:text-gray-100">{actionInfo.name}</h4>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{actionInfo.description}</p>
+          <h4 className="font-medium text-gray-900 dark:text-gray-100">{t(actionInfo.nameKey)}</h4>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t(actionInfo.descriptionKey)}</p>
         </div>
         {!isDefault && (
           <button
             onClick={handleReset}
             className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
-            title="重設為預設"
+            title={t('settings.hotkeysTab.resetToDefault')}
           >
             <RotateCcw className="w-4 h-4" />
           </button>
@@ -197,7 +200,7 @@ const HotkeyItem = ({ actionId, actionInfo, currentHotkey, defaultHotkey, onUpda
       <div className="flex items-center gap-2">
         {isTypeless ? (
           <div className="flex-1 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-center font-mono text-gray-700 dark:text-gray-300">
-            右 Alt / 右 Ctrl（單擊切換）
+            {t('settings.hotkeysTab.typelessFixed')}
           </div>
         ) : isRecording ? (
           <>
@@ -207,7 +210,7 @@ const HotkeyItem = ({ actionId, actionInfo, currentHotkey, defaultHotkey, onUpda
               onKeyDown={handleKeyDown}
               autoFocus
             >
-              {tempHotkey ? formatHotkey(tempHotkey) : '請按下快捷鍵...'}
+              {tempHotkey ? formatHotkey(tempHotkey, spaceLabel) : t('settings.hotkeysTab.pressHotkey')}
             </div>
             <button
               onClick={handleSaveHotkey}
@@ -220,19 +223,19 @@ const HotkeyItem = ({ actionId, actionInfo, currentHotkey, defaultHotkey, onUpda
               onClick={handleCancelRecording}
               className="px-3 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors"
             >
-              取消
+              {t('common.cancel')}
             </button>
           </>
         ) : (
           <>
             <div className="flex-1 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-center font-mono text-gray-700 dark:text-gray-300">
-              {formatHotkey(currentHotkey) || '未設置'}
+              {formatHotkey(currentHotkey, spaceLabel) || t('settings.hotkeysTab.notSet')}
             </div>
             <button
               onClick={handleStartRecording}
               className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
             >
-              錄製
+              {t('settings.hotkeysTab.record')}
             </button>
           </>
         )}
@@ -250,6 +253,7 @@ const HotkeyItem = ({ actionId, actionInfo, currentHotkey, defaultHotkey, onUpda
 
 // 快捷鍵設定主組件
 const HotkeySettings = () => {
+  const { t } = useTranslation();
   const [hotkeys, setHotkeys] = useState({});
   const [defaults, setDefaults] = useState({});
   const [loading, setLoading] = useState(true);
@@ -289,18 +293,18 @@ const HotkeySettings = () => {
         const result = await window.electronAPI.resetHotkeys();
         if (result.success) {
           setHotkeys(result.hotkeys || defaults);
-          toast.success('所有快捷鍵已重設為預設值');
+          toast.success(t('settings.hotkeysTab.resetAllDone'));
         }
       }
     } catch (err) {
-      toast.error('重設失敗');
+      toast.error(t('settings.hotkeysTab.resetFailed'));
     }
   };
 
   if (loading) {
     return (
       <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-        載入中...
+        {t('common.loading')}
       </div>
     );
   }
@@ -310,19 +314,19 @@ const HotkeySettings = () => {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Keyboard className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">快捷鍵設定</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('settings.hotkeysTab.title')}</h3>
         </div>
         <button
           onClick={handleResetAll}
           className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-1"
         >
           <RotateCcw className="w-4 h-4" />
-          重設全部
+          {t('settings.hotkeysTab.resetAll')}
         </button>
       </div>
 
       <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-        自定義應用程式的快捷鍵。點擊「錄製」後按下想要的快捷鍵組合。
+        {t('settings.hotkeysTab.description')}
       </p>
 
       <div className="space-y-3">
@@ -341,7 +345,7 @@ const HotkeySettings = () => {
 
       <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
         <p className="text-xs text-blue-700 dark:text-blue-300">
-          <strong>提示：</strong>某些快捷鍵可能被系統或其他應用程式佔用，如遇衝突請嘗試其他組合。
+          <strong>{t('settings.hotkeysTab.tipLabel')}</strong>{t('settings.hotkeysTab.tipContent')}
         </p>
       </div>
     </div>

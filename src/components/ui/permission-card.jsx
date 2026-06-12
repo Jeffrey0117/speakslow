@@ -1,5 +1,6 @@
 import React from "react";
 import { Check } from "lucide-react";
+import { useTranslation } from "../../i18n";
 
 const PermissionCard = ({
   icon: Icon,
@@ -7,8 +8,9 @@ const PermissionCard = ({
   description,
   granted,
   onRequest,
-  buttonText = "授予权限",
+  buttonText,
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="border border-gray-200 dark:border-gray-600 rounded-md p-2 bg-white dark:bg-gray-700 shadow-sm">
       <div className="flex items-center justify-between">
@@ -22,14 +24,14 @@ const PermissionCard = ({
         {granted ? (
           <div className="text-green-600 dark:text-green-400 flex items-center gap-1 flex-shrink-0">
             <Check className="w-3 h-3" />
-            <span className="text-xs font-medium">已授予</span>
+            <span className="text-xs font-medium">{t('settings.granted')}</span>
           </div>
         ) : (
           <button
             onClick={onRequest}
             className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors flex-shrink-0"
           >
-            {buttonText}
+            {buttonText || t('settings.grantPermission')}
           </button>
         )}
       </div>
