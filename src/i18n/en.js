@@ -324,6 +324,9 @@ export default {
     streamingInitializing: 'Starting stream...',
     streamingRecognizing: 'Streaming recognition...',
     recordingIndicator: 'Recording...',
+    miniMode: 'Mini mode (dock to corner)',
+    miniExpand: 'Expand panel',
+    miniIdle: 'Press Right Ctrl to talk',
     hotkeyName: 'Right Alt / Right Ctrl'
   },
 

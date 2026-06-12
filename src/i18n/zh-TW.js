@@ -324,6 +324,9 @@ export default {
     streamingInitializing: '串流啟動中...',
     streamingRecognizing: '串流辨識中...',
     recordingIndicator: '錄音中...',
+    miniMode: '迷你模式（縮到角落）',
+    miniExpand: '展開面板',
+    miniIdle: '按 右 Ctrl 說話',
     hotkeyName: '右 Alt / 右 Ctrl'
   },
 

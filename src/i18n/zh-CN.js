@@ -324,6 +324,9 @@ export default {
     streamingInitializing: '流式启动中...',
     streamingRecognizing: '流式识别中...',
     recordingIndicator: '录音中...',
+    miniMode: '迷你模式（缩到角落）',
+    miniExpand: '展开面板',
+    miniIdle: '按 右 Ctrl 说话',
     hotkeyName: '右 Alt / 右 Ctrl'
   },
 

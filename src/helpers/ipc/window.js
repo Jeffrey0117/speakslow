@@ -178,6 +178,14 @@ module.exports = function register(ctx) {
   // =====================================================
 
   // 設置主視窗置頂狀態
+  ipcMain.handle("set-mini-mode", async (event, enabled) => {
+    try {
+      return ctx.windowManager.setMiniMode(enabled);
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
+
   ipcMain.handle("set-always-on-top", async (event, value) => {
     try {
       ctx.windowManager.setMainWindowAlwaysOnTop(value);
