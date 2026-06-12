@@ -12,6 +12,11 @@ export default {
     notificationsDesc: 'Control whether to show success and status notifications',
     language: 'Interface Language',
     languageDesc: 'Choose the language used for the app interface',
+    asrProfile: 'Performance mode',
+    asrProfileDesc: 'Pick Fast on older machines: 2-3x faster recognition, slightly lower accuracy',
+    asrProfileStandard: 'Standard (most accurate)',
+    asrProfileFast: 'Fast (older machines)',
+    asrProfileChanged: 'Performance mode changed, applies to the next recognition',
     convertTranscription: 'Convert Transcription',
     convertTranscriptionDesc: 'Convert speech recognition results to the current language',
 

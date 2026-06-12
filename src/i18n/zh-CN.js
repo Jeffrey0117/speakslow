@@ -12,6 +12,11 @@ export default {
     notificationsDesc: '控制是否显示操作成功等提示通知',
     language: '界面语言',
     languageDesc: '选择应用界面显示的语言',
+    asrProfile: '性能模式',
+    asrProfileDesc: '老电脑选「快速」：识别快 2~3 倍，精度略降',
+    asrProfileStandard: '标准（最准）',
+    asrProfileFast: '快速（弱电脑）',
+    asrProfileChanged: '性能模式已切换，下次识别生效',
     convertTranscription: '转换识别结果',
     convertTranscriptionDesc: '将语音识别结果转换为当前语言',
 

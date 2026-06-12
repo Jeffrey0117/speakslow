@@ -59,9 +59,9 @@ module.exports = function register(ctx) {
   });
 
   // 邊錄邊算（precog）：錄音中把已閉合語音段先解碼，停止時只剩尾段
-  ipcMain.handle("precog-start", async () => {
+  ipcMain.handle("precog-start", async (event, profile) => {
     try {
-      return await ctx.sherpaManager.precogStart();
+      return await ctx.sherpaManager.precogStart(profile);
     } catch (error) {
       return { success: false, error: error.message };
     }

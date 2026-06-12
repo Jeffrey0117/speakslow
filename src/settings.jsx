@@ -36,6 +36,7 @@ const SettingsPage = () => {
     enable_streaming_mode: false,
     language: "zh-TW",
     convert_transcription: true,
+    asr_profile: "standard",          // 效能模式：standard（最準）/ fast（弱 CPU）
     // 錄音完成後動作設定（自動貼上已固定開啟，僅保留「自動送出 Enter」）
     auto_enter_after_paste: false,    // 貼上後自動送出（完全信任模式）
     // 視窗控制設定
@@ -86,6 +87,7 @@ const SettingsPage = () => {
           enable_streaming_mode: allSettings.enable_streaming_mode === true, // 默認關閉
           language: allSettings.language || "zh-TW", // 默认繁体中文
           convert_transcription: allSettings.convert_transcription !== false, // 默认转换
+          asr_profile: allSettings.asr_profile || "standard",
           // 錄音完成後動作設定
           auto_enter_after_paste: allSettings.auto_enter_after_paste === true, // 默認不自動送出
           // 視窗控制設定
@@ -435,6 +437,33 @@ const SettingsPage = () => {
                     <option value="zh-TW">繁體中文</option>
                     <option value="zh-CN">简体中文</option>
                     <option value="en">English</option>
+                  </select>
+                </div>
+
+                {/* 效能模式：標準（最準）/ 快速（弱 CPU 機器） */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                      {t('settings.asrProfile')}
+                    </label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      {t('settings.asrProfileDesc')}
+                    </p>
+                  </div>
+                  <select
+                    value={settings.asr_profile || 'standard'}
+                    onChange={async (e) => {
+                      const v = e.target.value;
+                      handleInputChange('asr_profile', v);
+                      if (window.electronAPI) {
+                        await window.electronAPI.setSetting('asr_profile', v);
+                      }
+                      toast.success(t('settings.asrProfileChanged'));
+                    }}
+                    className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  >
+                    <option value="standard">{t('settings.asrProfileStandard')}</option>
+                    <option value="fast">{t('settings.asrProfileFast')}</option>
                   </select>
                 </div>
 

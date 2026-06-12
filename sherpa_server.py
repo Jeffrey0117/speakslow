@@ -469,6 +469,33 @@ class SherpaServer:
             return text
         return rebuilt.strip()
 
+    def _get_fast_recognizer(self):
+        """快速模式：paraformer-small（~80MB）。弱 CPU 上快 2~3 倍，精度小降。
+        延遲載入；模型未安裝時丟例外，呼叫端回退標準模型。"""
+        if getattr(self, "_fast_recognizer", None) is not None:
+            return self._fast_recognizer
+        import sherpa_onnx
+        mdir = os.path.join(
+            self._poc_sherpa_dir(), "sherpa-onnx-paraformer-zh-small-2024-03-09"
+        )
+        model_path = os.path.join(mdir, "model.int8.onnx")
+        tokens_path = os.path.join(mdir, "tokens.txt")
+        if not (os.path.exists(model_path) and os.path.exists(tokens_path)):
+            raise RuntimeError("快速模型未安裝（sherpa-onnx-paraformer-zh-small）")
+        import time as _t
+        t0 = _t.time()
+        self._fast_recognizer = sherpa_onnx.OfflineRecognizer.from_paraformer(
+            paraformer=model_path,
+            tokens=tokens_path,
+            num_threads=self.num_threads,
+            sample_rate=16000,
+            feature_dim=80,
+            decoding_method="greedy_search",
+            provider="cpu",
+        )
+        logger.info(f"快速模型（paraformer-small）載入完成，耗時 {_t.time()-t0:.2f}s")
+        return self._fast_recognizer
+
     def _get_whisper_recognizer(self):
         """延遲載入 Whisper small（精準模式 / 重辨救援用）。首次呼叫才載入。"""
         if getattr(self, "whisper_recognizer", None) is not None:
@@ -520,11 +547,19 @@ class SherpaServer:
     # 按停止時只剩尾段要算 → 長講的停止延遲從「整段成本」變「尾段成本」。
     # 精度零損失（同模型、同 VAD 切段邏輯，等同既有的長音訊分段路徑）。
 
-    def precog_start(self):
+    def precog_start(self, profile="standard"):
         if self.vad is None or self.recognizer is None:
             return {"success": False, "error": "VAD/辨識器未就緒"}
         import threading
         import queue as _queue
+
+        # worker 使用與正式辨識相同的模型（快速模式時用 paraformer-small）
+        rec = self.recognizer
+        if profile == "fast":
+            try:
+                rec = self._get_fast_recognizer()
+            except Exception as e:
+                logger.warning(f"precog 快速模型不可用，改用標準: {e}")
 
         self.precog_abort()  # 清掉殘留會話
         self.vad.reset()
@@ -546,7 +581,7 @@ class SherpaServer:
                 try:
                     import time as _t
                     t0 = _t.time()
-                    txt = self._transcribe_samples(seg, 16000)
+                    txt = self._transcribe_samples(seg, 16000, rec)
                     p["results"].append((idx, txt))
                     logger.info(
                         f"precog 段 {idx}（{len(seg)/16000:.1f}s）解碼 {( _t.time()-t0)*1000:.0f}ms"
@@ -1216,6 +1251,13 @@ class SherpaServer:
                     logger.warning(f"Whisper 不可用，改用 Paraformer: {e}")
                     use_whisper = False
                     recognizer = self.recognizer
+            elif options.get("profile") == "fast":
+                # 效能模式：paraformer-small，給弱 CPU 的機器用
+                try:
+                    recognizer = self._get_fast_recognizer()
+                    logger.info("使用快速模型（paraformer-small）辨識")
+                except Exception as e:
+                    logger.warning(f"快速模型不可用，改用標準模型: {e}")
 
             logger.info(f"開始轉錄音頻文件: {audio_path}")
             start_time = time.time()
@@ -1240,7 +1282,9 @@ class SherpaServer:
             # 完全沒有 → 直接回空字串、跳過解碼。
             _gate_segs = None
             if precog_result is None:
+                _t_gate0 = time.time()
                 _gate_segs = self._vad_segment_list(samples)
+                _gate_ms = (time.time() - _t_gate0) * 1000
                 if self.vad is not None and not _gate_segs:
                     logger.info("VAD 未偵測到語音（純靜音/噪音），回傳空結果，拒絕解碼以防幻聽")
                     return {
@@ -1290,12 +1334,13 @@ class SherpaServer:
                 stream = recognizer.create_stream()
                 stream.accept_waveform(sample_rate, speech_samples)
                 recognizer.decode_stream(stream)
-                if recognizer is self.recognizer:  # 只有 Paraformer 有時間戳
+                if not use_whisper:  # Paraformer 家族（標準/快速）都有逐字時間戳
                     text = self._apply_pause_breaks(stream.result)
                 else:
                     text = (stream.result.text or "").strip()
 
             # 文字清理：全形英文→半形 + 去口吃重複（保留正常疊字、保留換行）
+            _decode_ms = (time.time() - start_time) * 1000  # 含 gate；decode 為主
             text = clean_transcript(text)
 
             elapsed = time.time() - start_time
@@ -1320,6 +1365,13 @@ class SherpaServer:
             # 純英文行轉英文標點慣例（半形 + 句首大寫），中英混雜行不動
             text_with_punc = localize_english_punct(text_with_punc)
 
+            _total_ms = (time.time() - start_time) * 1000
+            logger.info(
+                f"耗時分解: gate={locals().get('_gate_ms', 0):.0f}ms "
+                f"decode(含gate)={locals().get('_decode_ms', _total_ms):.0f}ms "
+                f"後處理={_total_ms - locals().get('_decode_ms', _total_ms):.0f}ms "
+                f"total={_total_ms:.0f}ms 音訊={duration:.1f}s"
+            )
             logger.info(f"轉錄完成: {text_with_punc[:100]}... (RTF: {rtf:.3f})")
 
             return {
@@ -1611,7 +1663,7 @@ class SherpaServer:
                 # ========== 串流辨識命令 ==========
                 # ========== 邊錄邊算（precog）命令 ==========
                 elif action == "precog_start":
-                    result = self.precog_start()
+                    result = self.precog_start(command.get("profile", "standard"))
                 elif action == "precog_feed":
                     result = self.precog_feed(command.get("audio_data"))
                 elif action == "precog_abort":

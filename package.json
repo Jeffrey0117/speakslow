@@ -128,6 +128,10 @@
         "to": "sherpa-backend/poc-sherpa/sherpa-onnx-paraformer-zh-2023-09-14"
       },
       {
+        "from": "poc-sherpa/sherpa-onnx-paraformer-zh-small-2024-03-09",
+        "to": "sherpa-backend/poc-sherpa/sherpa-onnx-paraformer-zh-small-2024-03-09"
+      },
+      {
         "from": "poc-sherpa/sherpa-onnx-punct-ct-transformer-zh-en-vocab272727-2024-04-12",
         "to": "sherpa-backend/poc-sherpa/sherpa-onnx-punct-ct-transformer-zh-en-vocab272727-2024-04-12"
       },

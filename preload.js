@@ -26,7 +26,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   restartSherpaServer: () => ipcRenderer.invoke("restart-sherpa-server"),
 
   // 邊錄邊算（precog）：錄音中先解碼已講完的段落，停止時只剩尾段
-  precogStart: () => ipcRenderer.invoke("precog-start"),
+  precogStart: (profile) => ipcRenderer.invoke("precog-start", profile),
   precogFeed: (audioB64) => ipcRenderer.invoke("precog-feed", audioB64),
   precogAbort: () => ipcRenderer.invoke("precog-abort"),
 

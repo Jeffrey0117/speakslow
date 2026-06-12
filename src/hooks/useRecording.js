@@ -206,7 +206,12 @@ export const useRecording = (modelStatus) => {
       processor.connect(audioContext.destination);
 
       // 邊錄邊算：每秒檢查，超過門檻就啟動 precog 並持續餵新音訊
-      precogRef.current = { active: false, fedChunks: 0, timer: null };
+      // 效能模式（asr_profile: standard | fast）跟正式辨識用同一顆模型
+      let asrProfile = 'standard';
+      try {
+        asrProfile = await window.electronAPI?.getSetting?.('asr_profile', 'standard') || 'standard';
+      } catch (e) { /* 預設 standard */ }
+      precogRef.current = { active: false, fedChunks: 0, timer: null, profile: asrProfile };
       const srcRate = audioContext.sampleRate;
       precogRef.current.timer = setInterval(async () => {
         try {
@@ -215,7 +220,7 @@ export const useRecording = (modelStatus) => {
           const totalSamples = chunks.reduce((s, a) => s + a.length, 0);
           if (!p.active) {
             if (totalSamples / srcRate < PRECOG_START_SEC) return;
-            const r = await window.electronAPI?.precogStart?.();
+            const r = await window.electronAPI?.precogStart?.(p.profile);
             if (!r?.success) { stopPrecogTimer(); return; } // 後端不支援就放棄
             p.active = true;
           }
@@ -291,7 +296,10 @@ export const useRecording = (modelStatus) => {
       setAudioData(wavBlob);
 
       // 處理音頻
-      await processAudio(wavBlob, { use_precog: precogActive });
+      await processAudio(wavBlob, {
+        use_precog: precogActive,
+        profile: precogRef.current.profile || 'standard',
+      });
     } catch (err) {
       setError(t('errors.audioProcessingFailed', { error: err.message }));
       cleanup();

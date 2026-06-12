@@ -74,16 +74,28 @@ export const useTranslation = () => {
     };
     loadLanguage();
 
-    // 监听语言变化
+    // 监听语言变化（同視窗事件）
     const handleLanguageChange = async () => {
       if (window.electronAPI) {
         const newLang = await window.electronAPI.getSetting('language', 'zh-TW');
         setLanguageState(newLang);
       }
     };
-
     window.addEventListener('language-changed', handleLanguageChange);
-    return () => window.removeEventListener('language-changed', handleLanguageChange);
+
+    // 跨視窗同步：設定視窗切語言 → 主面板/其他視窗透過 setting-changed IPC 更新。
+    // （window.dispatchEvent 只在同一視窗有效，少了這段主面板不會跟著切。）
+    let unsubscribe;
+    if (window.electronAPI?.onSettingChanged) {
+      unsubscribe = window.electronAPI.onSettingChanged((data) => {
+        if (data?.key === 'language' && data?.value) setLanguageState(data.value);
+      });
+    }
+
+    return () => {
+      window.removeEventListener('language-changed', handleLanguageChange);
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
   }, []);
 
   const t = useCallback((key, params = {}) => {
@@ -132,9 +144,20 @@ export const LanguageProvider = ({ children }) => {
         setLanguage(newLang);
       }
     };
-
     window.addEventListener('language-changed', handleLanguageChange);
-    return () => window.removeEventListener('language-changed', handleLanguageChange);
+
+    // 跨視窗同步（同 useTranslation 的說明）
+    let unsubscribe;
+    if (window.electronAPI?.onSettingChanged) {
+      unsubscribe = window.electronAPI.onSettingChanged((data) => {
+        if (data?.key === 'language' && data?.value) setLanguage(data.value);
+      });
+    }
+
+    return () => {
+      window.removeEventListener('language-changed', handleLanguageChange);
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
   }, []);
 
   return (
