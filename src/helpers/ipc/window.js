@@ -1,0 +1,205 @@
+const { ipcMain } = require("electron");
+
+module.exports = function register(ctx) {
+  // 剪贴板相关
+  ipcMain.handle("copy-text", async (event, text) => {
+    try {
+      return await ctx.clipboardManager.copyText(text);
+    } catch (error) {
+      ctx.logger.error("复制文本失败:", error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle("paste-text", async (event, text) => {
+    return ctx.clipboardManager.pasteText(text);
+  });
+
+  // 發送 Enter 鍵（完全信任模式）
+  ipcMain.handle("send-enter", async () => {
+    return ctx.clipboardManager.sendEnter();
+  });
+
+  ipcMain.handle("insert-text-directly", async (event, text) => {
+    try {
+      return await ctx.clipboardManager.insertTextDirectly(text);
+    } catch (error) {
+      ctx.logger.error("直接插入文本失败:", error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle("enable-macos-accessibility", async () => {
+    try {
+      if (process.platform === "darwin") {
+        const result = await ctx.clipboardManager.enableMacOSAccessibility();
+        return { success: result };
+      }
+      return { success: true, message: "非 macOS 平台，无需设置" };
+    } catch (error) {
+      ctx.logger.error("启用 macOS accessibility 失败:", error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle("read-clipboard", async () => {
+    try {
+      const text = await ctx.clipboardManager.readClipboard();
+      return { success: true, text };
+    } catch (error) {
+      ctx.logger.error("读取剪贴板失败:", error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle("write-clipboard", async (event, text) => {
+    try {
+      return await ctx.clipboardManager.writeClipboard(text);
+    } catch (error) {
+      ctx.logger.error("写入剪贴板失败:", error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  // 焦點管理 - 儲存和恢復前景視窗
+  ipcMain.handle("save-foreground-window", () => {
+    try {
+      return ctx.clipboardManager.saveForegroundWindow();
+    } catch (error) {
+      ctx.logger.error("儲存前景視窗失敗:", error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle("restore-foreground-window", async () => {
+    try {
+      return await ctx.clipboardManager.restoreForegroundWindow();
+    } catch (error) {
+      ctx.logger.error("恢復前景視窗失敗:", error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle("get-clipboard-history", () => {
+    // TODO: 实现剪贴板历史功能
+    return [];
+  });
+
+  ipcMain.handle("clear-clipboard-history", () => {
+    // TODO: 实现清除剪贴板历史功能
+    return true;
+  });
+
+  // 窗口管理相关
+  ipcMain.handle("hide-window", () => {
+    if (ctx.windowManager.mainWindow) {
+      ctx.windowManager.mainWindow.hide();
+    }
+    return true;
+  });
+
+  ipcMain.handle("show-window", () => {
+    if (ctx.windowManager.mainWindow) {
+      ctx.windowManager.mainWindow.show();
+    }
+    return true;
+  });
+
+  ipcMain.handle("minimize-window", () => {
+    if (ctx.windowManager.mainWindow) {
+      ctx.windowManager.mainWindow.minimize();
+    }
+    return true;
+  });
+
+  ipcMain.handle("close-window", () => {
+    if (ctx.windowManager.mainWindow) {
+      ctx.windowManager.mainWindow.close();
+    }
+    return true;
+  });
+
+  ipcMain.handle("show-control-panel", () => {
+    ctx.windowManager.showControlPanel();
+    return true;
+  });
+
+  ipcMain.handle("hide-control-panel", () => {
+    ctx.windowManager.hideControlPanel();
+    return true;
+  });
+
+  ipcMain.handle("open-control-panel", () => {
+    ctx.windowManager.showControlPanel();
+    return true;
+  });
+
+  ipcMain.handle("close-control-panel", () => {
+    ctx.windowManager.hideControlPanel();
+    return true;
+  });
+
+  ipcMain.handle("open-history-window", () => {
+    ctx.windowManager.showHistoryWindow();
+    return true;
+  });
+
+  ipcMain.handle("close-history-window", () => {
+    ctx.windowManager.closeHistoryWindow();
+    return true;
+  });
+
+  ipcMain.handle("hide-history-window", () => {
+    ctx.windowManager.hideHistoryWindow();
+    return true;
+  });
+
+  ipcMain.handle("open-settings-window", () => {
+    ctx.windowManager.showSettingsWindow();
+    return true;
+  });
+
+  ipcMain.handle("close-settings-window", () => {
+    ctx.windowManager.closeSettingsWindow();
+    return true;
+  });
+
+  ipcMain.handle("hide-settings-window", () => {
+    ctx.windowManager.hideSettingsWindow();
+    return true;
+  });
+
+  ipcMain.handle("close-app", () => {
+    require("electron").app.quit();
+  });
+
+  // =====================================================
+  // 視窗控制設定 API
+  // =====================================================
+
+  // 設置主視窗置頂狀態
+  ipcMain.handle("set-always-on-top", async (event, value) => {
+    try {
+      ctx.windowManager.setMainWindowAlwaysOnTop(value);
+      // 同時保存到設定
+      await ctx.databaseManager.setSetting('window_always_on_top', value);
+      return { success: true };
+    } catch (error) {
+      ctx.logger.error("設置置頂狀態失敗:", error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  // 獲取主視窗置頂狀態
+  ipcMain.handle("get-always-on-top", () => {
+    try {
+      if (ctx.windowManager.mainWindow && !ctx.windowManager.mainWindow.isDestroyed()) {
+        return { success: true, value: ctx.windowManager.mainWindow.isAlwaysOnTop() };
+      }
+      return { success: false, error: "主視窗不存在" };
+    } catch (error) {
+      ctx.logger.error("獲取置頂狀態失敗:", error);
+      return { success: false, error: error.message };
+    }
+  });
+};
