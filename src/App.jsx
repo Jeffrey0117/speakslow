@@ -1092,7 +1092,7 @@ export default function App() {
         </div>
         <div className="flex-1 min-w-0">
           <div className={`text-[13px] font-semibold leading-tight ${isRecording ? 'text-red-400' : 'text-white'}`}>
-            {isRecording ? t('panel.recordingIndicator') : (isProcessing || isOptimizing) ? t('app.processing') : t('panel.miniIdle')}
+            {isRecording ? t('panel.recordingIndicator') : (isRecordingProcessing || isOptimizing) ? t('app.processing') : t('panel.miniIdle')}
           </div>
           <div className="text-[11px] text-gray-400 truncate leading-tight mt-0.5">
             {lastText || t('appName')}

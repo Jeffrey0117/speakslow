@@ -85,6 +85,8 @@ class TrayManager {
       {
         label: "顯示主視窗",
         click: () => {
+          // 若卡在迷你尺寸，先還原大小再顯示（救援）
+          try { this.windowManager?.setMiniMode?.(false); } catch (e) { /* ignore */ }
           if (this.mainWindow) {
             this.mainWindow.show();
             this.mainWindow.focus();
