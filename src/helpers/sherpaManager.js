@@ -926,8 +926,6 @@ class SherpaManager {
         duration: result.duration || 0,
         audio_path: persistedAudioPath,
       };
-    } catch (error) {
-      throw error;
     } finally {
       await this.cleanupTempFile(tempAudioPath);
     }

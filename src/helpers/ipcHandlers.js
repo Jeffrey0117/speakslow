@@ -89,46 +89,10 @@ class IPCHandlers {
 
     // 音频转录相关
     ipcMain.handle("transcribe-audio", async (event, audioData, options) => {
-      // 儲存音訊檔案
-      let audioPath = null;
-      try {
-        const userDataPath = this.environmentManager?.userDataPath ||
-          (process.env.ELECTRON_USER_DATA || require('electron').app.getPath('userData'));
-        const audioDir = path.join(userDataPath, 'audio');
-
-        // 確保音訊目錄存在
-        if (!fs.existsSync(audioDir)) {
-          fs.mkdirSync(audioDir, { recursive: true });
-        }
-
-        // 生成唯一檔名
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const fileName = `recording_${timestamp}.wav`;
-        audioPath = path.join(audioDir, fileName);
-
-        // 將 Uint8Array 轉為 Buffer 並儲存
-        const buffer = Buffer.from(audioData);
-        fs.writeFileSync(audioPath, buffer);
-
-        if (this.logger) {
-          this.logger.info('音訊檔案已儲存:', audioPath);
-        }
-      } catch (err) {
-        if (this.logger) {
-          this.logger.error('儲存音訊檔案失敗:', err);
-        }
-        // 儲存失敗不影響轉錄流程
-      }
-
-      // 執行轉錄
-      const result = await this.sherpaManager.transcribeAudio(audioData, options);
-
-      // 將音訊路徑附加到結果
-      if (result && audioPath) {
-        result.audio_path = audioPath;
-      }
-
-      return result;
+      // 錄音的持久化由 sherpaManager.transcribeAudio 負責（persistAudioFile，
+      // 回傳 audio_path）。這裡不再另存一份 — 之前重複存檔導致每段錄音
+      // 落地兩份 WAV，且此處覆蓋 audio_path 讓另一份變成孤兒檔。
+      return await this.sherpaManager.transcribeAudio(audioData, options);
     });
 
     // 串流辨識 API (Zipformer Transducer)
