@@ -1060,7 +1060,7 @@ const SettingsPage = () => {
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-5">
                 <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">作者</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">由 <strong>切版職人</strong> 開發維護。</p>
-                <a href="https://github.com/Jeffrey0117/speakslow" target="_blank" rel="noreferrer"
+                <a href="https://github.com/Jeffrey0117/SpeakSlow" target="_blank" rel="noreferrer"
                    className="inline-block text-xs text-blue-500 hover:underline mt-2">
                   GitHub · Jeffrey0117/speakslow
                 </a>

@@ -13,7 +13,7 @@ export default function Nav() {
     <nav className="sticky top-0 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur border-b border-gray-200 dark:border-gray-700">
       <div className="container mx-auto px-4 h-14 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 font-bold text-gray-900 dark:text-white">
-          <img src="/speakslow/favicon.png" alt="" className="w-7 h-7 rounded-lg" />
+          <img src="/SpeakSlow/favicon.png" alt="" className="w-7 h-7 rounded-lg" />
           聲聲慢
         </Link>
         <div className="flex items-center gap-1 text-sm">
@@ -31,7 +31,7 @@ export default function Nav() {
             </Link>
           ))}
           <a
-            href="https://github.com/Jeffrey0117/speakslow/releases"
+            href="https://github.com/Jeffrey0117/SpeakSlow/releases"
             target="_blank"
             rel="noreferrer"
             className="ml-2 px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium transition-colors"

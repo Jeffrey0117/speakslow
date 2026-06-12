@@ -60,12 +60,12 @@ export default function WhyFreePage() {
         <p className="text-gray-600 dark:text-gray-300 mb-10 leading-relaxed">
           這是開源專案（Apache 2.0），改自同樣開源的 <a className="text-emerald-600 hover:underline" href="https://github.com/yan5xu/ququ" target="_blank" rel="noreferrer">ququ</a>。
           安裝檔放 GitHub Releases、官網放 GitHub Pages，全部免費託管，使用者再多也不會有帳單。
-          好用的話，到 <a className="text-emerald-600 hover:underline" href="https://github.com/Jeffrey0117/speakslow" target="_blank" rel="noreferrer">GitHub 給顆星星 ⭐</a> 就是最好的回報。
+          好用的話，到 <a className="text-emerald-600 hover:underline" href="https://github.com/Jeffrey0117/SpeakSlow" target="_blank" rel="noreferrer">GitHub 給顆星星 ⭐</a> 就是最好的回報。
         </p>
 
         <div className="text-center">
           <a
-            href="https://github.com/Jeffrey0117/speakslow/releases"
+            href="https://github.com/Jeffrey0117/SpeakSlow/releases"
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition-colors shadow-lg"

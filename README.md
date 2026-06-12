@@ -2,18 +2,20 @@
 
 <br/>
 
+<img src="assets/icon.png" width="110" alt="聲聲慢 logo">
+
 # 聲聲慢 (SpeakSlow)
 
 ### 讓每一個字，都被聽見
 
-**專為中文打造、最快的本地語音輸入 — 用講的取代打字，講完直接送給 AI。**
+**專為中文打造、最快的本地語音輸入。用講的取代打字，講完直接送給 AI。**
 
 <img src="https://img.shields.io/badge/license-Apache_2.0-blue.svg" alt="License">
 <img src="https://img.shields.io/badge/platform-Windows-0078D6" alt="Platform">
 <img src="https://img.shields.io/badge/ASR-sherpa--onnx-orange" alt="ASR">
 <img src="https://img.shields.io/badge/100%25-local-success" alt="Local">
 
-🌐 **[官方網站 / 介紹頁](https://jeffrey0117.github.io/speakslow/)**
+🌐 **[官方網站 / 介紹頁](https://jeffrey0117.github.io/SpeakSlow/)**
 
 </div>
 
@@ -29,9 +31,10 @@
 ## ✨ 它能做什麼
 
 ### 🎙️ 又快又準的本地辨識
-- **本地** sherpa-onnx **Paraformer（int8、非自回歸）** —— 講完約 **0.3 秒**貼上
+- **本地** sherpa-onnx **Paraformer（int8、非自回歸）**：講完約 **0.3 秒**貼上
 - **為中文 / 台灣優化**：簡轉繁用台灣標準字（「吃」不是「喫」）；中英混用（晶晶體）英文保留原文、不亂翻
-- **長音訊不幻聽**：超過 15 秒自動用 VAD 分段辨識，講一大段也完整
+- **長講邊錄邊算**：錄音中先解碼講完的段落，停止後不論講多長都約 0.2 秒出字（實測 101 秒長講快 8 倍）
+- **防幻聽**：不講話絕不會冒出文字，靜音與環境噪音直接拒絕解碼；長音訊自動 VAD 分段，講一大段也完整
 - **熱詞 / 自訂字典**：提升人名、產品、術語等專有名詞的準確度
 
 ### 🧹 乾淨的輸出（以下全部**不需要 AI**、純本地規則）
@@ -46,7 +49,7 @@
 - **貼到游標處、不污染剪貼簿**：貼上後自動還原你原本的剪貼簿內容
 - **面板一鍵 AI 開關**：不需要潤飾時直接關掉，省 API、要時再開
 
-### 🤖 AI 文字優化（可選 — 要更強再開）
+### 🤖 AI 文字優化（可選：要更強再開）
 - 接任何**相容 OpenAI** 的服務：DeepSeek / Gemini / OpenAI，或**本地 Ollama（全離線、免 API key）**
 - 內建為**台灣口語**調校的 prompt：潤飾、糾錯、整理排版
 - 一鍵預設，填上 key 即用
@@ -60,18 +63,21 @@
 ## 🔒 隱私：100% 本地，聲音不外流
 
 語音辨識在**你自己的電腦**跑，**聲音不上傳任何伺服器**。
-更進一步：AI 潤飾也能接**本機的 Ollama / LM Studio**（跑在你自己的顯卡上）—— 整條「講話 → 辨識 → 潤稿」都在本地，什麼都不離開你電腦。
+更進一步：AI 潤飾也能接**本機的 Ollama / LM Studio**（跑在你自己的顯卡上）：整條「講話 → 辨識 → 潤稿」都在本地，什麼都不離開你電腦。
 你的歷史與錄音存在本機資料庫，跟程式碼分開，**不會被開源出去**。
 
 ## 🚀 快速開始
 
-> 📦 一鍵安裝檔（.exe）施工中 —— 之後不用裝 Python / Node 也能用。
+### 一般使用者：下載安裝檔
 
-開發者從原始碼執行（需 **Node.js 18+**、**Python 3.x**）：
+到 [Releases](https://github.com/Jeffrey0117/SpeakSlow/releases) 下載最新的 `SpeakSlow-Setup-x.x.x.exe`，雙擊安裝即可。
+不需要 Python / Node，AI 模型已內建，裝完就能用，全程離線。
+
+### 開發者：從原始碼執行（需 **Node.js 18+**、**Python 3.x**）：
 
 ```bash
-git clone https://github.com/Jeffrey0117/speakslow.git
-cd speakslow
+git clone https://github.com/Jeffrey0117/SpeakSlow.git
+cd SpeakSlow
 
 # Node 依賴
 npm install
@@ -93,12 +99,12 @@ npm run dev
 ## 🛠️ 技術棧
 
 - **前端**：React 19、Tailwind CSS、Vite ｜ **桌面端**：Electron
-- **語音辨識（本地）**：[sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) — Paraformer（離線）、Whisper（精準）、Silero VAD、ct-transformer（標點）、Zipformer（串流）
+- **語音辨識（本地）**：[sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx)：Paraformer（離線）、Whisper（精準）、Silero VAD、ct-transformer（標點）、Zipformer（串流）
 - **資料庫**：better-sqlite3 ｜ **全域熱鍵**：uiohook-napi
 
 ## 🗺️ Roadmap
 
-- [ ] 一鍵 Windows 安裝檔（.exe）
+- [x] 一鍵 Windows 安裝檔（.exe）
 - [ ] 內建本地 LLM 一鍵設定
 - [ ] 用音量/音高判斷問號、驚嘆號（韻律標點）
 
@@ -110,9 +116,9 @@ npm run dev
 
 ## 🙏 致謝
 
-- [ququ (yan5xu/ququ)](https://github.com/yan5xu/ququ) — 原始專案，本專案在其基礎上改用 sherpa-onnx 引擎並重做 UI 與互動。
-- [sherpa-onnx (k2-fsa)](https://github.com/k2-fsa/sherpa-onnx) — 本地語音辨識引擎。
-- [Wispr Flow](https://wisprflow.ai/) — 產品概念的啟發。
+- [ququ (yan5xu/ququ)](https://github.com/yan5xu/ququ)：原始專案，本專案在其基礎上改用 sherpa-onnx 引擎並重做 UI 與互動。
+- [sherpa-onnx (k2-fsa)](https://github.com/k2-fsa/sherpa-onnx)：本地語音辨識引擎。
+- [Wispr Flow](https://wisprflow.ai/)：產品概念的啟發。
 
 ## 📄 授權
 

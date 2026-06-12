@@ -67,14 +67,14 @@ export default function StoryPage() {
             <ul className="space-y-2">
               <li>• 串流模式：字邊講邊出現（評估中，精度不能妥協）</li>
               <li>• 韻律標點：用音量/音高判斷「？」和「！」</li>
-              <li>• 你的想法：<a className="text-emerald-600 hover:underline" href="https://github.com/Jeffrey0117/speakslow/issues" target="_blank" rel="noreferrer">開個 issue 聊聊</a></li>
+              <li>• 你的想法：<a className="text-emerald-600 hover:underline" href="https://github.com/Jeffrey0117/SpeakSlow/issues" target="_blank" rel="noreferrer">開個 issue 聊聊</a></li>
             </ul>
           </section>
         </div>
 
         <div className="text-center mt-12">
           <a
-            href="https://github.com/Jeffrey0117/speakslow/releases"
+            href="https://github.com/Jeffrey0117/SpeakSlow/releases"
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition-colors shadow-lg"

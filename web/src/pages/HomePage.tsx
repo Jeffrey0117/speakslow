@@ -2,7 +2,7 @@ import { Github, Download } from 'lucide-react'
 import screenshot from '../assets/screenshot.png'
 import Nav from '../components/Nav'
 
-const REPO = 'https://github.com/Jeffrey0117/speakslow'
+const REPO = 'https://github.com/Jeffrey0117/SpeakSlow'
 
 export default function HomePage() {
   return (

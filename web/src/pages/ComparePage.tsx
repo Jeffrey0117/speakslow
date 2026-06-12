@@ -75,7 +75,7 @@ export default function ComparePage() {
 
         <div className="text-center">
           <a
-            href="https://github.com/Jeffrey0117/speakslow/releases"
+            href="https://github.com/Jeffrey0117/SpeakSlow/releases"
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition-colors shadow-lg"
