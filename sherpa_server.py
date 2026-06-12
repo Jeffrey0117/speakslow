@@ -1221,23 +1221,35 @@ class SherpaServer:
             samples, sample_rate = self._read_wave_file(audio_path)
             duration = len(samples) / sample_rate
 
+            # 邊錄邊算結算：必須在「任何其他 self.vad 操作」之前！
+            # 防幻聽閘門會 vad.reset()，若先跑會清掉 precog 尚未 flush 的
+            # 最後一段語音 → 使用者的最後一句話消失（真實踩過的雷）。
+            # precog 的段落本身就是 VAD 切出來的，天然防幻聽，不需再過閘門。
+            precog_result = None
+            if options.get("use_precog") and not use_whisper:
+                precog_result = self.precog_finalize()
+            else:
+                self.precog_abort()  # 清掉殘留會話
+
             # 防幻聽閘門（絕對禁止對「沒有語音」的音訊解碼）：
             # Paraformer 對純靜音/環境噪音會腦補出文字，且下面的音量正規化
             # 會把微弱噪音放大最多 5 倍助長幻聽。先用 VAD 確認有語音，
             # 完全沒有 → 直接回空字串、跳過解碼。
-            _gate_segs = self._vad_segment_list(samples)
-            if self.vad is not None and not _gate_segs:
-                logger.info("VAD 未偵測到語音（純靜音/噪音），回傳空結果，拒絕解碼以防幻聽")
-                return {
-                    "success": True,
-                    "text": "",
-                    "raw_text": "",
-                    "confidence": 1.0,
-                    "duration": duration,
-                    "language": "zh-TW",
-                    "model_type": "sherpa-onnx",
-                    "no_speech": True,
-                }
+            _gate_segs = None
+            if precog_result is None:
+                _gate_segs = self._vad_segment_list(samples)
+                if self.vad is not None and not _gate_segs:
+                    logger.info("VAD 未偵測到語音（純靜音/噪音），回傳空結果，拒絕解碼以防幻聽")
+                    return {
+                        "success": True,
+                        "text": "",
+                        "raw_text": "",
+                        "confidence": 1.0,
+                        "duration": duration,
+                        "language": "zh-TW",
+                        "model_type": "sherpa-onnx",
+                        "no_speech": True,
+                    }
 
             # 只做音量正規化，不做降噪和 VAD（平衡速度和準確度）
             max_val = np.max(np.abs(samples))
@@ -1251,14 +1263,6 @@ class SherpaServer:
             # Paraformer 是為短句設計的，整段塞太長會幻聽/吃字；分段可根治。
             # 短音訊維持原本單次解碼（零回歸）。
             LONG_AUDIO_SEC = 15.0
-
-            # 邊錄邊算：若 renderer 在錄音中已餵過音訊，直接取用預解碼結果
-            #（前面的段落早就算完，這裡只等尾段）。Whisper 模式不適用。
-            precog_result = None
-            if options.get("use_precog") and not use_whisper:
-                precog_result = self.precog_finalize()
-            else:
-                self.precog_abort()  # 清掉殘留會話
 
             segments = None
             if precog_result is None and duration > LONG_AUDIO_SEC:
