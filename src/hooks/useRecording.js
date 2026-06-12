@@ -313,6 +313,13 @@ export const useRecording = (modelStatus) => {
         if (transcriptionResult.success) {
           let raw_text = transcriptionResult.text;
 
+          // 防幻聽第二道防線：空結果（純靜音/噪音）不貼上、不存檔、不跑 AI
+          if (!raw_text || !raw_text.trim()) {
+            console.log('未偵測到語音，跳過貼上與儲存');
+            processingRef.current.isProcessingAudio = false;
+            return;
+          }
+
           // 检查是否需要转换为繁体中文
           const targetLang = await window.electronAPI.getSetting('language', 'zh-TW');
           const shouldConvert = await window.electronAPI.getSetting('convert_transcription', true);

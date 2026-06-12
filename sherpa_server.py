@@ -1221,6 +1221,24 @@ class SherpaServer:
             samples, sample_rate = self._read_wave_file(audio_path)
             duration = len(samples) / sample_rate
 
+            # 防幻聽閘門（絕對禁止對「沒有語音」的音訊解碼）：
+            # Paraformer 對純靜音/環境噪音會腦補出文字，且下面的音量正規化
+            # 會把微弱噪音放大最多 5 倍助長幻聽。先用 VAD 確認有語音，
+            # 完全沒有 → 直接回空字串、跳過解碼。
+            _gate_segs = self._vad_segment_list(samples)
+            if self.vad is not None and not _gate_segs:
+                logger.info("VAD 未偵測到語音（純靜音/噪音），回傳空結果，拒絕解碼以防幻聽")
+                return {
+                    "success": True,
+                    "text": "",
+                    "raw_text": "",
+                    "confidence": 1.0,
+                    "duration": duration,
+                    "language": "zh-TW",
+                    "model_type": "sherpa-onnx",
+                    "no_speech": True,
+                }
+
             # 只做音量正規化，不做降噪和 VAD（平衡速度和準確度）
             max_val = np.max(np.abs(samples))
             if max_val > 0 and max_val < 0.1:
@@ -1244,7 +1262,11 @@ class SherpaServer:
 
             segments = None
             if precog_result is None and duration > LONG_AUDIO_SEC:
-                segments = self._vad_segment_list(speech_samples)
+                # 重用防幻聽閘門的切段（無增益時內容相同）；有套增益才重掃
+                segments = (
+                    _gate_segs if speech_samples is samples
+                    else self._vad_segment_list(speech_samples)
+                )
 
             if precog_result is not None:
                 text, _precog_dur = precog_result

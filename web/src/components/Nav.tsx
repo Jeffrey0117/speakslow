@@ -31,12 +31,12 @@ export default function Nav() {
             </Link>
           ))}
           <a
-            href="https://github.com/Jeffrey0117/speakslow"
+            href="https://github.com/Jeffrey0117/speakslow/releases"
             target="_blank"
             rel="noreferrer"
-            className="ml-2 px-3 py-1.5 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="ml-2 px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium transition-colors"
           >
-            GitHub
+            開始下載
           </a>
         </div>
       </div>
