@@ -399,13 +399,26 @@ class IPCHandlers {
       }
     });
 
-    // 音訊檔案操作
+    // 音訊檔案操作。
+    // 安全：路徑來自渲染層（可能被 XSS 污染），必須限制在 userData/audio 內，
+    // 否則 get-audio-file 等於「任意檔案讀取」、save-audio-file 等於「任意檔案複製」。
+    const resolveAudioPath = (p) => {
+      if (!p || typeof p !== "string") return null;
+      const audioRoot = path.join(
+        require("electron").app.getPath("userData"),
+        "audio"
+      );
+      const resolved = path.resolve(p);
+      return resolved.startsWith(audioRoot + path.sep) ? resolved : null;
+    };
+
     ipcMain.handle("get-audio-file", async (event, audioPath) => {
       try {
-        if (!audioPath || !fs.existsSync(audioPath)) {
+        const safePath = resolveAudioPath(audioPath);
+        if (!safePath || !fs.existsSync(safePath)) {
           return { success: false, error: '音訊檔案不存在' };
         }
-        const buffer = fs.readFileSync(audioPath);
+        const buffer = fs.readFileSync(safePath);
         return { success: true, data: buffer.toString('base64'), mimeType: 'audio/wav' };
       } catch (err) {
         return { success: false, error: err.message };
@@ -414,10 +427,15 @@ class IPCHandlers {
 
     ipcMain.handle("save-audio-file", async (event, audioPath, savePath) => {
       try {
-        if (!audioPath || !fs.existsSync(audioPath)) {
+        // 來源限制在 audio 目錄；目的地由系統存檔對話框產生（使用者明確選擇）
+        const safeSource = resolveAudioPath(audioPath);
+        if (!safeSource || !fs.existsSync(safeSource)) {
           return { success: false, error: '來源音訊檔案不存在' };
         }
-        fs.copyFileSync(audioPath, savePath);
+        if (!savePath || typeof savePath !== "string") {
+          return { success: false, error: '無效的儲存路徑' };
+        }
+        fs.copyFileSync(safeSource, savePath);
         return { success: true, path: savePath };
       } catch (err) {
         return { success: false, error: err.message };
@@ -1209,12 +1227,22 @@ class IPCHandlers {
       return { success: true, path: "" };
     });
 
-    // 文件系统相关
+    // 文件系统相关。
+    // 安全：show-item-in-folder 限制在 userData 內；open-external 只允許 https。
     ipcMain.handle("show-item-in-folder", (event, fullPath) => {
-      require("electron").shell.showItemInFolder(fullPath);
+      if (!fullPath || typeof fullPath !== "string") return;
+      const userDataRoot = require("electron").app.getPath("userData");
+      const resolved = path.resolve(fullPath);
+      if (!resolved.startsWith(userDataRoot + path.sep)) return;
+      require("electron").shell.showItemInFolder(resolved);
     });
 
     ipcMain.handle("open-external", (event, url) => {
+      try {
+        if (new URL(url).protocol !== "https:") return;
+      } catch (e) {
+        return;
+      }
       require("electron").shell.openExternal(url);
     });
 
@@ -2010,10 +2038,6 @@ ${text}
     }
   }
 
-  // 清理处理器
-  removeAllHandlers() {
-    ipcMain.removeAllListeners();
-  }
 }
 
 module.exports = IPCHandlers;
