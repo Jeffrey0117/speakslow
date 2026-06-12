@@ -635,6 +635,16 @@ class SherpaManager {
       throw new Error("Sherpa 服務器未就緒");
     }
 
+    // 序列化佇列：stdin/stdout 單一管道、回應沒有請求 id，
+    // 一次只能在飛一個請求 —— 否則併發時（串流 feed + 狀態查詢）
+    // A 的回應會被同時掛著 listener 的 B 搶走，造成回應錯配。
+    const run = () => this._dispatchServerCommand(command);
+    const result = (this._commandQueue || Promise.resolve()).then(run, run);
+    this._commandQueue = result.catch(() => {}); // 佇列不因單一失敗而中斷
+    return result;
+  }
+
+  _dispatchServerCommand(command) {
     return new Promise((resolve, reject) => {
       let responseReceived = false;
 
