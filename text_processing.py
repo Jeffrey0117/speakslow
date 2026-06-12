@@ -239,19 +239,51 @@ def format_lists(text):
     return (intro + '：\n' + body) if intro else body
 
 
+# 講英文時的 uh/um/ah 常被雙語模型聽成這些中文語氣字 — 英文為主的行裡視為 filler
+_EN_FILLER_CJK = set('啊嗯呃哦喔欸唉誒呀嘛')
+
+
+def smart_join(parts):
+    """拼接多段辨識結果：兩段交界若都是英數字元，補一個空格
+    （中文直接相連；英文不補會黏成 youtranscribe 這種字）。"""
+    out = ''
+    for p in parts:
+        if not p:
+            continue
+        if out and out[-1].isascii() and out[-1].isalnum() \
+                and p[0].isascii() and p[0].isalnum():
+            out += ' '
+        out += p
+    return out
+
+
+def _is_english_dominant(line):
+    """判斷一行是否「英文為主」：沒有中日韓字元，或僅夾雜少量語氣 filler
+    （講英文時的 uh/ah 被聽成 啊/嗯）。真正的中英混雜句回傳 False。"""
+    cjk = [ch for ch in line if _is_cjk(ch)]
+    ascii_letters = sum(1 for ch in line if ch.isascii() and ch.isalpha())
+    if not cjk:
+        return ascii_letters > 0
+    return (
+        ascii_letters >= 12
+        and len(cjk) <= 1 + ascii_letters // 15
+        and all(ch in _EN_FILLER_CJK for ch in cjk)
+    )
+
+
 def localize_english_punct(text):
-    """純英文行的「去中文腔」：標點模型對英文也會輸出全形標點
-    （hello，how are you？），這裡把不含中日韓字元的行轉成英文慣例：
-    半形標點 + 標點後空格 + 句首大寫 + 獨立 i → I。
-    中英混雜的行保留中文標點（那是中文句子裡夾英文，全形才對）。"""
+    """英文為主的行「去中文腔」：標點模型對英文也會輸出全形標點
+    （hello，how are you？），轉成英文慣例：半形標點 + 標點後空格 +
+    句首大寫 + 獨立 i → I；夾雜的中文語氣 filler（啊/嗯）一併清除。
+    真正的中英混雜行保留中文標點（中文句子夾英文，全形才對）。"""
     if not text:
         return text
     out_lines = []
     for line in text.split('\n'):
-        if not line or any(_is_cjk(ch) for ch in line):
+        if not line or not _is_english_dominant(line):
             out_lines.append(line)
             continue
-        l = line
+        l = re.sub('[' + ''.join(_EN_FILLER_CJK) + ']+', ' ', line)  # filler → 空格
         for a, b in [('，', ', '), ('。', '. '), ('？', '? '), ('！', '! '),
                      ('：', ': '), ('；', '; '), ('、', ', ')]:
             l = l.replace(a, b)

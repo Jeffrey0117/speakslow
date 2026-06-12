@@ -23,6 +23,7 @@ from text_processing import (
     apply_punct_rules,
     format_lists,
     localize_english_punct,
+    smart_join,
 )
 
 # 設置日誌
@@ -615,7 +616,8 @@ class SherpaServer:
             p["queue"].put(None)
             if p["seg_count"] == 0:
                 return None
-            text = "".join(t for _, t in sorted(p["results"]) if t)
+            # smart_join：英文段落交界補空格（避免 you+transcribe 黏成一字）
+            text = smart_join(t for _, t in sorted(p["results"]))
             duration = p["fed_samples"] / 16000.0
             logger.info(f"precog 完成：{p['seg_count']} 段、{duration:.1f}s 音訊")
             return (text, duration)
@@ -1282,7 +1284,7 @@ class SherpaServer:
                 # intra-op 8 執行緒已吃滿核心，沒有閒置算力可平行。
                 logger.info(f"長音訊分段辨識：{duration:.1f}s -> {len(segments)} 段")
                 raw_parts = [self._transcribe_samples(seg, sample_rate, recognizer) for seg in segments]
-                text = "".join(p for p in raw_parts if p)
+                text = smart_join(raw_parts)
             else:
                 # 單次解碼：用逐字時間戳在「停頓」處斷行（韻律斷句，免 AI）
                 stream = recognizer.create_stream()
