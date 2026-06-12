@@ -409,7 +409,7 @@ export default function App() {
     stopRecording: stopRecordingNormal,
     cancelRecording: cancelRecordingNormal,
     error: recordingErrorNormal
-  } = useRecording();
+  } = useRecording(modelStatus); // 共用 App 的 modelStatus 實例（避免雙重輪詢）
 
   // 串流錄音模式
   const {

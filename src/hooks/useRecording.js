@@ -1,12 +1,13 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { useModelStatus } from './useModelStatus';
 import { convertText } from '../i18n';
 
 /**
  * 录音功能Hook
  * 提供录音、停止录音、音频处理等功能
+ * @param modelStatus 由呼叫端（App）傳入共用的 useModelStatus 實例 —
+ *   不在這裡自建，避免兩套 3 秒輪詢與重複事件訂閱同時跑。
  */
-export const useRecording = () => {
+export const useRecording = (modelStatus) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
@@ -26,9 +27,6 @@ export const useRecording = () => {
 
   // 麥克風權限狀態快取
   const micPermissionRef = useRef('unknown');
-
-  // 使用模型状态Hook
-  const modelStatus = useModelStatus();
 
   // 預查詢麥克風權限狀態
   useEffect(() => {
