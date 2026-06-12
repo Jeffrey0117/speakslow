@@ -670,8 +670,10 @@ class SherpaManager {
         throw new Error(result.error || "轉錄失敗");
       }
 
-      // 保存原始錄音（永不丟失），供日後「重新辨識」使用
-      const persistedAudioPath = await this.persistAudioFile(tempAudioPath);
+      // 保存原始錄音（永不丟失），供日後「重新辨識」使用。
+      // 路徑先定好、複製放背景做（不擋住結果回傳 → 貼上更快）；
+      // 複製完成後才刪暫存檔。
+      const persistedAudioPath = this._persistAudioInBackground(tempAudioPath);
 
       return {
         success: true,
@@ -682,8 +684,32 @@ class SherpaManager {
         duration: result.duration || 0,
         audio_path: persistedAudioPath,
       };
-    } finally {
+    } catch (error) {
       await this.cleanupTempFile(tempAudioPath);
+      throw error;
+    }
+  }
+
+  // 背景持久化錄音：立刻回傳目的路徑，複製與暫存清理非同步完成。
+  _persistAudioInBackground(tempAudioPath) {
+    try {
+      const userDataPath = require("electron").app.getPath("userData");
+      const audioDir = path.join(userDataPath, "audio");
+      const destPath = path.join(audioDir, `rec_${crypto.randomUUID()}.wav`);
+      (async () => {
+        try {
+          await fs.promises.mkdir(audioDir, { recursive: true });
+          await fs.promises.copyFile(tempAudioPath, destPath);
+        } catch (e) {
+          this.logger.warn && this.logger.warn("保存錄音檔失敗:", e?.message || e);
+        } finally {
+          this.cleanupTempFile(tempAudioPath).catch(() => {});
+        }
+      })();
+      return destPath;
+    } catch (e) {
+      this.cleanupTempFile(tempAudioPath).catch(() => {});
+      return null;
     }
   }
 
@@ -760,19 +786,6 @@ class SherpaManager {
   }
 
   // 把暫存 WAV 複製到永久目錄（userData/audio），回傳路徑；失敗回 null 不影響辨識
-  async persistAudioFile(tempAudioPath) {
-    try {
-      const userDataPath = require("electron").app.getPath("userData");
-      const audioDir = path.join(userDataPath, "audio");
-      await fs.promises.mkdir(audioDir, { recursive: true });
-      const destPath = path.join(audioDir, `rec_${crypto.randomUUID()}.wav`);
-      await fs.promises.copyFile(tempAudioPath, destPath);
-      return destPath;
-    } catch (e) {
-      this.logger.warn && this.logger.warn("保存錄音檔失敗:", e?.message || e);
-      return null;
-    }
-  }
 
   async checkStatus() {
     try {
