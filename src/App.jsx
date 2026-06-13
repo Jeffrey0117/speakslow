@@ -1179,7 +1179,7 @@ export default function App() {
             {miniFlash ? miniFlash.message
               : isRecording ? (commandMode ? t('panel.commandListening') : t('panel.recordingIndicator'))
               : (isRecordingProcessing || isOptimizing) ? t('app.processing')
-              : commandMode ? t('panel.commandModeBadge')
+              : commandMode ? t('panel.commandListening')
               : t('panel.miniIdle')}
           </div>
           <div className="text-[11px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5 overflow-hidden">

@@ -21,6 +21,9 @@ const BUILTIN_COMMANDS = [
   { kind: "translate", tl: "en", lang: "en", label: "翻成英文" },
   { kind: "translate", tl: "zh-TW", lang: "zh", label: "翻成中文" },
   { kind: "translate", tl: "ja", lang: "ja", label: "翻成日文" },
+  // AI 指令（走既有 AI 金鑰，會用到額度；翻譯走免費 Google，這些則需要真智慧）
+  { kind: "ai", aiMode: "condense", label: "濃縮" },
+  { kind: "ai", aiMode: "extract_vocab", label: "抓單字" },
 ];
 
 // 正規化辨識結果：去空白、去標點、轉小寫，方便關鍵詞比對
@@ -55,6 +58,14 @@ function matchCommand(text) {
     if (maxIdx === enIdx) return find((c) => c.lang === "en");
     if (maxIdx === jaIdx) return find((c) => c.lang === "ja");
     return find((c) => c.lang === "zh");
+  }
+
+  // 3) AI 指令（關鍵詞）
+  if (norm.includes("濃縮") || norm.includes("精簡") || norm.includes("縮短") || norm.includes("精煉")) {
+    return find((c) => c.aiMode === "condense");
+  }
+  if (norm.includes("單字") || norm.includes("生字") || norm.includes("詞彙") || norm.includes("單詞")) {
+    return find((c) => c.aiMode === "extract_vocab");
   }
 
   return null;
@@ -134,6 +145,16 @@ async function runVoiceCommand(ctx, text) {
   if (cmd.kind === "translate") {
     // 免費 Google 翻譯，不碰 AI 額度
     return await applyToSelection(ctx, cmd.label, (sel) => translateFree(sel, cmd.tl));
+  }
+
+  if (cmd.kind === "ai") {
+    // 走既有 AI 金鑰（會用到額度）
+    if (!ctx.aiProcessor) {
+      return { matched: true, success: false, label: cmd.label, error: "AI 未設定" };
+    }
+    return await applyToSelection(ctx, cmd.label, (sel) =>
+      ctx.aiProcessor.processTextWithAI(sel, cmd.aiMode)
+    );
   }
 
   return { matched: false };
