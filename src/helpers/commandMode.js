@@ -82,45 +82,6 @@ const BUILTIN_COMMANDS = [
   { kind: "key", keys: "^a{DEL}", label: "全部清除", triggers: ["全部刪除", "全部清掉", "全部清除", "清空"] },
 ];
 
-// 語音表情符號：講表情名 → 插入 emoji（key 用正規化後的小寫）
-const EMOJI_MAP = {
-  "火焰": "🔥", "火": "🔥", "燃燒": "🔥",
-  "哭": "😭", "大哭": "😭", "哭哭": "😢", "想哭": "😢",
-  "笑": "😂", "大笑": "🤣", "哈哈": "😄", "微笑": "🙂", "笑死": "🤣",
-  "哭笑不得": "😂", "無奈": "😅", "尷尬": "😅",
-  "愛心": "❤️", "愛": "❤️", "紅心": "❤️",
-  "愛你": "😍", "花痴": "😍", "戀愛": "😍",
-  "讚": "👍", "比讚": "👍", "棒": "👍", "good": "👍",
-  "ok": "👌", "好的": "👌",
-  "生氣": "😡", "憤怒": "😡", "怒": "😡",
-  "驚訝": "😮", "嚇到": "😱", "驚嚇": "😱",
-  "思考": "🤔", "想一下": "🤔",
-  "派對": "🎉", "慶祝": "🎉", "灑花": "🎉", "撒花": "🎉",
-  "酷": "😎", "墨鏡": "😎",
-  "睡覺": "😴", "想睡": "😴", "累": "😩",
-  "噁心": "🤢", "嘔吐": "🤮",
-  "骷髏": "💀",
-  "便便": "💩", "大便": "💩",
-  "錢": "💰", "金錢": "💰",
-  "禮物": "🎁",
-  "拜託": "🙏", "拜託拜託": "🙏", "祈禱": "🙏", "感謝": "🙏",
-  "鼓掌": "👏", "拍手": "👏",
-  "揮手": "👋", "嗨": "👋", "掰掰": "👋",
-  "星星": "⭐", "閃亮": "✨", "亮晶晶": "✨",
-  "問號": "❓", "驚嘆號": "❗",
-  "勾勾": "✅", "打勾": "✅", "正確": "✅",
-  "叉叉": "❌", "錯誤": "❌", "不行": "❌",
-};
-
-function lookupEmoji(norm) {
-  if (!norm) return null;
-  // 必須帶「表情 / 符號 / emoji」後綴才當表情輸入，避免「火焰」這種被當文字的詞被誤吃。
-  // 沒後綴 → 不是表情；有後綴但名字沒對應（瘋狗表情）→ 也回 null，交給後面處理。
-  const m = norm.match(/^(.+?)的?(表情符號|表情|符號|emoji)$/i);
-  if (!m) return null;
-  return EMOJI_MAP[m[1]] || null;
-}
-
 // 正規化辨識結果：去空白、去標點、轉小寫，方便關鍵詞比對
 function normalize(text) {
   return (text || "")
@@ -187,10 +148,6 @@ function matchCommand(text) {
       if (norm.includes(normalize(trig))) return cmd;
     }
   }
-
-  // 5) 語音表情符號：講表情名 → 插入 emoji
-  const emoji = lookupEmoji(norm);
-  if (emoji) return { kind: "emoji", emoji, label: emoji };
 
   return null;
 }
@@ -416,16 +373,6 @@ async function runSingleCommand(ctx, text) {
     return r.success
       ? { matched: true, success: true, label: cmd.label }
       : { matched: true, success: false, label: cmd.label, error: r.error };
-  }
-
-  if (cmd.kind === "emoji") {
-    // 語音表情：直接把 emoji 貼到游標處（不需選取）
-    try {
-      await ctx.clipboardManager.pasteText(cmd.emoji);
-      return { matched: true, success: true, label: cmd.emoji };
-    } catch (e) {
-      return { matched: true, success: false, label: cmd.emoji, error: "插入失敗：" + e.message };
-    }
   }
 
   if (cmd.kind === "key") {

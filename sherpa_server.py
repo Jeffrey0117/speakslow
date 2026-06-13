@@ -23,6 +23,7 @@ from text_processing import (
     clean_transcript,
     apply_punct_rules,
     strip_short_trailing_period,
+    apply_emoji,
     format_lists,
     localize_english_punct,
     smart_join,
@@ -1193,7 +1194,7 @@ class SherpaServer:
             return {
                 "success": True,
                 "session_id": session_id,
-                "final_text": to_traditional(strip_short_trailing_period(localize_english_punct(format_lists(apply_punct_rules(clean_transcript(text_with_punc)))))),
+                "final_text": apply_emoji(to_traditional(strip_short_trailing_period(localize_english_punct(format_lists(apply_punct_rules(clean_transcript(text_with_punc))))))),
                 "raw_text": to_traditional(raw_text),
                 "duration": round(duration, 2),
                 "process_time": round(elapsed, 2),
@@ -1378,7 +1379,7 @@ class SherpaServer:
 
             return {
                 "success": True,
-                "text": to_traditional(strip_short_trailing_period(text_with_punc)),
+                "text": apply_emoji(to_traditional(strip_short_trailing_period(text_with_punc))),
                 "raw_text": to_traditional(text),  # 保留原始無標點文本
                 "confidence": 0.95,  # sherpa-onnx 不提供置信度，給個默認值
                 "duration": duration,
