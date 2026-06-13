@@ -108,10 +108,10 @@ export default function TranscribeModal({ onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-white dark:bg-gray-900" style={{ WebkitAppRegion: "no-drag" }}>
-      {/* 標題列 */}
-      <div className="flex items-center justify-between px-4 h-12 border-b border-gray-200 dark:border-gray-700 shrink-0">
+      {/* 標題列（可拖曳移動視窗） */}
+      <div className="flex items-center justify-between px-4 h-12 border-b border-gray-200 dark:border-gray-700 shrink-0" style={{ WebkitAppRegion: "drag" }}>
         <span className="font-bold text-gray-900 dark:text-white">{t("transcribe.title")}</span>
-        <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800">
+        <button onClick={onClose} style={{ WebkitAppRegion: "no-drag" }} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
       </div>
@@ -125,11 +125,16 @@ export default function TranscribeModal({ onClose }) {
             onDrop={onDrop}
             className="shrink-0 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl py-6 text-center cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10 transition-colors"
           >
-            <div className="text-3xl mb-1">🎧</div>
+            <div className="text-3xl mb-1">🎬</div>
             <div className="text-sm text-gray-600 dark:text-gray-300">{t("transcribe.drop")}</div>
             <div className="text-xs text-gray-400 mt-1">{t("transcribe.formats")}</div>
-            {status === "error" && <div className="text-xs text-red-500 mt-2">{t("transcribe.failed")}：{errMsg}</div>}
-            <input ref={fileInputRef} type="file" accept="audio/*,.mp3,.wav,.m4a,.ogg,.flac" className="hidden" onChange={onPick} />
+            {status === "error" && (
+              <div className="mt-2">
+                <div className="text-xs text-red-500">{t("transcribe.failed")}：{errMsg}</div>
+                <div className="text-xs text-gray-400 mt-1">{t("transcribe.failedHint")}</div>
+              </div>
+            )}
+            <input ref={fileInputRef} type="file" accept="video/*,audio/*,.mp4,.mov,.mkv,.webm,.mp3,.wav,.m4a,.ogg,.flac" className="hidden" onChange={onPick} />
           </div>
         ) : (
           <div className="shrink-0">

@@ -2,11 +2,12 @@
 export default {
   transcribe: {
     title: 'Transcript',
-    drop: 'Drop an audio file, or click to choose',
-    formats: 'mp3 / wav / m4a / ogg / flac',
+    drop: 'Drop a video or audio file, or click to choose',
+    formats: 'Video mp4 / mov / webm, audio mp3 / wav / m4a / ogg / flac',
     decoding: 'Decoding…',
     empty: 'The transcript will appear here (editable)',
     failed: 'Failed',
+    failedHint: "If a video won't decode, convert it to mp4 or extract the audio as mp3 first",
     stop: 'Stop',
     another: 'Another file',
     copy: 'Copy',

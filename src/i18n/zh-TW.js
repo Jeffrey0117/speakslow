@@ -2,11 +2,12 @@
 export default {
   transcribe: {
     title: '逐字稿',
-    drop: '拖音檔進來，或點此選擇',
-    formats: '支援 mp3 / wav / m4a / ogg / flac',
+    drop: '拖影片或音檔進來，或點此選擇',
+    formats: '影片 mp4 / mov / webm，音檔 mp3 / wav / m4a / ogg / flac',
     decoding: '解碼中…',
     empty: '逐字稿會出現在這裡（可直接編輯）',
     failed: '失敗',
+    failedHint: '若影片無法解碼，請先轉成 mp4 或把音軌抽成 mp3 再試',
     stop: '停止',
     another: '換一個檔',
     copy: '複製',
