@@ -204,6 +204,16 @@ function keyTriggerAtStart(seg) {
   return best;
 }
 
+// 結尾常見的「尾段動作」：念出來 / 複製（接在轉換後面，常沒講連接詞就黏上）
+const TAIL_TRIGGERS = ["念出來", "唸出來", "讀出來", "念給我聽", "唸給我聽", "朗讀", "複製", "拷貝"];
+function tailTriggerAtEnd(seg) {
+  let best = null;
+  for (const t of TAIL_TRIGGERS) {
+    if (seg.endsWith(t) && (!best || t.length > best.length)) best = t;
+  }
+  return best;
+}
+
 // 指令流：把一句話拆成多段依序執行。
 // 1) 先依連接詞 / 標點 / 空白粗拆（「全選然後翻成英文」）。
 // 2) 再對每段「貪婪剝掉開頭的按鍵指令」，這樣就算沒講連接詞也能拆
@@ -216,17 +226,27 @@ function splitCommands(text) {
     .filter(Boolean);
   const out = [];
   for (let seg of rough) {
-    let guard = 0;
-    while (seg && guard++ < 12) {
+    // 1) 剝開頭的按鍵指令（全選翻成英文 → 全選 + 翻成英文）
+    let g1 = 0;
+    while (seg && g1++ < 12) {
       const trig = keyTriggerAtStart(seg);
       if (trig && seg.length > trig.length) {
         out.push(trig);
         seg = seg.slice(trig.length).trim();
-      } else {
-        out.push(seg);
-        seg = "";
-      }
+      } else break;
     }
+    // 2) 剝結尾的尾段動作（翻譯念出來 → 翻譯 + 念出來；可疊多個：翻譯念出來複製）
+    const tails = [];
+    let g2 = 0;
+    while (seg && g2++ < 6) {
+      const tl = tailTriggerAtEnd(seg);
+      if (tl && seg.length > tl.length) {
+        tails.unshift(tl);
+        seg = seg.slice(0, seg.length - tl.length).trim();
+      } else break;
+    }
+    if (seg) out.push(seg);
+    for (const tl of tails) out.push(tl);
   }
   return out;
 }
