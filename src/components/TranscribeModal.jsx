@@ -26,6 +26,26 @@ function pcmToWav(float32, srcRate, dstRate = 16000) {
   return new Uint8Array(buf);
 }
 
+// 秒數 -> SRT 時間格式 00:00:00,000
+function secToSrt(sec) {
+  const ms = Math.max(0, Math.round(sec * 1000));
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  const msr = ms % 1000;
+  const p = (n, w = 2) => String(n).padStart(w, "0");
+  return `${p(h)}:${p(m)}:${p(s)},${p(msr, 3)}`;
+}
+
+// segments [{start,end,text}] -> SRT 字串（重新編號）
+function buildSrt(segs) {
+  return segs
+    .map((g, i) => `${i + 1}\n${secToSrt(g.start)} --> ${secToSrt(g.end)}\n${g.text}`)
+    .join("\n\n") + (segs.length ? "\n" : "");
+}
+
+const CHUNK_SEC = 60;
+
 export default function TranscribeModal({ onClose }) {
   const { t } = useTranslation();
   const [status, setStatus] = React.useState("idle"); // idle|decoding|transcribing|done|error
@@ -33,8 +53,11 @@ export default function TranscribeModal({ onClose }) {
   const [transcript, setTranscript] = React.useState("");
   const [fileName, setFileName] = React.useState("");
   const [errMsg, setErrMsg] = React.useState("");
+  const [mode, setMode] = React.useState("txt"); // txt | srt
   const cancelRef = React.useRef(false);
   const fileInputRef = React.useRef(null);
+  const modeRef = React.useRef("txt");
+  modeRef.current = mode;
 
   const run = React.useCallback(async (file) => {
     if (!file) return;
@@ -56,19 +79,26 @@ export default function TranscribeModal({ onClose }) {
       }
       const srcRate = audioBuf.sampleRate;
       const data = audioBuf.getChannelData(0); // 取第一聲道
+      const srt = modeRef.current === "srt";
       // 切 60 秒一段（給進度 + 控記憶體；邊界偶有小瑕疵，v1 可接受）
-      const CHUNK_SEC = 60;
       const chunkSamples = CHUNK_SEC * srcRate;
       const totalChunks = Math.max(1, Math.ceil(data.length / chunkSamples));
       setStatus("transcribing");
-      let out = "";
+      let out = "";          // 逐字稿模式累積文字
+      const allSegs = [];    // 字幕模式累積 segment（含全域時間軸）
       for (let i = 0; i < totalChunks; i++) {
         if (cancelRef.current) { setStatus("idle"); return; }
         const slice = data.subarray(i * chunkSamples, Math.min((i + 1) * chunkSamples, data.length));
         const wav = pcmToWav(slice, srcRate, 16000);
+        const offset = i * CHUNK_SEC; // 此段在整檔的起始秒數
         try {
-          const res = await window.electronAPI?.transcribeAudio?.(wav, {});
-          if (res?.success && res.text && res.text.trim()) {
+          const res = await window.electronAPI?.transcribeAudio?.(wav, srt ? { segments: true } : {});
+          if (res?.success && srt && Array.isArray(res.segments)) {
+            for (const g of res.segments) {
+              if (g?.text?.trim()) allSegs.push({ start: g.start + offset, end: g.end + offset, text: g.text.trim() });
+            }
+            setTranscript(buildSrt(allSegs));
+          } else if (res?.success && res.text && res.text.trim()) {
             out += (out ? "\n" : "") + res.text.trim();
             setTranscript(out);
           }
@@ -98,7 +128,7 @@ export default function TranscribeModal({ onClose }) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = (fileName ? fileName.replace(/\.[^.]+$/, "") : "transcript") + ".txt";
+      a.download = (fileName ? fileName.replace(/\.[^.]+$/, "") : "transcript") + (mode === "srt" ? ".srt" : ".txt");
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (e) { /* ignore */ }
@@ -119,6 +149,23 @@ export default function TranscribeModal({ onClose }) {
       <div className="flex-1 min-h-0 flex flex-col p-3 gap-2">
         {/* 拖放 / 選檔 */}
         {status === "idle" || status === "error" ? (
+          <>
+          {/* 輸出格式：逐字稿 / 字幕 SRT */}
+          <div className="shrink-0 flex items-center gap-1 p-1 rounded-lg bg-gray-100 dark:bg-gray-800 text-sm">
+            {[["txt", t("transcribe.outTxt")], ["srt", t("transcribe.outSrt")]].map(([k, label]) => (
+              <button
+                key={k}
+                onClick={() => setMode(k)}
+                className={`flex-1 px-3 py-1.5 rounded-md transition-colors ${
+                  mode === k
+                    ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-medium shadow-sm"
+                    : "text-gray-500 dark:text-gray-400"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           <div
             onClick={() => fileInputRef.current?.click()}
             onDragOver={(e) => e.preventDefault()}
@@ -136,6 +183,7 @@ export default function TranscribeModal({ onClose }) {
             )}
             <input ref={fileInputRef} type="file" accept="video/*,audio/*,.mp4,.mov,.mkv,.webm,.mp3,.wav,.m4a,.ogg,.flac" className="hidden" onChange={onPick} />
           </div>
+          </>
         ) : (
           <div className="shrink-0">
             <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
@@ -170,7 +218,7 @@ export default function TranscribeModal({ onClose }) {
           )}
           <div className="flex-1" />
           <button disabled={!transcript} onClick={copyAll} className="px-3 py-1.5 text-sm rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 disabled:opacity-40">{t("transcribe.copy")}</button>
-          <button disabled={!transcript} onClick={exportTxt} className="px-3 py-1.5 text-sm rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-40">{t("transcribe.export")}</button>
+          <button disabled={!transcript} onClick={exportTxt} className="px-3 py-1.5 text-sm rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-40">{mode === "srt" ? t("transcribe.exportSrt") : t("transcribe.export")}</button>
         </div>
       </div>
     </div>

@@ -12,6 +12,9 @@ export default {
     another: 'Another file',
     copy: 'Copy',
     export: 'Export txt',
+    exportSrt: 'Export srt',
+    outTxt: 'Transcript',
+    outSrt: 'Subtitles SRT',
   },
   // App name
   appName: 'SpeakSlow',

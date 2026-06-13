@@ -545,6 +545,35 @@ class SherpaServer:
             logger.warning(f"VAD 分段失敗: {e}")
             return None
 
+    def _vad_segments_timed(self, samples, rate=16000):
+        """同 _vad_segment_list，但每段附帶 (start_sec, end_sec)，用 VAD 段的
+        起始樣本位移換算（給 SRT 字幕用）。回傳 [(np.float32, s0, s1)]；
+        無 VAD / 失敗回 None。"""
+        if self.vad is None:
+            return None
+        try:
+            self.vad.reset()
+            window_size = 512
+            for i in range(0, len(samples), window_size):
+                chunk = samples[i:i + window_size]
+                if len(chunk) < window_size:
+                    chunk = np.pad(chunk, (0, window_size - len(chunk)), 'constant')
+                self.vad.accept_waveform(chunk)
+            self.vad.flush()
+            segs = []
+            while not self.vad.empty():
+                front = self.vad.front
+                arr = np.array(front.samples, dtype=np.float32)
+                start = getattr(front, "start", 0) or 0
+                s0 = start / float(rate)
+                s1 = (start + len(arr)) / float(rate)
+                segs.append((arr, s0, s1))
+                self.vad.pop()
+            return segs if segs else None
+        except Exception as e:
+            logger.warning(f"VAD 分段(含時間)失敗: {e}")
+            return None
+
     # ========== 邊錄邊算（precog）==========
     # 錄音進行中就把「已閉合的語音段」先用同一顆 Paraformer 解碼掉，
     # 按停止時只剩尾段要算 → 長講的停止延遲從「整段成本」變「尾段成本」。
@@ -1308,6 +1337,40 @@ class SherpaServer:
                 samples = samples * gain
             speech_samples = samples
             skipped_duration = 0.0
+
+            # ===== 字幕（SRT）路徑：VAD 切句 + 每句時間軸，回傳 segment 清單 =====
+            # 與一般逐字稿路徑完全獨立（options.segments 才啟用），零回歸。
+            if options.get("segments"):
+                def _finalize_line(raw):
+                    if not raw or not raw.strip():
+                        return ""
+                    line = apply_punct_rules(self._add_punctuation(raw))
+                    line = localize_english_punct(line)
+                    line = apply_emoji(to_traditional(strip_short_trailing_period(line)))
+                    return line.replace("\n", " ").strip()
+
+                timed = self._vad_segments_timed(speech_samples, 16000)
+                out_segs = []
+                if timed:
+                    for seg, s0, s1 in timed:
+                        line = _finalize_line(clean_transcript(
+                            self._transcribe_samples(seg, sample_rate, recognizer)))
+                        if line:
+                            out_segs.append({"start": round(s0, 3), "end": round(s1, 3), "text": line})
+                else:
+                    # 沒有 VAD 段（短/連續音訊）：整個 chunk 當一條字幕
+                    line = _finalize_line(clean_transcript(
+                        self._transcribe_samples(speech_samples, sample_rate, recognizer)))
+                    if line:
+                        out_segs.append({"start": 0.0, "end": round(duration, 3), "text": line})
+                logger.info(f"SRT 分段辨識：{duration:.1f}s -> {len(out_segs)} 條字幕")
+                return {
+                    "success": True,
+                    "segments": out_segs,
+                    "duration": duration,
+                    "language": "zh-TW",
+                    "model_type": "sherpa-onnx",
+                }
 
             # 長音訊（>15s）：用 VAD 切成多段、每段各自辨識再拼接。
             # Paraformer 是為短句設計的，整段塞太長會幻聽/吃字；分段可根治。

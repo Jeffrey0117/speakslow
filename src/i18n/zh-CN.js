@@ -12,6 +12,9 @@ export default {
     another: '换一个文件',
     copy: '复制',
     export: '导出 txt',
+    exportSrt: '导出 srt',
+    outTxt: '逐字稿',
+    outSrt: '字幕 SRT',
   },
   // 应用名称
   appName: '声声慢',
