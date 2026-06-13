@@ -26,8 +26,8 @@ class AITextProcessor {
     return t;
   }
 
-  // AI文本处理方法
-  async processTextWithAI(text, mode = 'optimize') {
+  // AI文本处理方法（customPrompt 不為空時直接用它當 user 訊息，供操作模式 freeform 用）
+  async processTextWithAI(text, mode = 'optimize', customPrompt = null) {
     try {
       // 从数据库设置或環境變數获取API密钥
       let apiKey = await this.databaseManager.getSetting('ai_api_key');
@@ -61,7 +61,7 @@ class AITextProcessor {
           },
           {
             role: 'user',
-            content: prompts[mode] || prompts.optimize
+            content: customPrompt || prompts[mode] || prompts.optimize
           }
         ],
         temperature: 0.3,

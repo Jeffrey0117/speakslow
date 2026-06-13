@@ -21,9 +21,8 @@ const BUILTIN_COMMANDS = [
   { kind: "translate", tl: "en", lang: "en", label: "翻成英文" },
   { kind: "translate", tl: "zh-TW", lang: "zh", label: "翻成中文" },
   { kind: "translate", tl: "ja", lang: "ja", label: "翻成日文" },
-  // AI 指令（走既有 AI 金鑰，會用到額度；翻譯走免費 Google，這些則需要真智慧）
-  { kind: "ai", aiMode: "condense", label: "濃縮" },
-  { kind: "ai", aiMode: "extract_vocab", label: "抓單字" },
+  // AI 固定指令（精選、輸出彼此明顯不同；其餘模糊需求一律走 freeform）
+  { kind: "ai", aiMode: "optimize", label: "潤稿" },
   { kind: "ai", aiMode: "summarize", label: "總結" },
   { kind: "ai", aiMode: "copywrite", label: "寫成文案" },
   // 按鍵指令（送 SendKeys 給前景視窗，免費、瞬間；讓你能串指令流）
@@ -68,17 +67,14 @@ function matchCommand(text) {
     return find((c) => c.lang === "zh");
   }
 
-  // 3) AI 指令（關鍵詞）
-  if (norm.includes("濃縮") || norm.includes("精簡") || norm.includes("縮短") || norm.includes("精煉")) {
-    return find((c) => c.aiMode === "condense");
-  }
-  if (norm.includes("單字") || norm.includes("生字") || norm.includes("詞彙") || norm.includes("單詞")) {
-    return find((c) => c.aiMode === "extract_vocab");
+  // 3) AI 固定指令（只留輸出明顯不同的幾個；濃縮/抓單字/改寫等模糊需求交給 freeform）
+  if (norm.includes("潤稿") || norm.includes("潤飾") || norm.includes("修順") || norm.includes("順稿") || norm.includes("校對")) {
+    return find((c) => c.aiMode === "optimize");
   }
   if (norm.includes("總結") || norm.includes("摘要") || norm.includes("重點整理")) {
     return find((c) => c.aiMode === "summarize");
   }
-  if (norm.includes("文案") || norm.includes("行銷文")) {
+  if (norm.includes("文案") || norm.includes("社群貼文") || norm.includes("行銷文")) {
     return find((c) => c.aiMode === "copywrite");
   }
 
@@ -191,12 +187,31 @@ function splitCommands(text) {
   return out;
 }
 
+// freeform：把使用者整句話當「給 AI 的指示」，套用在選取的文字上
+function freeformPrompt(instruction, selection) {
+  return (
+    "請依照下面的「指示」處理「文字」，只輸出處理後的結果本身，不要任何說明、前言或引號：\n\n" +
+    "【指示】" + instruction + "\n\n" +
+    "【文字】\n" + selection
+  );
+}
+
 /**
- * 執行單一指令（比對 + 套用）。
+ * 執行單一指令（比對 + 套用）。沒對到固定指令時，若有 AI 金鑰就走 freeform
+ * （講什麼做什麼），把整句當指示套在選取上；沒選取則回報，不浪費額度。
  */
 async function runSingleCommand(ctx, text) {
   const cmd = matchCommand(text);
-  if (!cmd) return { matched: false };
+  if (!cmd) {
+    if (ctx.aiProcessor && text && text.trim()) {
+      const instruction = text.trim();
+      const label = "✨ " + (instruction.length > 14 ? instruction.slice(0, 14) + "…" : instruction);
+      return await applyToSelection(ctx, label, (sel) =>
+        ctx.aiProcessor.processTextWithAI(sel, "freeform", freeformPrompt(instruction, sel))
+      );
+    }
+    return { matched: false };
+  }
 
   if (cmd.kind === "transform") {
     return await applyToSelection(ctx, cmd.label, (sel) =>
