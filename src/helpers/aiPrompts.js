@@ -98,10 +98,6 @@ ${text}
 
 请直接返回清理后并分段的文本，不要包含任何解释或说明。`,
         summarize: `请总结以下文本的主要内容，提取关键信息：\n\n${text}`,
-        // 操作模式：語音指令翻譯（只輸出翻譯結果，由 system prompt 強制無前言）
-        translate_en: `Translate the following text into natural, fluent English. Preserve meaning, tone and proper nouns. Output ONLY the translation:\n\n${text}`,
-        translate_zh: `把以下文字翻譯成自然、通順的繁體中文。保留原意、語氣與專有名詞。只輸出翻譯結果：\n\n${text}`,
-        translate_ja: `以下のテキストを自然で流暢な日本語に翻訳してください。意味・トーン・固有名詞を保ち、翻訳結果のみを出力してください：\n\n${text}`,
         enhance: `请对以下文本进行内容优化：
 
 **优化要求：**

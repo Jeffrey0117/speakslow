@@ -1,4 +1,5 @@
 const { clipboard } = require("electron");
+const { translateFree } = require("./translate");
 
 /**
  * 操作模式（語音指令）派發層 —— 刻意保持「瘦」。
@@ -11,15 +12,15 @@ const { clipboard } = require("electron");
  *
  * 一條指令 = { kind, label, mode|aiMode }
  *   kind 'transform' → 走 sherpa opencc（mode: to_traditional / to_simplified）
- *   kind 'translate' → 走 AI（aiMode: translate_en / translate_zh / translate_ja）
+ *   kind 'translate' → 走免費 Google 翻譯（tl: 目標語言代碼），不燒 AI 額度
  */
 
 const BUILTIN_COMMANDS = [
   { kind: "transform", mode: "to_traditional", label: "轉成繁體" },
   { kind: "transform", mode: "to_simplified", label: "轉成簡體" },
-  { kind: "translate", aiMode: "translate_en", label: "翻成英文" },
-  { kind: "translate", aiMode: "translate_zh", label: "翻成中文" },
-  { kind: "translate", aiMode: "translate_ja", label: "翻成日文" },
+  { kind: "translate", tl: "en", lang: "en", label: "翻成英文" },
+  { kind: "translate", tl: "zh-TW", lang: "zh", label: "翻成中文" },
+  { kind: "translate", tl: "ja", lang: "ja", label: "翻成日文" },
 ];
 
 // 正規化辨識結果：去空白、去標點、轉小寫，方便關鍵詞比對
@@ -51,9 +52,9 @@ function matchCommand(text) {
   const zhIdx = lastOf("中文", "chinese");
   const maxIdx = Math.max(enIdx, jaIdx, zhIdx);
   if (maxIdx !== -1) {
-    if (maxIdx === enIdx) return find((c) => c.aiMode === "translate_en");
-    if (maxIdx === jaIdx) return find((c) => c.aiMode === "translate_ja");
-    return find((c) => c.aiMode === "translate_zh");
+    if (maxIdx === enIdx) return find((c) => c.lang === "en");
+    if (maxIdx === jaIdx) return find((c) => c.lang === "ja");
+    return find((c) => c.lang === "zh");
   }
 
   return null;
@@ -131,12 +132,8 @@ async function runVoiceCommand(ctx, text) {
   }
 
   if (cmd.kind === "translate") {
-    if (!ctx.aiProcessor) {
-      return { matched: true, success: false, label: cmd.label, error: "AI 未設定" };
-    }
-    return await applyToSelection(ctx, cmd.label, (sel) =>
-      ctx.aiProcessor.processTextWithAI(sel, cmd.aiMode)
-    );
+    // 免費 Google 翻譯，不碰 AI 額度
+    return await applyToSelection(ctx, cmd.label, (sel) => translateFree(sel, cmd.tl));
   }
 
   return { matched: false };
