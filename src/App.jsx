@@ -374,6 +374,25 @@ export default function App() {
     return () => { if (typeof off === 'function') off(); };
   }, []);
 
+  // 「念出來」：播放 / 停止 主行程送來的 Edge TTS MP3
+  const ttsAudioRef = useRef(null);
+  useEffect(() => {
+    const stopTts = () => {
+      try { ttsAudioRef.current?.pause(); } catch (e) { /* ignore */ }
+      ttsAudioRef.current = null;
+    };
+    const offPlay = window.electronAPI?.onTtsPlay?.((b64) => {
+      try {
+        stopTts(); // 先停掉上一段
+        const a = new Audio('data:audio/mpeg;base64,' + b64);
+        ttsAudioRef.current = a;
+        a.play().catch(() => {});
+      } catch (e) { /* ignore */ }
+    });
+    const offStop = window.electronAPI?.onTtsStop?.(stopTts);
+    return () => { if (offPlay) offPlay(); if (offStop) offStop(); stopTts(); };
+  }, []);
+
   // 掛載時跟主行程對齊迷你狀態：HMR 熱重載 / 任何重載會把 React state 歸零，
   // 但視窗尺寸由主行程管、不會跟著重置 → 會出現「視窗是迷你、版面卻是正常面板」
   // 的錯位。一掛載就問「現在到底是不是迷你」並校正，兩邊永遠一致。

@@ -10,7 +10,7 @@ let _current = null;
  * CJK 安全：文字寫成 UTF-8 暫存檔，PowerShell 以 UTF-8 讀回，避免編碼亂碼。
  * 偏好繁體中文語音（系統有的話），抓不到就用預設。
  */
-function speak(text) {
+function speakSapi(text) {
   if (process.platform !== "win32") {
     return { success: false, error: "目前只支援 Windows 朗讀" };
   }
@@ -49,4 +49,4 @@ function stopSpeaking() {
   _current = null;
 }
 
-module.exports = { speak, stopSpeaking };
+module.exports = { speakSapi, stopSpeaking };

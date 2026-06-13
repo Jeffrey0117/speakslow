@@ -883,6 +883,12 @@ class SherpaManager {
     return await this._sendServerCommand({ action: "text_transform", mode, text });
   }
 
+  // 操作模式「念出來」：Edge 神經網路語音，回傳 base64 MP3
+  async tts(text, voice = "zh-TW-HsiaoChenNeural") {
+    if (!this.serverReady) return { success: false, error: "服務器未就緒" };
+    return await this._sendServerCommand({ action: "tts", text, voice });
+  }
+
   async precogStart(profile = "standard") {
     if (!this.serverReady) return { success: false, error: "服務器未就緒" };
     return await this._sendServerCommand({ action: "precog_start", profile });

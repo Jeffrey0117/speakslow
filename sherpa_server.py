@@ -1661,6 +1661,31 @@ class SherpaServer:
                     result = self.check_status()
                 elif action == "stats":
                     result = {"success": True, "stats": self.get_performance_stats()}
+                elif action == "tts":
+                    # 操作模式「念出來」：Edge 神經網路語音（線上、免費、好聽），回傳 base64 MP3
+                    tts_text = command.get("text", "") or ""
+                    voice = command.get("voice", "zh-TW-HsiaoChenNeural")
+                    if not tts_text.strip():
+                        result = {"success": False, "error": "沒有文字可朗讀"}
+                    else:
+                        try:
+                            import edge_tts, asyncio, base64
+
+                            async def _synth():
+                                comm = edge_tts.Communicate(tts_text, voice)
+                                buf = bytearray()
+                                async for chunk in comm.stream():
+                                    if chunk.get("type") == "audio":
+                                        buf += chunk["data"]
+                                return bytes(buf)
+
+                            audio = asyncio.run(_synth())
+                            if not audio:
+                                result = {"success": False, "error": "TTS 無音訊"}
+                            else:
+                                result = {"success": True, "audio_b64": base64.b64encode(audio).decode("ascii")}
+                        except Exception as _e:
+                            result = {"success": False, "error": f"Edge TTS 失敗: {_e}"}
                 elif action == "text_transform":
                     # 操作模式：對選取文字做純文字轉換（簡繁互轉等）
                     mode = command.get("mode", "")

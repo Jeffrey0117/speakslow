@@ -240,8 +240,11 @@ module.exports = function register(ctx) {
         },
         onCancelRecording: () => {
           ctx.logger.info('TypeLess: 觸發取消錄音 (Esc)');
-          // Esc 也順手停掉正在朗讀的語音（念到一半想停）
+          // Esc 也順手停掉正在朗讀的語音（念到一半想停）：SAPI 後備殺程序 + 通知渲染端停 Edge MP3
           try { stopSpeaking(); } catch (e) { /* ignore */ }
+          require("electron").BrowserWindow.getAllWindows().forEach((w) => {
+            if (!w.isDestroyed()) w.webContents.send("tts-stop");
+          });
           // 隱藏錄音指示器視窗
           if (ctx.windowManager) {
             ctx.windowManager.hideTypelessIndicator();

@@ -1,6 +1,23 @@
 const { clipboard } = require("electron");
 const { translateFree } = require("./translate");
-const { speak } = require("./tts");
+const { speakSapi } = require("./tts");
+
+// 朗讀：先試 Edge 神經語音（好聽，走 sherpa server），失敗再退 Windows SAPI（離線）。
+// Edge 回傳 base64 MP3 → 丟給渲染端用 Audio 播（可被 Esc 停）。
+async function speakText(ctx, text, label) {
+  try {
+    const res = await ctx.sherpaManager.tts(text);
+    if (res && res.success && res.audio_b64) {
+      const win = ctx.windowManager && ctx.windowManager.mainWindow;
+      if (win && !win.isDestroyed()) win.webContents.send("tts-play", res.audio_b64);
+      return { matched: true, success: true, label };
+    }
+  } catch (e) { /* 落到 SAPI 後備 */ }
+  const r = speakSapi(text);
+  return r.success
+    ? { matched: true, success: true, label }
+    : { matched: true, success: false, label, error: r.error };
+}
 
 /**
  * 操作模式（語音指令）派發層 —— 刻意保持「瘦」。
@@ -253,10 +270,7 @@ async function runSingleCommand(ctx, text) {
     if (!sel || sel.trim() === "") {
       return { matched: true, success: false, label: cmd.label, error: "沒有選取到文字" };
     }
-    const r = speak(sel);
-    return r.success
-      ? { matched: true, success: true, label: cmd.label }
-      : { matched: true, success: false, label: cmd.label, error: r.error };
+    return await speakText(ctx, sel, cmd.label);
   }
 
   if (cmd.kind === "key") {
@@ -295,7 +309,7 @@ async function runVoiceCommand(ctx, text) {
     }
     // 「念出來」緊接在轉換之後：直接唸結果（例：翻成日文 → 念出來 唸日文）
     if (cmd && cmd.kind === "speak" && lastResult != null) {
-      speak(lastResult);
+      await speakText(ctx, lastResult, "念出來");
       ran.push({ matched: true, success: true, label: "念出來" });
       await delay(150);
       continue;

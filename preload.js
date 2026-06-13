@@ -70,6 +70,18 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // 操作模式：把辨識文字當語音指令派發
   runVoiceCommand: (text) => ipcRenderer.invoke("run-voice-command", text),
 
+  // 「念出來」：主行程把 Edge TTS 的 MP3（base64）丟過來播 / 停
+  onTtsPlay: (callback) => {
+    const handler = (_event, b64) => callback(b64);
+    ipcRenderer.on("tts-play", handler);
+    return () => ipcRenderer.removeListener("tts-play", handler);
+  },
+  onTtsStop: (callback) => {
+    const handler = () => callback();
+    ipcRenderer.on("tts-stop", handler);
+    return () => ipcRenderer.removeListener("tts-stop", handler);
+  },
+
   // 焦點管理 (Windows: 儲存和恢復前景視窗)
   saveForegroundWindow: () => ipcRenderer.invoke("save-foreground-window"),
   restoreForegroundWindow: () => ipcRenderer.invoke("restore-foreground-window"),
