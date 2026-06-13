@@ -23,6 +23,7 @@ class TypelessManager {
     this.mode = 'toggle';
     this.isActive = false;   // toggle 模式：目前是否正在錄音
     this.triggerHeld = false; // 防止長按時的自動重複觸發
+    this.lastKeyDownTime = 0; // 上次觸發鍵 keydown 的時間（解「漏接 keyup」卡死用）
 
     // 回調函數
     this.onStartRecording = null;
@@ -78,8 +79,15 @@ class TypelessManager {
     if (!this.triggerKeys.includes(event.keycode)) return;
 
     if (this.mode === 'toggle') {
-      // 單擊切換：忽略長按造成的自動重複（keydown 會連續觸發）
-      if (this.triggerHeld) return;
+      // 單擊切換：忽略長按造成的自動重複（keydown 會連續觸發）。
+      // 但「靠 keyup 清 triggerHeld」在高負載/錄影時 keyup 會被吞掉，
+      // 導致 triggerHeld 永遠卡 true、之後按右 Ctrl 全無反應（真實踩過的雷）。
+      // 解法：自動重複的 keydown 間隔極短（~30ms）；若距離上次 keydown 已超過
+      // 門檻，代表上一次的 keyup 漏接了 → 視為新的一次按下，強制解卡。
+      const now = Date.now();
+      const gap = now - this.lastKeyDownTime;
+      this.lastKeyDownTime = now;
+      if (this.triggerHeld && gap < 600) return; // 真的是長按自動重複，忽略
       this.triggerHeld = true;
 
       this.isActive = !this.isActive;
