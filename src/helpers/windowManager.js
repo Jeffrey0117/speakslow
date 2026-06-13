@@ -361,6 +361,13 @@ class WindowManager {
       },
     });
 
+    // 錄音藥丸永遠最高：用最高層級 'screen-saver' 壓過全螢幕影片播放器等，
+    // 並設為跨全螢幕 / 所有桌面都可見，確保錄音時不被任何東西蓋住。
+    try {
+      this.typelessIndicatorWindow.setAlwaysOnTop(true, "screen-saver");
+      this.typelessIndicatorWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+    } catch (e) { /* ignore */ }
+
     const isDev = process.env.NODE_ENV === "development";
 
     if (isDev) {
