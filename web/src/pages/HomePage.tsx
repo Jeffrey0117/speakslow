@@ -28,20 +28,6 @@ export default function HomePage() {
             <strong className="text-emerald-600 dark:text-emerald-400">特別適合用語音跟 AI 對話</strong>，講完馬上送出，小錯字 AI 也讀得懂。
           </p>
 
-          {/* Demo 影片（30 秒實測） */}
-          <div className="mb-6">
-            <video
-              src="/SpeakSlow/demo.mp4"
-              autoPlay
-              muted
-              loop
-              playsInline
-              controls
-              className="mx-auto rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 max-h-[440px]"
-            />
-            <p className="text-xs text-gray-400 mt-2">30 秒實測：講完即貼，全程本機</p>
-          </div>
-
           {/* Product screenshot */}
           <div className="mb-8">
             <img
