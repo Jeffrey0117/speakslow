@@ -282,6 +282,7 @@ export default function App() {
   const [miniMode, setMiniMode] = useState(false); // 迷你模式（原地變身扁平浮窗）
   const [miniCopied, setMiniCopied] = useState(false); // 迷你條複製回饋
   const [commandMode, setCommandMode] = useState(false); // 操作模式（語音指令，預設關閉）
+  const [commandRunning, setCommandRunning] = useState(false); // 指令執行中（底部跑馬燈進度條用）
   const commandModeRef = useRef(false); // 給 safePaste 閉包讀最新值，避免 stale
   const miniModeRef = useRef(false); // 給 showNotification 閉包讀目前是否迷你模式
   const isRecordingRef = useRef(false); // 給快捷鍵閉包讀「目前是否正在錄音」
@@ -558,6 +559,7 @@ export default function App() {
   const safePaste = useCallback(async (text) => {
     // 操作模式：辨識結果不貼字，改當語音指令派發（攔在最前面）
     if (commandModeRef.current) {
+      setCommandRunning(true); // 底部進度條：告訴使用者「指令在跑」（AI 等待時尤其有感）
       try {
         const res = await window.electronAPI?.runVoiceCommand?.(text);
         if (res?.matched) {
@@ -576,6 +578,8 @@ export default function App() {
         }
       } catch (e) {
         showNotification('error', t('panel.commandError'));
+      } finally {
+        setCommandRunning(false);
       }
       return; // 操作模式不貼字
     }
@@ -1200,7 +1204,7 @@ export default function App() {
     }[miniFlash.type] || 'text-gray-900 dark:text-white') : '';
     return (
       <div
-        className={`h-screen w-screen flex items-center gap-3 px-3 bg-white/95 dark:bg-gray-900/95 rounded-xl shadow-2xl overflow-hidden select-none ${
+        className={`relative h-screen w-screen flex items-center gap-3 px-3 bg-white/95 dark:bg-gray-900/95 rounded-xl shadow-2xl overflow-hidden select-none ${
           commandMode
             ? 'border-2 border-dashed border-sky-400'
             : 'border border-gray-200 dark:border-gray-700/70'
@@ -1261,6 +1265,9 @@ export default function App() {
         >
           <Maximize2 className="w-4 h-4" />
         </button>
+        {commandRunning && (
+          <div className="cmd-progress-track"><div className="cmd-progress-bar" /></div>
+        )}
       </div>
     );
   }
@@ -1268,9 +1275,12 @@ export default function App() {
   return (
     <div className="h-screen w-screen p-8">
       {/* 卡片：透明外層留足夠邊距，讓柔和陰影完整顯示、不被視窗裁成硬邊方塊 */}
-      <div className={`h-full bg-gradient-to-br from-slate-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 px-4 pt-4 pb-2 rounded-3xl overflow-hidden flex flex-col shadow-[0_10px_30px_rgba(0,0,0,0.16)] ${
+      <div className={`relative h-full bg-gradient-to-br from-slate-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 px-4 pt-4 pb-2 rounded-3xl overflow-hidden flex flex-col shadow-[0_10px_30px_rgba(0,0,0,0.16)] ${
         commandMode ? 'ring-2 ring-sky-300 ring-inset' : ''
       }`}>
+      {commandRunning && (
+        <div className="cmd-progress-track"><div className="cmd-progress-bar" /></div>
+      )}
       {/* 主界面 */}
       <div className="w-full max-w-2xl mx-auto flex-1 min-h-0 flex flex-col">
         {/* 标题栏 */}

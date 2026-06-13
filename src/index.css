@@ -308,6 +308,29 @@ html, body {
   animation: pill-bounce 1.2s ease-in-out infinite;
 }
 
+/* 指令執行中：底部跑馬燈進度條（像音樂播放器，不定量、純體感） */
+.cmd-progress-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 50;
+}
+.cmd-progress-bar {
+  height: 100%;
+  width: 32%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, rgba(56,189,248,0) 0%, #38bdf8 45%, #0ea5e9 55%, rgba(14,165,233,0) 100%);
+  animation: cmd-progress-slide 1.05s ease-in-out infinite;
+}
+@keyframes cmd-progress-slide {
+  0% { transform: translateX(-130%); }
+  100% { transform: translateX(360%); }
+}
+
 /* 處理中狀態動畫 */
 @keyframes processing-shimmer {
   0% {
