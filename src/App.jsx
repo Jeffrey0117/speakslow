@@ -360,6 +360,23 @@ export default function App() {
   // 同步 miniMode 到 ref（showNotification 閉包要讀最新值）
   useEffect(() => { miniModeRef.current = miniMode; }, [miniMode]);
 
+  // 掛載時跟主行程對齊迷你狀態：HMR 熱重載 / 任何重載會把 React state 歸零，
+  // 但視窗尺寸由主行程管、不會跟著重置 → 會出現「視窗是迷你、版面卻是正常面板」
+  // 的錯位。一掛載就問「現在到底是不是迷你」並校正，兩邊永遠一致。
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const mini = await window.electronAPI?.getMiniMode?.();
+        if (!cancelled && typeof mini === 'boolean') {
+          miniModeRef.current = mini;
+          setMiniMode(mini);
+        }
+      } catch (e) { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   // 好看的「已取消」提示（取代陽春的 info toast）
   const notifyCancel = useCallback(() => {
     toast.custom(() => (

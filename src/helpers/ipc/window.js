@@ -183,6 +183,12 @@ module.exports = function register(ctx) {
     catch (error) { return { success: false, error: error.message }; }
   });
 
+  // 渲染端重載後查詢目前是否迷你（同步狀態，避免視窗尺寸與版面錯位）
+  ipcMain.handle("get-mini-mode", async () => {
+    try { return ctx.windowManager.getMiniState(); }
+    catch (error) { return false; }
+  });
+
   ipcMain.handle("set-always-on-top", async (event, value) => {
     try {
       ctx.windowManager.setMainWindowAlwaysOnTop(value);

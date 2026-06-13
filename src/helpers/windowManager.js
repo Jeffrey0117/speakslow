@@ -11,6 +11,13 @@ class WindowManager {
     this.typelessIndicatorWindow = null; // TypeLess 錄音指示器視窗
     this.isQuitting = false; // 用於判斷是否真正退出
     this._miniRepaintTimer = null; // 迷你模式期間的低頻重繪心跳（防閒置鬼影）
+    this.isMini = false; // 視窗目前是否為迷你尺寸（渲染端重載後用來重新同步）
+  }
+
+  // 渲染端（HMR 熱重載 / 任何重載）掛載時查詢：視窗目前到底是不是迷你？
+  // 避免「視窗是迷你尺寸、但 React 畫成正常面板」的狀態錯位。
+  getMiniState() {
+    return !!this.isMini;
   }
 
   // 設置 databaseManager（用於延遲初始化）
@@ -354,6 +361,7 @@ class WindowManager {
     if (!this.mainWindow || this.mainWindow.isDestroyed()) return { success: false };
     const { screen } = require("electron");
     const win = this.mainWindow;
+    this.isMini = enabled; // 真實來源：渲染端重載後靠這個重新同步，避免狀態錯位
     if (enabled) this._preMiniBounds = win.getBounds();
 
     // 透明視窗改 bounds 會在「離開的舊位置」留殘影（DWM 不清、底下的 app
