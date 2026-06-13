@@ -154,7 +154,8 @@ async function applyToSelection(ctx, label, producer) {
 
   // 6) 還原使用者原本的剪貼簿（貼上已 await 完成，安全；後續「複製」會自己再寫）
   clipboard.writeText(userClipboard);
-  return { matched: true, success: true, label };
+  // resultText 讓指令流的「複製」可以直接拿結果寫剪貼簿（不靠脆弱的選取+Ctrl+C）
+  return { matched: true, success: true, label, resultText: out };
 }
 
 // 開頭若命中按鍵指令觸發詞，回傳該觸發詞（取最長），否則 null
@@ -248,10 +249,20 @@ async function runVoiceCommand(ctx, text) {
   }
 
   const ran = [];
+  let lastResult = null; // 最近一次轉換／翻譯的結果文字
   for (const seg of segments) {
+    const cmd = matchCommand(seg);
+    // 「複製」緊接在轉換之後：直接把已知結果寫進剪貼簿，不靠選取+Ctrl+C（最可靠）
+    if (cmd && cmd.kind === "key" && cmd.keys === "^c" && lastResult != null) {
+      try { clipboard.writeText(lastResult); } catch (e) { /* ignore */ }
+      ran.push({ matched: true, success: true, label: "複製" });
+      await delay(150);
+      continue;
+    }
     const r = await runSingleCommand(ctx, seg);
     if (r.matched) {
       ran.push(r);
+      lastResult = typeof r.resultText === "string" ? r.resultText : null;
       await delay(350); // 等選取／按鍵／貼上生效，下一段才接得上
     }
   }
