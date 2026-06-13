@@ -1073,9 +1073,16 @@ export default function App() {
   const micProps = getMicButtonProps();
 
   const toggleMiniMode = async (enabled) => {
-    // 先讓視窗變形，再切版面（同一個視窗、不會消失）
-    try { await window.electronAPI?.setMiniMode?.(enabled); } catch (e) { /* ignore */ }
-    setMiniMode(enabled);
+    if (enabled) {
+      // 縮小：先切成扁條版面、等一幀渲染完，再縮視窗（避免大版面被擠壓閃現）
+      setMiniMode(true);
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      try { await window.electronAPI?.setMiniMode?.(true); } catch (e) { /* ignore */ }
+    } else {
+      // 展開：先放大視窗，再切回主面板版面
+      try { await window.electronAPI?.setMiniMode?.(false); } catch (e) { /* ignore */ }
+      setMiniMode(false);
+    }
   };
 
   // 迷你模式：扁平媒體浮窗版面（與主面板同一視窗，原地變身）

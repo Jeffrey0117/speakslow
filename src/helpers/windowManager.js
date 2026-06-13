@@ -371,6 +371,10 @@ class WindowManager {
     }
     this.mainWindow.setResizable(false);
     this.mainWindow.show();
+    // 透明視窗縮放後 Windows 常留殘影（DWM 不重繪舊區域），強制重繪一次
+    setTimeout(() => {
+      try { this.mainWindow.webContents.invalidate(); } catch (e) { /* ignore */ }
+    }, 60);
     return { success: true, mini: enabled };
   }
 
