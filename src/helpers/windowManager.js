@@ -398,6 +398,9 @@ class WindowManager {
     const { screen } = require("electron");
     const win = this.mainWindow;
     this.isMini = enabled; // 真實來源：渲染端重載後靠這個重新同步，避免狀態錯位
+    // 廣播給 React：不管是誰改的（托盤、main 端救援…），版面都跟著視窗大小走，
+    // 避免「大視窗畫迷你版面」這種錯位。
+    try { win.webContents.send("mini-mode-changed", enabled); } catch (e) { /* ignore */ }
     if (enabled) this._preMiniBounds = win.getBounds();
 
     // 透明視窗改 bounds 會在「離開的舊位置」留殘影（DWM 不清、底下的 app

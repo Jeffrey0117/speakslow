@@ -13,6 +13,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
   setMiniMode: (enabled) => ipcRenderer.invoke("set-mini-mode", enabled),
   getMiniMode: () => ipcRenderer.invoke("get-mini-mode"),
   setWindowOpacity: (value) => ipcRenderer.invoke("set-window-opacity", value),
+  onMiniModeChanged: (callback) => {
+    const handler = (_event, enabled) => callback(enabled);
+    ipcRenderer.on("mini-mode-changed", handler);
+    return () => ipcRenderer.removeListener("mini-mode-changed", handler);
+  },
   setCommandMode: (enabled) => ipcRenderer.invoke("set-command-mode", enabled),
   getCommandMode: () => ipcRenderer.invoke("get-command-mode"),
   onCommandModeChanged: (callback) => {

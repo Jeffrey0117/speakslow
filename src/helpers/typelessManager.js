@@ -62,13 +62,15 @@ class TypelessManager {
   handleKeyDown(event) {
     if (!this.isEnabled) return;
 
-    // 錄音中按 Esc → 取消（丟棄音訊，不轉錄、不貼上）。切換 / 按住兩種模式都支援，
-    // 讓你「按住講到一半發現講錯」也能鬼切：按住不放、按一下 Esc 就丟掉，
-    // 放開觸發鍵後因 isKeyDown 已歸零而不會再去停止/處理。
-    if (event.keycode === UiohookKey.Escape && (this.isActive || this.isKeyDown)) {
+    // 按 Esc → 取消錄音 + 強制收掉指示器藥丸。切換 / 按住兩種模式都支援，
+    // 讓你「按住講到一半發現講錯」也能鬼切。且就算錄音狀態已脫鉤（藥丸卡成孤兒），
+    // Esc 也一律呼叫 onCancelRecording 把藥丸關掉（渲染端沒在錄音則為無害 no-op）。
+    if (event.keycode === UiohookKey.Escape) {
+      const wasRecording = this.isActive || this.isKeyDown;
       this.isActive = false;
       this.isKeyDown = false;
-      this.safeLog('info', 'TypeLess: 取消錄音 (Esc)');
+      this.triggerHeld = false;
+      if (wasRecording) this.safeLog('info', 'TypeLess: 取消錄音 (Esc)');
       if (this.onCancelRecording) this.onCancelRecording();
       return;
     }
