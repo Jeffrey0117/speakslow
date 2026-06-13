@@ -1344,26 +1344,79 @@ class SherpaServer:
                 def _finalize_line(raw):
                     if not raw or not raw.strip():
                         return ""
-                    line = apply_punct_rules(self._add_punctuation(raw))
+                    line = apply_punct_rules(self._add_punctuation(clean_transcript(raw)))
                     line = localize_english_punct(line)
                     line = apply_emoji(to_traditional(strip_short_trailing_period(line)))
                     return line.replace("\n", " ").strip()
 
+                # 把一段解碼結果用「逐字時間戳」切成短字幕：超過字數/秒數、或遇到
+                # 停頓(gap)就斷一條。tokens 本身沒有標點，所以以停頓+長度為主要訊號，
+                # 斷好後每條各自加標點/繁化/emoji。避免「一句字幕長達十幾秒」沒法看。
+                MAX_CHARS, MAX_DUR, GAP_BREAK = 16, 4.5, 0.4
+                def _cues_from_result(result, offset):
+                    tokens = list(getattr(result, "tokens", []) or [])
+                    ts = list(getattr(result, "timestamps", []) or [])
+                    if not tokens or len(ts) != len(tokens):
+                        return None  # 無逐字時間（如 Whisper）→ 呼叫端整段處理
+                    cues, pieces = [], []
+                    cur_start = [None]
+                    prev_ascii = [False]
+                    prev_cont = False
+                    last_ts = None
+
+                    def flush(end_ts):
+                        line = _finalize_line("".join(pieces))
+                        if line and cur_start[0] is not None:
+                            cues.append({
+                                "start": round(offset + cur_start[0], 3),
+                                "end": round(offset + end_ts, 3),
+                                "text": line,
+                            })
+
+                    for i, tok in enumerate(tokens):
+                        t = tok
+                        cont = t.endswith("@@")
+                        if cont:
+                            t = t[:-2]
+                        cur_len = len("".join(pieces).replace(" ", ""))
+                        big_gap = last_ts is not None and ts[i] - last_ts >= GAP_BREAK
+                        too_long = cur_len >= MAX_CHARS
+                        too_dur = cur_start[0] is not None and ts[i] - cur_start[0] >= MAX_DUR
+                        # 不在子詞接續中間斷（prev_cont）
+                        if pieces and not prev_cont and (big_gap or too_long or too_dur):
+                            flush(last_ts)
+                            pieces.clear()
+                            cur_start[0] = None
+                            prev_ascii[0] = False
+                        if cur_start[0] is None:
+                            cur_start[0] = ts[i]
+                        if t:
+                            if t[0].isascii() and t[0].isalnum() and prev_ascii[0] and not prev_cont:
+                                pieces.append(" ")
+                            pieces.append(t)
+                            prev_ascii[0] = t[-1].isascii() and t[-1].isalnum()
+                        prev_cont = cont
+                        last_ts = ts[i]
+                    if pieces:
+                        flush(last_ts)
+                    return cues
+
                 timed = self._vad_segments_timed(speech_samples, 16000)
                 out_segs = []
-                if timed:
-                    for seg, s0, s1 in timed:
-                        line = _finalize_line(clean_transcript(
-                            self._transcribe_samples(seg, sample_rate, recognizer)))
+                segs_iter = timed if timed else [(speech_samples, 0.0, duration)]
+                for seg, s0, s1 in segs_iter:
+                    stream = recognizer.create_stream()
+                    stream.accept_waveform(sample_rate, seg)
+                    recognizer.decode_stream(stream)
+                    cues = _cues_from_result(stream.result, s0)
+                    if cues is None:
+                        # 無逐字時間 → 整段一條（後備）
+                        line = _finalize_line(stream.result.text or "")
                         if line:
                             out_segs.append({"start": round(s0, 3), "end": round(s1, 3), "text": line})
-                else:
-                    # 沒有 VAD 段（短/連續音訊）：整個 chunk 當一條字幕
-                    line = _finalize_line(clean_transcript(
-                        self._transcribe_samples(speech_samples, sample_rate, recognizer)))
-                    if line:
-                        out_segs.append({"start": 0.0, "end": round(duration, 3), "text": line})
-                logger.info(f"SRT 分段辨識：{duration:.1f}s -> {len(out_segs)} 條字幕")
+                    else:
+                        out_segs.extend(cues)
+                logger.info(f"SRT 字幕：{duration:.1f}s -> {len(out_segs)} 條短字幕")
                 return {
                     "success": True,
                     "segments": out_segs,
