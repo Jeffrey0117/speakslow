@@ -118,6 +118,7 @@ export default {
     windowOpacityDesc: 'Make the panel semi-transparent (mini and full panel share this) so you can see through it',
     commandSection: 'Command Mode / Read Aloud',
     commandSectionDesc: 'Read-aloud voice and behavior for command mode (toggle with Ctrl+Shift+K)',
+    openNotes: 'Open notes',
     ttsVoice: 'Read-aloud Voice',
     ttsVoiceDesc: 'Voice used by the read-aloud command',
     ttsVoiceHsiaoChen: 'Female - HsiaoChen (gentle)',

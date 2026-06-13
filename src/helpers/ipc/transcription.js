@@ -3,6 +3,20 @@ const { runVoiceCommand } = require("../commandMode");
 const recovery = require("../recovery");
 
 module.exports = function register(ctx) {
+  // 打開「記下來」的筆記檔（用系統預設程式）
+  ipcMain.handle("open-notes", async () => {
+    try {
+      const { app, shell } = require("electron");
+      const fs = require("fs");
+      const p = require("path").join(app.getPath("userData"), "speakslow-notes.md");
+      if (!fs.existsSync(p)) fs.writeFileSync(p, "# 聲聲慢筆記\n", "utf8");
+      await shell.openPath(p);
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  });
+
   // 崩潰救援：錄音中持續把音訊寫到暫存檔，中斷時下次開機可救回
   ipcMain.handle("recovery-begin", async () => recovery.begin());
   ipcMain.handle("recovery-append", async (_e, b64) => recovery.append(b64));

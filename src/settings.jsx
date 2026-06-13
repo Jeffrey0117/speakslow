@@ -751,13 +751,22 @@ const SettingsPage = () => {
           {/* 操作模式 / 朗讀設定 */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 mb-6">
             <div className="p-6 space-y-5">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 chinese-title">
-                  {t('settings.commandSection')}
-                </h2>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                  {t('settings.commandSectionDesc')}
-                </p>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 chinese-title">
+                    {t('settings.commandSection')}
+                  </h2>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                    {t('settings.commandSectionDesc')}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => window.electronAPI?.openNotes?.()}
+                  className="shrink-0 px-3 py-1.5 text-xs rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  {t('settings.openNotes')}
+                </button>
               </div>
 
               {/* 朗讀語音 */}

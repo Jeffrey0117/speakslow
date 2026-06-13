@@ -118,6 +118,7 @@ export default {
     windowOpacityDesc: '让面板半透明（迷你与一般面板共用），看得到底下的东西',
     commandSection: '操作模式 / 朗读',
     commandSectionDesc: '语音指令模式（Ctrl+Shift+K 切换）的朗读语音与行为',
+    openNotes: '打开笔记',
     ttsVoice: '朗读语音',
     ttsVoiceDesc: '「念出来」指令使用的语音',
     ttsVoiceHsiaoChen: '女声・晓臻（温柔）',

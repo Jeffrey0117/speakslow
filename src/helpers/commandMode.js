@@ -1,6 +1,22 @@
-const { clipboard } = require("electron");
+const { clipboard, app } = require("electron");
+const fs = require("fs");
+const nodePath = require("path");
 const { translateFree } = require("./translate");
 const { speakSapi } = require("./tts");
+
+// 「記下來」：把選取 append 到固定筆記檔（markdown），附時間戳
+function notesPath() {
+  return nodePath.join(app.getPath("userData"), "speakslow-notes.md");
+}
+function appendNote(text) {
+  try {
+    const stamp = new Date().toLocaleString();
+    fs.appendFileSync(notesPath(), `\n### ${stamp}\n${text}\n`, "utf8");
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+}
 
 // 朗讀：先試 Edge 神經語音（好聽，走 sherpa server），失敗再退 Windows SAPI（離線）。
 // Edge 回傳 base64 MP3 → 丟給渲染端用 Audio 播（可被 Esc 停）。
@@ -52,6 +68,8 @@ const BUILTIN_COMMANDS = [
   { kind: "translate_auto", label: "翻譯" },
   // 朗讀（Windows 內建 SAPI，免費）
   { kind: "speak", label: "念出來" },
+  // 記下來：把選取存進筆記檔
+  { kind: "note", label: "記下來" },
   // AI 固定指令（精選、輸出彼此明顯不同；其餘模糊需求一律走 freeform）
   { kind: "ai", aiMode: "optimize", label: "潤稿" },
   { kind: "ai", aiMode: "summarize", label: "總結" },
@@ -105,6 +123,11 @@ function matchCommand(text) {
   // 3) 朗讀（免費，SAPI）
   if (norm.includes("念出來") || norm.includes("唸出來") || norm.includes("讀出來") || norm.includes("朗讀") || norm.includes("念給") || norm.includes("唸給")) {
     return find((c) => c.kind === "speak");
+  }
+
+  // 3.5) 記下來（存筆記）
+  if (norm.includes("記下來") || norm.includes("記一下") || norm.includes("存筆記") || norm.includes("記筆記") || norm.includes("做筆記") || norm.includes("記起來") || norm.includes("存起來")) {
+    return find((c) => c.kind === "note");
   }
 
   // 4) AI 固定指令（只留輸出明顯不同的幾個；濃縮/抓單字/改寫等模糊需求交給 freeform）
@@ -330,6 +353,26 @@ async function runSingleCommand(ctx, text) {
       return { matched: true, success: false, label: cmd.label, error: "沒有選取到文字" };
     }
     return await speakText(ctx, sel, cmd.label);
+  }
+
+  if (cmd.kind === "note") {
+    // 記下來：抓選取 → append 到筆記檔（不貼回去）
+    const userClipboard = clipboard.readText();
+    clipboard.writeText("");
+    if (!ctx.clipboardManager.focusAndCopyFast()) {
+      clipboard.writeText(userClipboard);
+      return { matched: true, success: false, label: cmd.label, error: "無法複製選取（PowerShell 未就緒）" };
+    }
+    await delay(220);
+    const sel = clipboard.readText();
+    clipboard.writeText(userClipboard);
+    if (!sel || sel.trim() === "") {
+      return { matched: true, success: false, label: cmd.label, error: "沒有選取到文字" };
+    }
+    const r = appendNote(sel.trim());
+    return r.success
+      ? { matched: true, success: true, label: cmd.label }
+      : { matched: true, success: false, label: cmd.label, error: r.error };
   }
 
   if (cmd.kind === "key") {

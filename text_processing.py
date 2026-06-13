@@ -231,6 +231,22 @@ def apply_punct_rules(text):
     return text
 
 
+def strip_short_trailing_period(text):
+    """很短的單詞 / 短句，結尾的「。」拿掉（選字重唸換字、單詞口述時很煩）。
+    只處理：單行、結尾是。、句中無其他。！？、本體 ≤5 個字元。
+    「！」「？」保留 —— 那是刻意的語氣 / 疑問。"""
+    if not text:
+        return text
+    if "\n" in text.strip():
+        return text  # 多行（多句 / 列點）不動
+    t = text.rstrip()
+    if t.endswith("。"):
+        body = t[:-1]
+        if not any(p in body for p in "。！？") and len(body.strip()) <= 5:
+            return body
+    return text
+
+
 def format_lists(text):
     """規則式列點排版（免 AI）：偵測「第一…第二…第三…」連續列舉，
     轉成換行的「1. 2. 3.」清單，開頭引言補上冒號。

@@ -73,6 +73,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // 點字改錯：取得選取那段的候選詞
   suggestCorrections: (sentence, target) => ipcRenderer.invoke("suggest-corrections", sentence, target),
 
+  // 打開「記下來」筆記檔
+  openNotes: () => ipcRenderer.invoke("open-notes"),
+
   // 崩潰救援：錄音中持續把音訊寫到暫存檔
   recoveryBegin: () => ipcRenderer.invoke("recovery-begin"),
   recoveryAppend: (b64) => ipcRenderer.invoke("recovery-append", b64),
