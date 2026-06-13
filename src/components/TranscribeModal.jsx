@@ -92,7 +92,7 @@ export default function TranscribeModal({ onClose }) {
         const wav = pcmToWav(slice, srcRate, 16000);
         const offset = i * CHUNK_SEC; // 此段在整檔的起始秒數
         try {
-          const res = await window.electronAPI?.transcribeAudio?.(wav, srt ? { segments: true } : {});
+          const res = await window.electronAPI?.transcribeAudio?.(wav, srt ? { segments: true, no_persist: true } : { no_persist: true });
           if (res?.success && srt && Array.isArray(res.segments)) {
             for (const g of res.segments) {
               if (g?.text?.trim()) allSegs.push({ start: g.start + offset, end: g.end + offset, text: g.text.trim() });

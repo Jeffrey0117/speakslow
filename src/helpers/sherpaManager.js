@@ -673,11 +673,18 @@ class SherpaManager {
       // 保存原始錄音（永不丟失），供日後「重新辨識」使用。
       // 路徑先定好、複製放背景做（不擋住結果回傳 → 貼上更快）；
       // 複製完成後才刪暫存檔。
-      const persistedAudioPath = this._persistAudioInBackground(tempAudioPath);
+      // 檔案轉錄（逐字稿/SRT）逐段呼叫，no_persist 時不存錄音、只清暫存檔。
+      let persistedAudioPath = null;
+      if (options && options.no_persist) {
+        this.cleanupTempFile(tempAudioPath).catch(() => {});
+      } else {
+        persistedAudioPath = this._persistAudioInBackground(tempAudioPath);
+      }
 
       return {
         success: true,
-        text: result.text.trim(),
+        text: (result.text || "").trim(),
+        segments: result.segments, // SRT 模式：逐句時間軸 [{start,end,text}]
         raw_text: result.raw_text,
         confidence: result.confidence || 0.95,
         language: result.language || "zh-CN",
