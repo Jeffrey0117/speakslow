@@ -438,21 +438,26 @@ export default function App() {
       const prevIdx = parseInt(localStorage.getItem('level_idx') || '0', 10);
       if (newIdx > prevIdx) {
         const lv = LEVELS[newIdx];
-        toast.custom(() => (
-          <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/40 dark:to-orange-900/40 rounded-2xl shadow-xl border border-amber-200 dark:border-amber-700/50">
-            <span className="text-2xl">{lv.emoji}</span>
-            <div>
-              <div className="text-sm font-bold text-amber-700 dark:text-amber-300">{t('panel.levelUnlocked', { title: lv.title })}</div>
-              <div className="text-xs text-amber-600/90 dark:text-amber-400/90">{lv.message}</div>
+        if (miniModeRef.current) {
+          // 迷你模式：大卡片會爆版 → 在膠囊閃一下精簡版（emoji + 頭銜）
+          showNotification('warning', `${lv.emoji} 解鎖 ${lv.title}`);
+        } else {
+          toast.custom(() => (
+            <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/40 dark:to-orange-900/40 rounded-2xl shadow-xl border border-amber-200 dark:border-amber-700/50">
+              <span className="text-2xl">{lv.emoji}</span>
+              <div>
+                <div className="text-sm font-bold text-amber-700 dark:text-amber-300">{t('panel.levelUnlocked', { title: lv.title })}</div>
+                <div className="text-xs text-amber-600/90 dark:text-amber-400/90">{lv.message}</div>
+              </div>
             </div>
-          </div>
-        ), { duration: 4000 });
+          ), { duration: 4000 });
+        }
       }
       localStorage.setItem('level_idx', String(Math.max(newIdx, prevIdx)));
     } catch (e) {
       /* 統計失敗不影響主流程 */
     }
-  }, [t]);
+  }, [t, showNotification]);
   
   const { isDragging, handleMouseDown, handleMouseMove, handleMouseUp, handleClick } = useWindowDrag();
   const modelStatus = useModelStatus();
