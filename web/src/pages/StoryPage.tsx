@@ -10,9 +10,17 @@ export default function StoryPage() {
           一個「打字太慢、講話很快」的人，把語音輸入磨到順手的過程。
         </p>
 
-        {/* Demo 影片位置 */}
-        <div className="bg-gray-900 rounded-2xl aspect-video flex items-center justify-center mb-12 border border-gray-700">
-          <p className="text-gray-400 text-sm">🎬 Demo 影片即將上線</p>
+        {/* Demo 影片（30 秒實測） */}
+        <div className="mb-12">
+          <video
+            src="/SpeakSlow/demo.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            controls
+            className="mx-auto rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 max-h-[480px]"
+          />
         </div>
 
         <div className="space-y-10 text-gray-700 dark:text-gray-200 leading-relaxed">

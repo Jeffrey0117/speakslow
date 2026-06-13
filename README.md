@@ -24,7 +24,7 @@
 > 按一下 **右 Alt / 右 Ctrl** → 講中文 → 文字**自動貼到你游標所在的位置**。
 > 語音辨識**完全在你電腦本地運行**，一個字都不上雲。
 
-<div align="center"><em>（Demo 影片施工中）</em></div>
+<div align="center">🎬 <a href="https://jeffrey0117.github.io/SpeakSlow/demo.mp4"><strong>30 秒實測影片</strong></a>（講完即貼，全程本機）</div>
 
 <br/>
 
