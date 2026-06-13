@@ -1161,7 +1161,7 @@ export default function App() {
       <div
         className={`h-screen w-screen flex items-center gap-3 px-3 bg-white/95 dark:bg-gray-900/95 rounded-xl shadow-2xl overflow-hidden select-none ${
           commandMode
-            ? 'border-2 border-sky-500 ring-1 ring-sky-400/40'
+            ? 'border-2 border-dashed border-sky-400'
             : 'border border-gray-200 dark:border-gray-700/70'
         }`}
         style={{ WebkitAppRegion: 'drag' }}
@@ -1175,7 +1175,7 @@ export default function App() {
           <div className={`text-[13px] font-semibold leading-tight ${
             miniFlash ? flashColor
               : isRecording ? 'text-red-500 dark:text-red-400'
-              : commandMode ? 'text-sky-600 dark:text-sky-400'
+              : commandMode ? 'text-sky-500 dark:text-sky-300'
               : 'text-gray-900 dark:text-white'
           }`}>
             {miniFlash ? miniFlash.message
@@ -1228,7 +1228,7 @@ export default function App() {
     <div className="h-screen w-screen p-8">
       {/* 卡片：透明外層留足夠邊距，讓柔和陰影完整顯示、不被視窗裁成硬邊方塊 */}
       <div className={`h-full bg-gradient-to-br from-slate-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 px-4 pt-4 pb-2 rounded-3xl overflow-hidden flex flex-col shadow-[0_10px_30px_rgba(0,0,0,0.16)] ${
-        commandMode ? 'ring-2 ring-sky-500 ring-inset' : ''
+        commandMode ? 'ring-2 ring-sky-300 ring-inset' : ''
       }`}>
       {/* 主界面 */}
       <div className="w-full max-w-2xl mx-auto flex-1 min-h-0 flex flex-col">

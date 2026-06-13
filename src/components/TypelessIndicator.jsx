@@ -26,7 +26,7 @@ const TypelessIndicator = () => {
       <div
         className={`pill-bounce backdrop-blur-sm rounded-full px-5 py-2 flex items-center gap-2.5 ${
           commandMode
-            ? "bg-sky-500 border-2 border-dashed border-white/80"
+            ? "bg-sky-400 border-2 border-dashed border-white/80"
             : "bg-red-500 border border-red-400/60"
         }`}
       >
