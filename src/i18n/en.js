@@ -331,6 +331,7 @@ export default {
     hotkeyName: 'Right Alt / Right Ctrl',
     commandModeOn: 'Command mode: ON',
     commandModeOff: 'Command mode: OFF',
+    commandModeBadge: 'Command',
     commandDone: '✓ {label}',
     commandFailed: '{label}: {error}',
     commandUnknown: 'No matching command',

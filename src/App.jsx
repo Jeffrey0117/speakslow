@@ -283,6 +283,9 @@ export default function App() {
   const [miniCopied, setMiniCopied] = useState(false); // 迷你條複製回饋
   const [commandMode, setCommandMode] = useState(false); // 操作模式（語音指令，預設關閉）
   const commandModeRef = useRef(false); // 給 safePaste 閉包讀最新值，避免 stale
+  const miniModeRef = useRef(false); // 給 showNotification 閉包讀目前是否迷你模式
+  const [miniFlash, setMiniFlash] = useState(null); // 迷你模式：在小條上閃一下的訊息（取代浮動 toast）
+  const miniFlashTimer = useRef(null);
   const [aiOptimizationEnabled, setAiOptimizationEnabled] = useState(false); // AI 優化狀態
 
   // 錄音完成後動作設定
@@ -344,8 +347,18 @@ export default function App() {
   // 条件性显示通知的辅助函数
   const showNotification = useCallback((type, message, options) => {
     if (!notificationsEnabled && type !== 'error') return;
+    // 迷你模式：浮動 toast 會蓋住小條、比例全錯 → 改在小條身上閃一下字
+    if (miniModeRef.current) {
+      setMiniFlash({ type, message });
+      if (miniFlashTimer.current) clearTimeout(miniFlashTimer.current);
+      miniFlashTimer.current = setTimeout(() => setMiniFlash(null), 1800);
+      return;
+    }
     toast[type](message, options);
   }, [notificationsEnabled]);
+
+  // 同步 miniMode 到 ref（showNotification 閉包要讀最新值）
+  useEffect(() => { miniModeRef.current = miniMode; }, [miniMode]);
 
   // 好看的「已取消」提示（取代陽春的 info toast）
   const notifyCancel = useCallback(() => {
@@ -1119,19 +1132,38 @@ export default function App() {
     const lastText = processedText || originalText;
     const miniText = lastText || t('appName');
     const shouldMarquee = miniText.length > 16; // 短文字不跑，長文字跑馬燈
+    const flashColor = miniFlash ? ({
+      success: 'text-emerald-500 dark:text-emerald-400',
+      error: 'text-red-500 dark:text-red-400',
+      warning: 'text-amber-500 dark:text-amber-400',
+      info: 'text-violet-500 dark:text-violet-400',
+    }[miniFlash.type] || 'text-gray-900 dark:text-white') : '';
     return (
       <div
-        className="h-screen w-screen flex items-center gap-3 px-3 bg-white/95 dark:bg-gray-900/95 rounded-xl border border-gray-200 dark:border-gray-700/70 shadow-2xl overflow-hidden select-none"
+        className={`h-screen w-screen flex items-center gap-3 px-3 bg-white/95 dark:bg-gray-900/95 rounded-xl shadow-2xl overflow-hidden select-none ${
+          commandMode
+            ? 'border-2 border-violet-500 ring-1 ring-violet-400/40'
+            : 'border border-gray-200 dark:border-gray-700/70'
+        }`}
         style={{ WebkitAppRegion: 'drag' }}
       >
         <div className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
-          isRecording ? 'bg-red-500 animate-pulse' : 'bg-gray-100 dark:bg-gray-800'
+          isRecording ? 'bg-red-500 animate-pulse' : commandMode ? 'bg-violet-100 dark:bg-violet-900/40' : 'bg-gray-100 dark:bg-gray-800'
         }`}>
           <img src="./icon.png" alt="" className="w-7 h-7 rounded-md" draggable="false" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className={`text-[13px] font-semibold leading-tight ${isRecording ? 'text-red-500 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>
-            {isRecording ? t('panel.recordingIndicator') : (isRecordingProcessing || isOptimizing) ? t('app.processing') : t('panel.miniIdle')}
+          <div className={`text-[13px] font-semibold leading-tight ${
+            miniFlash ? flashColor
+              : isRecording ? 'text-red-500 dark:text-red-400'
+              : commandMode ? 'text-violet-600 dark:text-violet-400'
+              : 'text-gray-900 dark:text-white'
+          }`}>
+            {miniFlash ? miniFlash.message
+              : isRecording ? t('panel.recordingIndicator')
+              : (isRecordingProcessing || isOptimizing) ? t('app.processing')
+              : commandMode ? t('panel.commandModeBadge')
+              : t('panel.miniIdle')}
           </div>
           <div className="text-[11px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5 overflow-hidden">
             {shouldMarquee ? (
@@ -1176,7 +1208,9 @@ export default function App() {
   return (
     <div className="h-screen w-screen p-8">
       {/* 卡片：透明外層留足夠邊距，讓柔和陰影完整顯示、不被視窗裁成硬邊方塊 */}
-      <div className="h-full bg-gradient-to-br from-slate-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 px-4 pt-4 pb-2 rounded-3xl overflow-hidden flex flex-col shadow-[0_10px_30px_rgba(0,0,0,0.16)]">
+      <div className={`h-full bg-gradient-to-br from-slate-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 px-4 pt-4 pb-2 rounded-3xl overflow-hidden flex flex-col shadow-[0_10px_30px_rgba(0,0,0,0.16)] ${
+        commandMode ? 'ring-2 ring-violet-500 ring-inset' : ''
+      }`}>
       {/* 主界面 */}
       <div className="w-full max-w-2xl mx-auto flex-1 min-h-0 flex flex-col">
         {/* 标题栏 */}
@@ -1187,9 +1221,17 @@ export default function App() {
           onMouseUp={handleMouseUp}
         >
           <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 brand-title">
-              {t('appName')}
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 brand-title">
+                {t('appName')}
+              </h1>
+              {commandMode && (
+                <span className="non-draggable inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-violet-100 text-violet-700 dark:bg-violet-900/50 dark:text-violet-300 border border-violet-300 dark:border-violet-700">
+                  <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
+                  {t('panel.commandModeBadge')}
+                </span>
+              )}
+            </div>
           <div className="flex items-center space-x-1 non-draggable">
             {(originalText || processedText) && (
               <Tooltip content={t('app.copy')} position="bottom">

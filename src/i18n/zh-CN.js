@@ -331,6 +331,7 @@ export default {
     hotkeyName: '右 Alt / 右 Ctrl',
     commandModeOn: '操作模式：开',
     commandModeOff: '操作模式：关',
+    commandModeBadge: '操作模式',
     commandDone: '✓ {label}',
     commandFailed: '{label}：{error}',
     commandUnknown: '没有对应指令',
