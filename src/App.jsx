@@ -942,8 +942,8 @@ export default function App() {
             setCommandMode(next);
             // 鏡像到主行程 → 廣播給錄音指示器藥丸（讓它變藍/紅）
             try { window.electronAPI?.setCommandMode?.(next); } catch (e) { /* ignore */ }
-            // 開→藍色（配合操作模式主題色，不用綠色才不突兀）；關→中性黑
-            showNotification(next ? 'command' : 'info',
+            // 開/關都用中性黑字（綠色、藍色都嫌突兀；藍色由膠囊邊框自己表達）
+            showNotification('info',
               next ? t('panel.commandModeOn') : t('panel.commandModeOff'));
             break;
           }

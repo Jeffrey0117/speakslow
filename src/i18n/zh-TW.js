@@ -332,7 +332,7 @@ export default {
     commandModeOn: '操作模式：開',
     commandModeOff: '操作模式：關',
     commandModeBadge: '操作模式',
-    commandListening: '聽指令',
+    commandListening: '聽指令...',
     commandDone: '✓ {label}',
     commandFailed: '{label}：{error}',
     commandUnknown: '沒有對應指令',

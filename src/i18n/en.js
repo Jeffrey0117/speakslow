@@ -332,7 +332,7 @@ export default {
     commandModeOn: 'Command mode: ON',
     commandModeOff: 'Command mode: OFF',
     commandModeBadge: 'Command',
-    commandListening: 'Listening',
+    commandListening: 'Listening...',
     commandDone: '✓ {label}',
     commandFailed: '{label}: {error}',
     commandUnknown: 'No matching command',
