@@ -24,6 +24,14 @@ const BUILTIN_COMMANDS = [
   // AI 指令（走既有 AI 金鑰，會用到額度；翻譯走免費 Google，這些則需要真智慧）
   { kind: "ai", aiMode: "condense", label: "濃縮" },
   { kind: "ai", aiMode: "extract_vocab", label: "抓單字" },
+  { kind: "ai", aiMode: "summarize", label: "總結" },
+  { kind: "ai", aiMode: "copywrite", label: "寫成文案" },
+  // 按鍵指令（送 SendKeys 給前景視窗，免費、瞬間；讓你能串指令流）
+  { kind: "key", keys: "^a", label: "全選", triggers: ["全選", "全部選取", "選取全部", "選全部"] },
+  { kind: "key", keys: "^c", label: "複製", triggers: ["複製", "拷貝"] },
+  { kind: "key", keys: "^v", label: "貼上", triggers: ["貼上", "貼上來"] },
+  { kind: "key", keys: "{ENTER}", label: "送出", triggers: ["送出", "傳送", "發送", "換行", "斷行"] },
+  { kind: "key", keys: "^a{DEL}", label: "全部清除", triggers: ["全部刪除", "全部清掉", "全部清除", "清空"] },
 ];
 
 // 正規化辨識結果：去空白、去標點、轉小寫，方便關鍵詞比對
@@ -66,6 +74,20 @@ function matchCommand(text) {
   }
   if (norm.includes("單字") || norm.includes("生字") || norm.includes("詞彙") || norm.includes("單詞")) {
     return find((c) => c.aiMode === "extract_vocab");
+  }
+  if (norm.includes("總結") || norm.includes("摘要") || norm.includes("重點整理")) {
+    return find((c) => c.aiMode === "summarize");
+  }
+  if (norm.includes("文案") || norm.includes("行銷文")) {
+    return find((c) => c.aiMode === "copywrite");
+  }
+
+  // 4) 按鍵指令（觸發詞子字串；多字詞要排在單字詞前，例如「全部刪除」先於「刪除」）
+  for (const cmd of BUILTIN_COMMANDS) {
+    if (cmd.kind !== "key") continue;
+    for (const trig of cmd.triggers) {
+      if (norm.includes(normalize(trig))) return cmd;
+    }
   }
 
   return null;
@@ -155,6 +177,14 @@ async function runVoiceCommand(ctx, text) {
     return await applyToSelection(ctx, cmd.label, (sel) =>
       ctx.aiProcessor.processTextWithAI(sel, cmd.aiMode)
     );
+  }
+
+  if (cmd.kind === "key") {
+    // 純按鍵：不抓選取、不轉換，直接送鍵給前景視窗（免費、瞬間）
+    const ok = ctx.clipboardManager.focusAndSendKeysFast(cmd.keys);
+    return ok
+      ? { matched: true, success: true, label: cmd.label }
+      : { matched: true, success: false, label: cmd.label, error: "送鍵失敗（PowerShell 未就緒）" };
   }
 
   return { matched: false };

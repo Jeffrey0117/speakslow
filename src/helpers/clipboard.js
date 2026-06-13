@@ -133,6 +133,17 @@ class ClipboardManager {
     );
   }
 
+  // 快速：還原焦點到前景視窗並送出任意按鍵（操作模式的按鍵指令用）
+  // keys 為 SendKeys 語法字串（^a=Ctrl+A、^c、^v、{ENTER}、{DELETE} 等）
+  focusAndSendKeysFast(keys) {
+    const ps = this._ensurePsShell();
+    if (!ps) return false;
+    // keys 為內建常數（非使用者輸入），不含單引號，可安全內嵌
+    return this._psSend(
+      `if ($savedHwnd -ne [IntPtr]::Zero) { Restore-Fg $savedHwnd; Start-Sleep -Milliseconds 25 }; $ws.SendKeys('${keys}')`
+    );
+  }
+
   // 快速：送出 Enter
   sendEnterFast() {
     const ps = this._ensurePsShell();

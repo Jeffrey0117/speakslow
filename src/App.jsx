@@ -937,6 +937,9 @@ export default function App() {
             handleCopyLastResult();
             break;
           case 'toggle-command-mode': {
+            // 鬼轉：切換鍵若用到右 Ctrl 會同時誤觸錄音，這裡把那一下錄音取消掉
+            //（你明顯是要切模式，不是要錄音）
+            handleCancelRecording();
             const next = !commandModeRef.current;
             commandModeRef.current = next;
             setCommandMode(next);
