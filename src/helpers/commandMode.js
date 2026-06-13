@@ -48,6 +48,8 @@ const BUILTIN_COMMANDS = [
   { kind: "translate", tl: "en", lang: "en", label: "翻成英文" },
   { kind: "translate", tl: "zh-TW", lang: "zh", label: "翻成中文" },
   { kind: "translate", tl: "ja", lang: "ja", label: "翻成日文" },
+  // 只講「翻譯」沒指定語言：執行時偵測選取是中還是英，翻成另一個
+  { kind: "translate_auto", label: "翻譯" },
   // 朗讀（Windows 內建 SAPI，免費）
   { kind: "speak", label: "念出來" },
   // AI 固定指令（精選、輸出彼此明顯不同；其餘模糊需求一律走 freeform）
@@ -94,6 +96,10 @@ function matchCommand(text) {
     if (maxIdx === enIdx) return find((c) => c.lang === "en");
     if (maxIdx === jaIdx) return find((c) => c.lang === "ja");
     return find((c) => c.lang === "zh");
+  }
+  // 只講「翻譯 / 翻一下」沒指定語言 → 中↔英自動互翻（最常見的那對）
+  if (norm.includes("翻譯") || norm.includes("翻一下") || norm.includes("翻成") || norm.includes("translate")) {
+    return find((c) => c.kind === "translate_auto");
   }
 
   // 3) 朗讀（免費，SAPI）
@@ -267,6 +273,16 @@ async function runSingleCommand(ctx, text) {
   if (cmd.kind === "translate") {
     // 免費 Google 翻譯，不碰 AI 額度
     return await applyToSelection(ctx, cmd.label, (sel) => translateFree(sel, cmd.tl));
+  }
+
+  if (cmd.kind === "translate_auto") {
+    // 中↔英自動互翻：偵測選取以中文還是英文為主，翻成另一個
+    return await applyToSelection(ctx, cmd.label, (sel) => {
+      const cjk = (sel.match(/[一-鿿぀-ヿ가-힯]/g) || []).length;
+      const latin = (sel.match(/[A-Za-z]/g) || []).length;
+      const tl = cjk >= latin ? "en" : "zh-TW";
+      return translateFree(sel, tl);
+    });
   }
 
   if (cmd.kind === "ai") {
