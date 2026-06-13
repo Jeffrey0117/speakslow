@@ -1,5 +1,6 @@
 const { clipboard } = require("electron");
 const { translateFree } = require("./translate");
+const { speak } = require("./tts");
 
 /**
  * 操作模式（語音指令）派發層 —— 刻意保持「瘦」。
@@ -21,6 +22,8 @@ const BUILTIN_COMMANDS = [
   { kind: "translate", tl: "en", lang: "en", label: "翻成英文" },
   { kind: "translate", tl: "zh-TW", lang: "zh", label: "翻成中文" },
   { kind: "translate", tl: "ja", lang: "ja", label: "翻成日文" },
+  // 朗讀（Windows 內建 SAPI，免費）
+  { kind: "speak", label: "念出來" },
   // AI 固定指令（精選、輸出彼此明顯不同；其餘模糊需求一律走 freeform）
   { kind: "ai", aiMode: "optimize", label: "潤稿" },
   { kind: "ai", aiMode: "summarize", label: "總結" },
@@ -67,7 +70,12 @@ function matchCommand(text) {
     return find((c) => c.lang === "zh");
   }
 
-  // 3) AI 固定指令（只留輸出明顯不同的幾個；濃縮/抓單字/改寫等模糊需求交給 freeform）
+  // 3) 朗讀（免費，SAPI）
+  if (norm.includes("念出來") || norm.includes("唸出來") || norm.includes("讀出來") || norm.includes("朗讀") || norm.includes("念給") || norm.includes("唸給")) {
+    return find((c) => c.kind === "speak");
+  }
+
+  // 4) AI 固定指令（只留輸出明顯不同的幾個；濃縮/抓單字/改寫等模糊需求交給 freeform）
   if (norm.includes("潤稿") || norm.includes("潤飾") || norm.includes("修順") || norm.includes("順稿") || norm.includes("校對")) {
     return find((c) => c.aiMode === "optimize");
   }
@@ -233,6 +241,24 @@ async function runSingleCommand(ctx, text) {
     );
   }
 
+  if (cmd.kind === "speak") {
+    // 朗讀選取：抓選取 → 唸出來（不貼回去，唸完還原剪貼簿）
+    const userClipboard = clipboard.readText();
+    if (!ctx.clipboardManager.focusAndCopyFast()) {
+      return { matched: true, success: false, label: cmd.label, error: "無法複製選取（PowerShell 未就緒）" };
+    }
+    await delay(220);
+    const sel = clipboard.readText();
+    clipboard.writeText(userClipboard); // 朗讀不需要剪貼簿，還原使用者原本的
+    if (!sel || sel.trim() === "") {
+      return { matched: true, success: false, label: cmd.label, error: "沒有選取到文字" };
+    }
+    const r = speak(sel);
+    return r.success
+      ? { matched: true, success: true, label: cmd.label }
+      : { matched: true, success: false, label: cmd.label, error: r.error };
+  }
+
   if (cmd.kind === "key") {
     // 純按鍵：不抓選取、不轉換，直接送鍵給前景視窗（免費、瞬間）
     const ok = ctx.clipboardManager.focusAndSendKeysFast(cmd.keys);
@@ -264,6 +290,13 @@ async function runVoiceCommand(ctx, text) {
     if (cmd && cmd.kind === "key" && cmd.keys === "^c" && lastResult != null) {
       try { clipboard.writeText(lastResult); } catch (e) { /* ignore */ }
       ran.push({ matched: true, success: true, label: "複製" });
+      await delay(150);
+      continue;
+    }
+    // 「念出來」緊接在轉換之後：直接唸結果（例：翻成日文 → 念出來 唸日文）
+    if (cmd && cmd.kind === "speak" && lastResult != null) {
+      speak(lastResult);
+      ran.push({ matched: true, success: true, label: "念出來" });
       await delay(150);
       continue;
     }
