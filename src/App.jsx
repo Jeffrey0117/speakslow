@@ -221,10 +221,10 @@ const TextDisplay = React.memo(({ originalText, processedText, scrollRef, t, onA
   if (!displayText) return null;
 
   return (
-    <div className="fade-in mb-3">
-      {/* 卡片高度隨內容（一句話就扁扁的），超過上限才在卡片內捲動 */}
-      <div className="bg-white/90 dark:bg-gray-800/90 rounded-xl shadow-md border border-gray-200/70 dark:border-gray-700/60 overflow-hidden">
-        <div ref={scrollRef} className="h-[120px] overflow-y-auto px-3.5 py-3 panel-scroll">
+    <div className="fade-in pb-3 h-full flex flex-col min-h-0">
+      {/* 卡片填滿可用高度（貼近底下統計、不留大空隙），文字超過才在卡片內捲動 */}
+      <div className="bg-white/90 dark:bg-gray-800/90 rounded-xl shadow-md border border-gray-200/70 dark:border-gray-700/60 overflow-hidden flex-1 flex flex-col min-h-0">
+        <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-3.5 py-3 panel-scroll">
           <p
             ref={pRef}
             onMouseUp={handleMouseUp}
