@@ -1,22 +1,28 @@
 import React from "react";
 import { useTranslation } from "../i18n";
+import { getLevelIndex, LEVELS } from "../utils/levels";
 
 // 統計橫幅組件 - 用幽默方式展示成就
 const StatsBanner = ({ stats }) => {
   const { t } = useTranslation();
-  const msgs = t('history.bannerMessages');
+  // 跟升等 toast 共用同一份等級表（levels.js），避免兩邊對不上
   const getLevelInfo = (chars) => {
-    if (chars === 0) return { emoji: '🤫', message: msgs[0], color: 'gray', borderClass: 'border-gray-300 dark:border-gray-600' };
-    if (chars < 100) return { emoji: '👋', message: msgs[1], color: 'gray', borderClass: 'border-gray-300 dark:border-gray-600' };
-    if (chars < 500) return { emoji: '🗣️', message: msgs[2], color: 'green', borderClass: 'border-green-400 dark:border-green-500' };
-    if (chars < 1000) return { emoji: '💬', message: msgs[3], color: 'green', borderClass: 'border-green-400 dark:border-green-500' };
-    if (chars < 2000) return { emoji: '📢', message: msgs[4], color: 'blue', borderClass: 'border-blue-400 dark:border-blue-500' };
-    if (chars < 5000) return { emoji: '🎙️', message: msgs[5], color: 'blue', borderClass: 'border-blue-400 dark:border-blue-500' };
-    if (chars < 10000) return { emoji: '📚', message: msgs[6], color: 'purple', borderClass: 'border-purple-400 dark:border-purple-500' };
-    if (chars < 30000) return { emoji: '🎓', message: msgs[7], color: 'purple', borderClass: 'border-purple-400 dark:border-purple-500' };
-    if (chars < 50000) return { emoji: '✍️', message: msgs[8], color: 'orange', borderClass: 'border-orange-400 dark:border-orange-500' };
-    if (chars < 100000) return { emoji: '🏛️', message: msgs[9], color: 'orange', borderClass: 'border-orange-400 dark:border-orange-500' };
-    return { emoji: '🌟', message: msgs[10], color: 'amber', borderClass: 'border-amber-400 dark:border-amber-500' };
+    const lv = LEVELS[getLevelIndex(chars)];
+    const color = chars < 1000 ? 'gray'
+      : chars < 5000 ? 'green'
+      : chars < 20000 ? 'blue'
+      : chars < 50000 ? 'purple'
+      : chars < 100000 ? 'orange'
+      : 'amber';
+    const borderMap = {
+      gray: 'border-gray-300 dark:border-gray-600',
+      green: 'border-green-400 dark:border-green-500',
+      blue: 'border-blue-400 dark:border-blue-500',
+      purple: 'border-purple-400 dark:border-purple-500',
+      orange: 'border-orange-400 dark:border-orange-500',
+      amber: 'border-amber-400 dark:border-amber-500',
+    };
+    return { emoji: lv.emoji, message: lv.message, color, borderClass: borderMap[color] };
   };
 
   const getNumberColorClass = (color) => {
