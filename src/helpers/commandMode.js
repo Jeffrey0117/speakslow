@@ -274,6 +274,20 @@ function splitCommands(text) {
   return out;
 }
 
+// AI（尤其本地 qwen）常吐簡體 → 輸出統一過一次 opencc 簡轉繁，保證繁體
+async function aiToTraditional(ctx, producer) {
+  const res = await producer();
+  if (res && res.success && typeof res.text === "string" && res.text.trim()) {
+    try {
+      const conv = await ctx.sherpaManager.transformText(res.text, "to_traditional");
+      if (conv && conv.success && typeof conv.text === "string" && conv.text.trim()) {
+        return { ...res, text: conv.text };
+      }
+    } catch (e) { /* 轉換失敗就用原文 */ }
+  }
+  return res;
+}
+
 // freeform：把使用者整句話當「給 AI 的指示」，套用在選取的文字上
 function freeformPrompt(instruction, selection) {
   return (
@@ -301,7 +315,7 @@ async function runSingleCommand(ctx, text) {
       const instruction = text.trim();
       const label = "✨ " + (instruction.length > 14 ? instruction.slice(0, 14) + "…" : instruction);
       return await applyToSelection(ctx, label, (sel) =>
-        ctx.aiProcessor.processTextWithAI(sel, "freeform", freeformPrompt(instruction, sel))
+        aiToTraditional(ctx, () => ctx.aiProcessor.processTextWithAI(sel, "freeform", freeformPrompt(instruction, sel)))
       );
     }
     return { matched: false };
@@ -334,7 +348,7 @@ async function runSingleCommand(ctx, text) {
       return { matched: true, success: false, label: cmd.label, error: "AI 未設定" };
     }
     return await applyToSelection(ctx, cmd.label, (sel) =>
-      ctx.aiProcessor.processTextWithAI(sel, cmd.aiMode)
+      aiToTraditional(ctx, () => ctx.aiProcessor.processTextWithAI(sel, cmd.aiMode))
     );
   }
 
