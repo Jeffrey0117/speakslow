@@ -280,6 +280,7 @@ export default function App() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(true); // 視窗置頂狀態
   const [miniMode, setMiniMode] = useState(false); // 迷你模式（原地變身扁平浮窗）
+  const [miniCopied, setMiniCopied] = useState(false); // 迷你條複製回饋
   const [aiOptimizationEnabled, setAiOptimizationEnabled] = useState(false); // AI 優化狀態
 
   // 錄音完成後動作設定
@@ -1110,6 +1111,20 @@ export default function App() {
             )}
           </div>
         </div>
+        {lastText && (
+          <button
+            onClick={() => { window.electronAPI?.copyText?.(lastText); setMiniCopied(true); setTimeout(() => setMiniCopied(false), 1200); }}
+            title={t('app.copy')}
+            style={{ WebkitAppRegion: 'no-drag' }}
+            className={`shrink-0 p-1.5 rounded-lg transition-colors ${
+              miniCopied
+                ? 'text-emerald-500'
+                : 'text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700/80'
+            }`}
+          >
+            <Copy className="w-4 h-4" />
+          </button>
+        )}
         <button
           onClick={() => toggleMiniMode(false)}
           title={t('panel.miniExpand')}
@@ -1162,14 +1177,6 @@ export default function App() {
                 ✨AI
               </button>
             </Tooltip>
-            <Tooltip content={t('panel.miniMode')} position="bottom">
-              <button
-                onClick={() => toggleMiniMode(true)}
-                className="p-1.5 hover:bg-white/70 dark:hover:bg-gray-700/70 rounded-lg transition-colors non-draggable"
-              >
-                <Minimize2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-              </button>
-            </Tooltip>
             <Tooltip content={t('app.settings')} position="bottom">
               <button
                 onClick={handleOpenSettings}
@@ -1194,9 +1201,9 @@ export default function App() {
                 }`} />
               </button>
             </Tooltip>
-            <Tooltip content={t('panel.minimize')} position="bottom">
+            <Tooltip content={t('panel.miniMode')} position="bottom">
               <button
-                onClick={handleMinimize}
+                onClick={() => toggleMiniMode(true)}
                 className="p-1.5 hover:bg-white/70 dark:hover:bg-gray-700/70 rounded-lg transition-colors"
               >
                 <Minus className="w-4 h-4 text-gray-600 dark:text-gray-400" />
