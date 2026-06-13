@@ -356,7 +356,7 @@ class WindowManager {
     if (enabled) {
       this._preMiniBounds = this.mainWindow.getBounds();
       const wa = screen.getPrimaryDisplay().workArea;
-      const w = 384;
+      const w = 300;
       const h = 64;
       this.mainWindow.setMinimumSize(w, h);
       this.mainWindow.setBounds({

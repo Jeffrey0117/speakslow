@@ -326,6 +326,7 @@ export default {
     recordingIndicator: '录音中...',
     miniMode: '迷你模式（缩到角落）',
     miniExpand: '展开面板',
+    closeToTray: '收到托盘（不会关闭程序）',
     miniIdle: '按 右 Ctrl 说话',
     hotkeyName: '右 Alt / 右 Ctrl'
   },

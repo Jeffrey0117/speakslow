@@ -1216,7 +1216,7 @@ export default function App() {
                 <Minus className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               </button>
             </Tooltip>
-            <Tooltip content={t('app.close')} position="bottom">
+            <Tooltip content={t('panel.closeToTray')} position="bottom">
               <button
                 onClick={handleClose}
                 className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
