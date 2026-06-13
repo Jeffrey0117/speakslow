@@ -24,7 +24,13 @@
 > 按一下 **右 Alt / 右 Ctrl** → 講中文 → 文字**自動貼到你游標所在的位置**。
 > 語音辨識**完全在你電腦本地運行**，一個字都不上雲。
 
-<div align="center">🎬 <a href="https://jeffrey0117.github.io/SpeakSlow/demo.mp4"><strong>30 秒實測影片</strong></a>（講完即貼，全程本機）</div>
+<div align="center">
+
+<img src="assets/demo.gif" width="300" alt="30 秒實測：講完即貼，全程本機">
+
+🎬 <a href="https://jeffrey0117.github.io/SpeakSlow/demo.mp4">高畫質影片版</a>（講完即貼，全程本機）
+
+</div>
 
 <br/>
 
@@ -59,6 +65,15 @@
 - **每日字數趨勢圖**
 - **完整歷史**：搜尋、統計、匯出
 - **錄音永久保存**：辨識不滿意可**一鍵重新辨識**，甚至用 **Whisper** 換更強的模型重辨
+
+## 📊 作者本人天天在用（不是做好看的）
+
+<div align="center">
+<img src="assets/usage-dashboard.jpg" width="46%" alt="累計 36,707 字、省下 17 小時 22 分">
+<img src="assets/usage-history.jpg" width="46%" alt="單日口述一萬八千字的歷史紀錄">
+
+<em>口述 3 小時 = 省下 17 小時打字。有一天講了一萬八千字，可以出書了，書名就叫《我說的》。</em>
+</div>
 
 ## 🔒 隱私：100% 本地，聲音不外流
 

@@ -23,6 +23,18 @@ export default function StoryPage() {
           />
         </div>
 
+        {/* 作者實際使用數據 */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 text-center">我自己天天在用</h2>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <img src="/SpeakSlow/usage-1.jpg" alt="累計 36,707 字、省下 17 小時 22 分" className="rounded-xl border border-gray-200 dark:border-gray-700 shadow" />
+            <img src="/SpeakSlow/usage-2.jpg" alt="單日口述一萬八千字" className="rounded-xl border border-gray-200 dark:border-gray-700 shadow" />
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-3">
+            口述 3 小時，省下 17 小時打字。有一天講了一萬八千字，可以出書了，書名就叫《我說的》。
+          </p>
+        </div>
+
         <div className="space-y-10 text-gray-700 dark:text-gray-200 leading-relaxed">
           <section>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">起點：站在開源的肩膀上</h2>
