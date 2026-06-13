@@ -88,6 +88,8 @@ export const useRecording = (modelStatus) => {
   // 清理資源
   const cleanup = useCallback(() => {
     stopPrecogTimer(); // 停止邊錄邊算的餵入（不 abort：成功路徑還要取用結果）
+    // 錄音正常結束/取消 → 收掉崩潰救援暫存檔（這段已正常處理，不是孤兒）
+    try { window.electronAPI?.recoveryEnd?.(); } catch (e) { /* ignore */ }
     if (processorRef.current) {
       processorRef.current.disconnect();
       processorRef.current = null;
@@ -211,13 +213,24 @@ export const useRecording = (modelStatus) => {
       try {
         asrProfile = await window.electronAPI?.getSetting?.('asr_profile', 'standard') || 'standard';
       } catch (e) { /* 預設 standard */ }
-      precogRef.current = { active: false, fedChunks: 0, timer: null, profile: asrProfile };
+      precogRef.current = { active: false, fedChunks: 0, recoveryFed: 0, timer: null, profile: asrProfile };
       const srcRate = audioContext.sampleRate;
+      // 崩潰救援：開一條暫存檔，錄音中持續寫入；正常/取消停止時會刪掉
+      try { window.electronAPI?.recoveryBegin?.(); } catch (e) { /* ignore */ }
       precogRef.current.timer = setInterval(async () => {
         try {
           const p = precogRef.current;
           const chunks = pcmBufferRef.current;
           const totalSamples = chunks.reduce((s, a) => s + a.length, 0);
+          // 崩潰救援：每秒把新音訊 append 到暫存檔（不管 precog 有沒有啟動）
+          if (chunks.length > (p.recoveryFed || 0)) {
+            const recNew = chunks.slice(p.recoveryFed || 0);
+            p.recoveryFed = chunks.length;
+            try {
+              const rb64 = chunksToPcm16Base64(recNew, srcRate);
+              window.electronAPI?.recoveryAppend?.(rb64);
+            } catch (e) { /* 救援失敗不影響錄音 */ }
+          }
           if (!p.active) {
             if (totalSamples / srcRate < PRECOG_START_SEC) return;
             const r = await window.electronAPI?.precogStart?.(p.profile);

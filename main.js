@@ -149,6 +149,13 @@ const typelessManager = new TypelessManager(logger);
 const dataDirectory = environmentManager.ensureDataDirectory();
 databaseManager.initialize(dataDirectory);
 
+// 崩潰救援：若上次錄音中途被砍，把遺留的音訊救回歷史（標「未轉錄」）
+try {
+  require("./src/helpers/recovery").recoverOnStartup(databaseManager, logger);
+} catch (e) {
+  logger && logger.warn && logger.warn("崩潰救援啟動檢查失敗:", e?.message || e);
+}
+
 // 初始化 windowManager，傳入 databaseManager 以支援設定讀取
 const windowManager = new WindowManager(databaseManager);
 const trayManager = new TrayManager();

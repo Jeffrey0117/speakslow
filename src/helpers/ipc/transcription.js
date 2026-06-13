@@ -1,7 +1,13 @@
 const { ipcMain } = require("electron");
 const { runVoiceCommand } = require("../commandMode");
+const recovery = require("../recovery");
 
 module.exports = function register(ctx) {
+  // 崩潰救援：錄音中持續把音訊寫到暫存檔，中斷時下次開機可救回
+  ipcMain.handle("recovery-begin", async () => recovery.begin());
+  ipcMain.handle("recovery-append", async (_e, b64) => recovery.append(b64));
+  ipcMain.handle("recovery-end", async () => recovery.end());
+
   // 操作模式：把一段辨識文字當指令派發（比對到才執行，否則回 matched:false）
   ipcMain.handle("run-voice-command", async (_event, text) => {
     try {

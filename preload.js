@@ -70,6 +70,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // 操作模式：把辨識文字當語音指令派發
   runVoiceCommand: (text) => ipcRenderer.invoke("run-voice-command", text),
 
+  // 崩潰救援：錄音中持續把音訊寫到暫存檔
+  recoveryBegin: () => ipcRenderer.invoke("recovery-begin"),
+  recoveryAppend: (b64) => ipcRenderer.invoke("recovery-append", b64),
+  recoveryEnd: () => ipcRenderer.invoke("recovery-end"),
+
   // 「念出來」：主行程把 Edge TTS 的 MP3（base64）丟過來播 / 停
   onTtsPlay: (callback) => {
     const handler = (_event, b64) => callback(b64);
