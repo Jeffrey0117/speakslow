@@ -143,16 +143,10 @@ async function applyToSelection(ctx, label, producer) {
   }
   await delay(280); // 等 Ctrl+V 落地
 
-  // 5) 讓「結果」維持選取：游標停在貼上文字末端，用 Shift+← 把整段選回來。
-  //    這樣指令流接「複製」或再一個轉換才有東西可吃（字元數計，CJK 多為 1）。
-  const count = [...out].length;
-  if (count > 0 && count <= 2000) {
-    // 用括號群組讓 Shift 在整段 LEFT 連按期間都按住（+({LEFT N})）
-    clipboardManager.focusAndSendKeysFast(`+({LEFT ${count}})`);
-    await delay(150);
-  }
+  // （不再用 Shift+← 把結果選回來 —— 那會在畫面上一格一格刷、又醜又慢。
+  //   指令流的「複製」改成直接拿 resultText 寫剪貼簿，不需要靠選取。）
 
-  // 6) 還原使用者原本的剪貼簿（貼上已 await 完成，安全；後續「複製」會自己再寫）
+  // 還原使用者原本的剪貼簿（貼上已 await 完成，安全；後續「複製」會自己再寫）
   clipboard.writeText(userClipboard);
   // resultText 讓指令流的「複製」可以直接拿結果寫剪貼簿（不靠脆弱的選取+Ctrl+C）
   return { matched: true, success: true, label, resultText: out };
