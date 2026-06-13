@@ -189,6 +189,17 @@ module.exports = function register(ctx) {
     catch (error) { return false; }
   });
 
+  // 操作模式狀態：主視窗 toggle 時鏡像到主行程 → 廣播給錄音指示器藥丸
+  ipcMain.handle("set-command-mode", async (event, enabled) => {
+    try { return ctx.windowManager.setCommandMode(enabled); }
+    catch (error) { return { success: false, error: error.message }; }
+  });
+
+  ipcMain.handle("get-command-mode", async () => {
+    try { return ctx.windowManager.getCommandMode(); }
+    catch (error) { return false; }
+  });
+
   ipcMain.handle("set-always-on-top", async (event, value) => {
     try {
       ctx.windowManager.setMainWindowAlwaysOnTop(value);

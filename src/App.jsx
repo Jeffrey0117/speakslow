@@ -930,6 +930,8 @@ export default function App() {
             const next = !commandModeRef.current;
             commandModeRef.current = next;
             setCommandMode(next);
+            // 鏡像到主行程 → 廣播給錄音指示器藥丸（讓它變藍/紅）
+            try { window.electronAPI?.setCommandMode?.(next); } catch (e) { /* ignore */ }
             showNotification(next ? 'success' : 'info',
               next ? t('panel.commandModeOn') : t('panel.commandModeOff'));
             break;
@@ -1177,9 +1179,9 @@ export default function App() {
               : 'text-gray-900 dark:text-white'
           }`}>
             {miniFlash ? miniFlash.message
-              : isRecording ? (commandMode ? t('panel.commandListening') : t('panel.recordingIndicator'))
+              : isRecording ? t('panel.recordingIndicator')
               : (isRecordingProcessing || isOptimizing) ? t('app.processing')
-              : commandMode ? t('panel.commandListening')
+              : commandMode ? t('panel.commandModeBadge')
               : t('panel.miniIdle')}
           </div>
           <div className="text-[11px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5 overflow-hidden">

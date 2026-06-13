@@ -12,6 +12,20 @@ class WindowManager {
     this.isQuitting = false; // 用於判斷是否真正退出
     this._miniRepaintTimer = null; // 迷你模式期間的低頻重繪心跳（防閒置鬼影）
     this.isMini = false; // 視窗目前是否為迷你尺寸（渲染端重載後用來重新同步）
+    this.commandMode = false; // 操作模式（主行程鏡像，給錄音指示器藥丸用）
+  }
+
+  // 操作模式狀態（渲染端 toggle 時鏡像到主行程，並廣播給錄音指示器小窗）
+  setCommandMode(enabled) {
+    this.commandMode = !!enabled;
+    if (this.typelessIndicatorWindow && !this.typelessIndicatorWindow.isDestroyed()) {
+      try { this.typelessIndicatorWindow.webContents.send("command-mode-changed", this.commandMode); } catch (e) { /* ignore */ }
+    }
+    return { success: true, commandMode: this.commandMode };
+  }
+
+  getCommandMode() {
+    return !!this.commandMode;
   }
 
   // 渲染端（HMR 熱重載 / 任何重載）掛載時查詢：視窗目前到底是不是迷你？
@@ -418,11 +432,21 @@ class WindowManager {
   }
 
   showTypelessIndicator() {
+    // 顯示時把目前操作模式狀態推給藥丸（讓它一出現就是正確的紅/藍樣式）
+    const pushState = () => {
+      if (this.typelessIndicatorWindow && !this.typelessIndicatorWindow.isDestroyed()) {
+        try { this.typelessIndicatorWindow.webContents.send("command-mode-changed", this.commandMode); } catch (e) { /* ignore */ }
+      }
+    };
     if (this.typelessIndicatorWindow && !this.typelessIndicatorWindow.isDestroyed()) {
+      pushState();
       this.typelessIndicatorWindow.show();
     } else {
       this.createTypelessIndicatorWindow().then(() => {
         if (this.typelessIndicatorWindow) {
+          // 等內容載入完再推狀態，避免訊息早於監聽器
+          this.typelessIndicatorWindow.webContents.once("did-finish-load", pushState);
+          pushState();
           this.typelessIndicatorWindow.show();
         }
       });
