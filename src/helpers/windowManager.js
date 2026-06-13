@@ -408,7 +408,10 @@ class WindowManager {
     // 廣播給 React：不管是誰改的（托盤、main 端救援…），版面都跟著視窗大小走，
     // 避免「大視窗畫迷你版面」這種錯位。
     try { win.webContents.send("mini-mode-changed", enabled); } catch (e) { /* ignore */ }
-    if (enabled) this._preMiniBounds = win.getBounds();
+    // 縮小時記住「縮之前」的尺寸當還原目標。但若這次呼叫時視窗其實已經是迷你
+    // （狀態重複觸發 / desync），別把 300 寬的迷你尺寸存進去，否則下次展開會把
+    // 大面板還原成 300 窄視窗 → 標題被擠爛、徽章蓋住名字（真實踩過的雷）。
+    if (enabled && win.getBounds().width > 320) this._preMiniBounds = win.getBounds();
 
     // 透明視窗改 bounds 會在「離開的舊位置」留殘影（DWM 不清、底下的 app
     // 不重繪就一直掛著）。hide/show 在某些機器上仍清不乾淨。
@@ -430,9 +433,13 @@ class WindowManager {
           width: w,
           height: h,
         });
-      } else if (this._preMiniBounds) {
+      } else {
+        // 展開：還原成縮之前的尺寸；若還原目標遺失或寬度不合理（曾被存成迷你尺寸），
+        // 退回正常面板寬度，保證大面板一定有足夠寬度，不會擠爛標題。
         win.setMinimumSize(472, 470);
-        win.setBounds(this._preMiniBounds);
+        const cur = win.getBounds();
+        const ok = this._preMiniBounds && this._preMiniBounds.width > 320;
+        win.setBounds(ok ? this._preMiniBounds : { x: cur.x, y: cur.y, width: 472, height: 470 });
       }
       win.setResizable(false);
       try { win.webContents.invalidate(); } catch (e) { /* ignore */ }

@@ -1,4 +1,5 @@
-import { Github, Download } from 'lucide-react'
+import { Github, Download, BookOpen } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import screenshot from '../assets/screenshot.png'
 import Nav from '../components/Nav'
 
@@ -55,6 +56,16 @@ export default function HomePage() {
             >
               <Github className="w-5 h-5" /> 在 GitHub 上 Star ⭐
             </a>
+          </div>
+
+          {/* 教學連結 */}
+          <div className="mb-8">
+            <Link
+              to="/guide"
+              className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium hover:underline"
+            >
+              <BookOpen className="w-4 h-4" /> 看完整使用教學
+            </Link>
           </div>
 
           <p className="text-sm text-gray-500 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
