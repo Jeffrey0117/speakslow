@@ -328,7 +328,13 @@ export default {
     miniExpand: 'Expand panel',
     closeToTray: 'Hide to tray (app keeps running)',
     miniIdle: 'Press Right Ctrl to talk',
-    hotkeyName: 'Right Alt / Right Ctrl'
+    hotkeyName: 'Right Alt / Right Ctrl',
+    commandModeOn: 'Command mode: ON (say a command, e.g. "to Traditional")',
+    commandModeOff: 'Command mode: OFF (back to normal dictation)',
+    commandDone: 'Done: {label}',
+    commandFailed: '{label} failed: {error}',
+    commandUnknown: 'No matching command: "{text}"',
+    commandError: 'Command execution failed'
   },
 
   // History page

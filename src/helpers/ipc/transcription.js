@@ -1,6 +1,16 @@
 const { ipcMain } = require("electron");
+const { runVoiceCommand } = require("../commandMode");
 
 module.exports = function register(ctx) {
+  // 操作模式：把一段辨識文字當指令派發（比對到才執行，否則回 matched:false）
+  ipcMain.handle("run-voice-command", async (_event, text) => {
+    try {
+      return await runVoiceCommand(ctx, text);
+    } catch (error) {
+      return { matched: false, success: false, error: error.message };
+    }
+  });
+
   // 录音相关
   ipcMain.handle("start-recording", async () => {
     // TODO: 实现录音开始功能

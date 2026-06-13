@@ -53,6 +53,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
   writeClipboard: (text) => ipcRenderer.invoke("write-clipboard", text),
   sendEnter: () => ipcRenderer.invoke("send-enter"),
 
+  // 操作模式：把辨識文字當語音指令派發
+  runVoiceCommand: (text) => ipcRenderer.invoke("run-voice-command", text),
+
   // 焦點管理 (Windows: 儲存和恢復前景視窗)
   saveForegroundWindow: () => ipcRenderer.invoke("save-foreground-window"),
   restoreForegroundWindow: () => ipcRenderer.invoke("restore-foreground-window"),

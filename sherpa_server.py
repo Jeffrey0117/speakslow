@@ -19,6 +19,7 @@ import numpy as np
 # 文字後處理層（簡轉繁/清理/標點規則/列點），抽至 text_processing.py
 from text_processing import (
     to_traditional,
+    to_simplified,
     clean_transcript,
     apply_punct_rules,
     format_lists,
@@ -1660,6 +1661,20 @@ class SherpaServer:
                     result = self.check_status()
                 elif action == "stats":
                     result = {"success": True, "stats": self.get_performance_stats()}
+                elif action == "text_transform":
+                    # 操作模式：對選取文字做純文字轉換（簡繁互轉等）
+                    mode = command.get("mode", "")
+                    src = command.get("text", "") or ""
+                    if mode in ("to_traditional", "s2tw"):
+                        out = to_traditional(src)
+                    elif mode in ("to_simplified", "tw2s"):
+                        out = to_simplified(src)
+                    else:
+                        result = {"success": False, "error": f"未知轉換模式: {mode}"}
+                        print(json.dumps(result, ensure_ascii=False))
+                        sys.stdout.flush()
+                        continue
+                    result = {"success": True, "text": out}
                 # ========== 串流辨識命令 ==========
                 # ========== 邊錄邊算（precog）命令 ==========
                 elif action == "precog_start":

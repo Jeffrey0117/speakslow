@@ -281,6 +281,8 @@ export default function App() {
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(true); // 視窗置頂狀態
   const [miniMode, setMiniMode] = useState(false); // 迷你模式（原地變身扁平浮窗）
   const [miniCopied, setMiniCopied] = useState(false); // 迷你條複製回饋
+  const [commandMode, setCommandMode] = useState(false); // 操作模式（語音指令，預設關閉）
+  const commandModeRef = useRef(false); // 給 safePaste 閉包讀最新值，避免 stale
   const [aiOptimizationEnabled, setAiOptimizationEnabled] = useState(false); // AI 優化狀態
 
   // 錄音完成後動作設定
@@ -507,6 +509,25 @@ export default function App() {
 
   // 安全粘贴函数（根據設定決定是否貼上和送出 Enter）
   const safePaste = useCallback(async (text) => {
+    // 操作模式：辨識結果不貼字，改當語音指令派發（攔在最前面）
+    if (commandModeRef.current) {
+      try {
+        const res = await window.electronAPI?.runVoiceCommand?.(text);
+        if (res?.matched) {
+          if (res.success) {
+            showNotification('success', t('panel.commandDone', { label: res.label }));
+          } else {
+            showNotification('warning', t('panel.commandFailed', { label: res.label, error: res.error || '' }));
+          }
+        } else {
+          showNotification('info', t('panel.commandUnknown', { text }));
+        }
+      } catch (e) {
+        showNotification('error', t('panel.commandError'));
+      }
+      return; // 操作模式不貼字
+    }
+
     const now = Date.now();
     const lastPaste = lastPasteRef.current;
 
@@ -875,6 +896,14 @@ export default function App() {
           case 'copy-last':
             handleCopyLastResult();
             break;
+          case 'toggle-command-mode': {
+            const next = !commandModeRef.current;
+            commandModeRef.current = next;
+            setCommandMode(next);
+            showNotification(next ? 'success' : 'info',
+              next ? t('panel.commandModeOn') : t('panel.commandModeOff'));
+            break;
+          }
           default:
             console.warn('未知的快捷鍵操作:', actionId);
         }

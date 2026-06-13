@@ -30,6 +30,25 @@ def to_traditional(text):
     except Exception:
         return text
 
+# 繁轉簡轉換器（供「操作模式」語音指令「轉成簡體」使用）
+try:
+    from opencc import OpenCC as _OpenCC2
+    try:
+        _opencc_t2s = _OpenCC2('tw2s')  # 繁體（台灣）→簡體
+    except Exception:
+        _opencc_t2s = _OpenCC2('t2s')   # 退回一般繁→簡
+except Exception:
+    _opencc_t2s = None
+
+def to_simplified(text):
+    """將繁體中文轉換為簡體中文"""
+    if not text or _opencc_t2s is None:
+        return text
+    try:
+        return _opencc_t2s.convert(text)
+    except Exception:
+        return text
+
 
 def normalize_ascii_width(text):
     """全形英文字母 / 數字 → 半形（不動中文與全形標點，避免破壞，。？）"""

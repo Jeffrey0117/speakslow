@@ -877,6 +877,12 @@ class SherpaManager {
   // ===== 邊錄邊算（precog）=====
   // 錄音進行中先把已講完的段落解碼掉（同一顆 Paraformer，精度零損失），
   // 停止時 transcribeAudio 帶 use_precog 取用結果 → 長講停止延遲降一個數量級。
+  // 操作模式：對文字做純轉換（簡繁互轉等），走 sherpa server 的 opencc
+  async transformText(text, mode) {
+    if (!this.serverReady) return { success: false, error: "服務器未就緒" };
+    return await this._sendServerCommand({ action: "text_transform", mode, text });
+  }
+
   async precogStart(profile = "standard") {
     if (!this.serverReady) return { success: false, error: "服務器未就緒" };
     return await this._sendServerCommand({ action: "precog_start", profile });

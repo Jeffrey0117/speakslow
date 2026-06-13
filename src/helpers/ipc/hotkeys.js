@@ -498,6 +498,14 @@ module.exports = function register(ctx) {
         }
       });
 
+      // 切換操作模式（語音指令）
+      ctx.hotkeyManager.setActionCallback('toggle-command-mode', (info) => {
+        self.logger.info(`快捷鍵觸發: toggle-command-mode (${info.accelerator})`);
+        if (self.windowManager?.mainWindow && !self.windowManager.mainWindow.isDestroyed()) {
+          self.windowManager.mainWindow.webContents.send("hotkey-action", { actionId: 'toggle-command-mode' });
+        }
+      });
+
       // 從資料庫讀取設定，並與預設值合併（確保新增的快捷鍵也會被註冊）
       const savedHotkeys = await ctx.databaseManager.getSetting('custom_hotkeys', null);
       const defaults = ctx.hotkeyManager.getDefaultHotkeys();

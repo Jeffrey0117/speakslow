@@ -124,6 +124,15 @@ class ClipboardManager {
     );
   }
 
+  // 快速：還原焦點到先前視窗並複製選取（Ctrl+C）—— 操作模式抓選取用
+  focusAndCopyFast() {
+    const ps = this._ensurePsShell();
+    if (!ps) return false;
+    return this._psSend(
+      `if ($savedHwnd -ne [IntPtr]::Zero) { Restore-Fg $savedHwnd; Start-Sleep -Milliseconds 25 }; $ws.SendKeys('^c')`
+    );
+  }
+
   // 快速：送出 Enter
   sendEnterFast() {
     const ps = this._ensurePsShell();

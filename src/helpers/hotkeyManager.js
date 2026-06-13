@@ -27,6 +27,7 @@ class HotkeyManager {
     this.defaultHotkeys = {
       'show-window': 'CommandOrControl+Shift+Q',
       'copy-last': 'CommandOrControl+Shift+C',
+      'toggle-command-mode': 'CommandOrControl+Shift+K',
     };
 
     // 系統保留快捷鍵（不允許使用）
@@ -100,6 +101,7 @@ class HotkeyManager {
       'cancel-recording': '取消錄音',
       'show-window': '顯示主視窗',
       'copy-last': '複製上次結果',
+      'toggle-command-mode': '切換操作模式',
     };
     return names[actionId] || actionId;
   }

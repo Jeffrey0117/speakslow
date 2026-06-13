@@ -328,7 +328,13 @@ export default {
     miniExpand: '展开面板',
     closeToTray: '收到托盘（不会关闭程序）',
     miniIdle: '按 右 Ctrl 说话',
-    hotkeyName: '右 Alt / 右 Ctrl'
+    hotkeyName: '右 Alt / 右 Ctrl',
+    commandModeOn: '操作模式：开（说出指令，例如「转成繁体」）',
+    commandModeOff: '操作模式：关（恢复一般听写）',
+    commandDone: '已执行：{label}',
+    commandFailed: '{label} 失败：{error}',
+    commandUnknown: '没有对应指令：「{text}」',
+    commandError: '指令执行失败'
   },
 
   // 历史记录页面
