@@ -135,18 +135,25 @@ async function applyToSelection(ctx, label, producer) {
     return { matched: true, success: false, label, error: e.message };
   }
 
-  // 4) 貼回去取代選取（pasteText 自己會還原焦點 + Ctrl+V）
-  try {
-    await clipboardManager.pasteText(out);
-  } catch (e) {
-    return { matched: true, success: false, label, error: "貼上失敗：" + e.message };
+  // 4) 貼回去取代選取（手動管剪貼簿，全程 await，避免計時還原打架）
+  clipboard.writeText(out);
+  if (!clipboardManager.focusAndPasteFast()) {
+    clipboard.writeText(userClipboard);
+    return { matched: true, success: false, label, error: "貼上失敗（PowerShell 未就緒）" };
+  }
+  await delay(280); // 等 Ctrl+V 落地
+
+  // 5) 讓「結果」維持選取：游標停在貼上文字末端，用 Shift+← 把整段選回來。
+  //    這樣指令流接「複製」或再一個轉換才有東西可吃（字元數計，CJK 多為 1）。
+  const count = [...out].length;
+  if (count > 0 && count <= 2000) {
+    // 用括號群組讓 Shift 在整段 LEFT 連按期間都按住（+({LEFT N})）
+    clipboardManager.focusAndSendKeysFast(`+({LEFT ${count}})`);
+    await delay(150);
   }
 
-  // 5) 蓋過 pasteText 的內部還原，把使用者「真正原本」的剪貼簿補回去
-  setTimeout(() => {
-    try { clipboard.writeText(userClipboard); } catch (e) { /* ignore */ }
-  }, 700);
-
+  // 6) 還原使用者原本的剪貼簿（貼上已 await 完成，安全；後續「複製」會自己再寫）
+  clipboard.writeText(userClipboard);
   return { matched: true, success: true, label };
 }
 
