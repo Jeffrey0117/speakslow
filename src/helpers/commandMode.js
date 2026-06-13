@@ -150,11 +150,18 @@ async function applyToSelection(ctx, label, producer) {
   return { matched: true, success: true, label };
 }
 
+// 指令流：把一句話依連接詞 / 標點拆成多段，依序執行（例：「全選然後翻成英文」）
+function splitCommands(text) {
+  return (text || "")
+    .split(/然後再|然後|接著|再來|之後|[，,、；;。]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 /**
- * 入口：拿到一段辨識文字，比對 + 執行。
- * @returns {{matched:boolean, success?:boolean, label?:string, error?:string}}
+ * 執行單一指令（比對 + 套用）。
  */
-async function runVoiceCommand(ctx, text) {
+async function runSingleCommand(ctx, text) {
   const cmd = matchCommand(text);
   if (!cmd) return { matched: false };
 
@@ -190,4 +197,32 @@ async function runVoiceCommand(ctx, text) {
   return { matched: false };
 }
 
-module.exports = { runVoiceCommand, matchCommand, BUILTIN_COMMANDS };
+/**
+ * 入口：拿到一段辨識文字，拆成指令流後依序執行。
+ * 單一指令 → 直接執行；多段（全選然後翻譯…）→ 照順序跑，段與段間留時間
+ * 讓前一個的選取／按鍵生效，這樣「全選 → 翻成英文」一句話就成立。
+ * @returns {{matched:boolean, success?:boolean, label?:string, error?:string}}
+ */
+async function runVoiceCommand(ctx, text) {
+  const segments = splitCommands(text);
+  if (segments.length <= 1) {
+    return await runSingleCommand(ctx, text);
+  }
+
+  const ran = [];
+  for (const seg of segments) {
+    const r = await runSingleCommand(ctx, seg);
+    if (r.matched) {
+      ran.push(r);
+      await delay(350); // 等選取／按鍵／貼上生效，下一段才接得上
+    }
+  }
+
+  if (ran.length === 0) return { matched: false };
+  const allOk = ran.every((r) => r.success);
+  const labels = ran.map((r) => r.label).join(" → ");
+  const firstErr = ran.find((r) => !r.success);
+  return { matched: true, success: allOk, label: labels, error: firstErr ? firstErr.error : undefined };
+}
+
+module.exports = { runVoiceCommand, matchCommand, splitCommands, BUILTIN_COMMANDS };
