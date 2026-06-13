@@ -96,10 +96,16 @@ function matchCommand(text) {
   const lastOf = (...ws) => Math.max(...ws.map((w) => norm.lastIndexOf(w)));
   const find = (pred) => BUILTIN_COMMANDS.find(pred) || null;
 
-  // 1) 簡繁互轉優先：用「繁體 / 簡體」關鍵詞判斷目標，動詞講法不限
+  // 1) 簡繁互轉：用「繁體 / 簡體」關鍵詞判斷目標，動詞講法不限。
+  //    但「繁體中文 / 簡體中文」是語言名（翻譯目標），不是簡繁轉換目標 → 跳過，
+  //    交給下面的翻譯規則（修：對英文說「翻譯成繁體中文」以前被當成簡繁轉換，
+  //    opencc 對英文無作用 → 看起來「沒反應」）。
   const tradIdx = lastOf("繁體", "繁体", "正體", "正体");
   const simpIdx = lastOf("簡體", "简体");
-  if (tradIdx !== -1 || simpIdx !== -1) {
+  const isChineseLangName =
+    norm.includes("繁體中文") || norm.includes("繁体中文") || norm.includes("正體中文") ||
+    norm.includes("簡體中文") || norm.includes("简体中文");
+  if (!isChineseLangName && (tradIdx !== -1 || simpIdx !== -1)) {
     const mode = tradIdx >= simpIdx ? "to_traditional" : "to_simplified";
     return find((c) => c.mode === mode);
   }
@@ -113,6 +119,10 @@ function matchCommand(text) {
   if (maxIdx !== -1) {
     if (maxIdx === enIdx) return find((c) => c.lang === "en");
     if (maxIdx === jaIdx) return find((c) => c.lang === "ja");
+    // 中文：簡體中文 → zh-CN（Google 直接給簡體），否則 zh-TW（繁體）
+    if (norm.includes("簡體") || norm.includes("简体")) {
+      return { kind: "translate", tl: "zh-CN", lang: "zh", label: "翻成簡體中文" };
+    }
     return find((c) => c.lang === "zh");
   }
   // 只講「翻譯 / 翻一下」沒指定語言 → 中↔英自動互翻（最常見的那對）

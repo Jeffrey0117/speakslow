@@ -93,7 +93,12 @@ const SettingsPage = () => {
           // 視窗控制設定
           window_always_on_top: allSettings.window_always_on_top !== false, // 默認置頂
           minimize_to_tray: allSettings.minimize_to_tray !== false, // 默認縮小到托盤
-          close_to_tray: allSettings.close_to_tray !== false // 默認關閉到托盤
+          close_to_tray: allSettings.close_to_tray !== false, // 默認關閉到托盤
+          // 視窗透明度（0.3~1）：之前漏在白名單外 → 開設定永遠顯示 100%（與實際脫鉤）
+          window_opacity: (() => {
+            const v = Number(allSettings.window_opacity);
+            return Number.isFinite(v) && v > 0 ? Math.max(0.3, Math.min(1, v)) : 1;
+          })()
         };
         setSettings(prev => ({ ...prev, ...loadedSettings }));
         
