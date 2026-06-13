@@ -13,6 +13,17 @@ class WindowManager {
     this._miniRepaintTimer = null; // 迷你模式期間的低頻重繪心跳（防閒置鬼影）
     this.isMini = false; // 視窗目前是否為迷你尺寸（渲染端重載後用來重新同步）
     this.commandMode = false; // 操作模式（主行程鏡像，給錄音指示器藥丸用）
+    this._userOpacity = 1; // 使用者設定的視窗透明度（迷你變形時要還原成這個，而非寫死 1）
+  }
+
+  // 設定視窗透明度（0.3~1）；迷你 / 一般面板共用
+  setWindowOpacity(value) {
+    const v = Math.max(0.3, Math.min(1, Number(value) || 1));
+    this._userOpacity = v;
+    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+      try { this.mainWindow.setOpacity(v); } catch (e) { /* ignore */ }
+    }
+    return { success: true, opacity: v };
   }
 
   // 操作模式狀態（渲染端 toggle 時鏡像到主行程，並廣播給錄音指示器小窗）
@@ -122,6 +133,17 @@ class WindowManager {
     this.mainWindow.on("closed", () => {
       this.mainWindow = null;
     });
+
+    // 套用使用者設定的視窗透明度（迷你 / 一般面板共用同一個值）
+    try {
+      const savedOpacity = this.databaseManager
+        ? this.databaseManager.getSetting('window_opacity', 1)
+        : 1;
+      this._userOpacity = Math.max(0.3, Math.min(1, Number(savedOpacity) || 1));
+      this.mainWindow.setOpacity(this._userOpacity);
+    } catch (e) {
+      this._userOpacity = 1;
+    }
 
     return this.mainWindow;
   }
@@ -404,10 +426,10 @@ class WindowManager {
       }
       win.setResizable(false);
       try { win.webContents.invalidate(); } catch (e) { /* ignore */ }
-      // 再給一個合成幀，確認新位置已畫好才淡回，避免淡回瞬間又抓到舊幀。
+      // 再給一個合成幀，確認新位置已畫好才淡回（還原成使用者設定的透明度，非寫死 1）。
       setTimeout(() => {
         if (!win || win.isDestroyed()) return;
-        win.setOpacity(1);
+        win.setOpacity(this._userOpacity != null ? this._userOpacity : 1);
       }, 50);
     }, 110);
 

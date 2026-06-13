@@ -114,6 +114,8 @@ export default {
     // 視窗控制
     windowControl: '🪟 視窗控制',
     windowControlDesc: '設定視窗置頂與系統托盤行為',
+    windowOpacity: '視窗透明度',
+    windowOpacityDesc: '讓面板半透明（迷你與一般面板共用），看得到底下的東西',
     alwaysOnTop: '視窗置頂',
     alwaysOnTopDesc: '讓應用程式視窗保持在其他視窗之上',
     alwaysOnTopEnabled: '視窗置頂已開啟',

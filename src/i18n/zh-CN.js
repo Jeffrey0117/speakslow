@@ -114,6 +114,8 @@ export default {
     // 窗口控制
     windowControl: '🪟 窗口控制',
     windowControlDesc: '设置窗口置顶与系统托盘行为',
+    windowOpacity: '窗口透明度',
+    windowOpacityDesc: '让面板半透明（迷你与一般面板共用），看得到底下的东西',
     alwaysOnTop: '窗口置顶',
     alwaysOnTopDesc: '让应用程序窗口保持在其他窗口之上',
     alwaysOnTopEnabled: '窗口置顶已开启',

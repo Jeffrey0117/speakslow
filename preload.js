@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   setAlwaysOnTop: (value) => ipcRenderer.invoke("set-always-on-top", value),
   setMiniMode: (enabled) => ipcRenderer.invoke("set-mini-mode", enabled),
   getMiniMode: () => ipcRenderer.invoke("get-mini-mode"),
+  setWindowOpacity: (value) => ipcRenderer.invoke("set-window-opacity", value),
   setCommandMode: (enabled) => ipcRenderer.invoke("set-command-mode", enabled),
   getCommandMode: () => ipcRenderer.invoke("get-command-mode"),
   onCommandModeChanged: (callback) => {

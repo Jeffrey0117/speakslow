@@ -114,6 +114,8 @@ export default {
     // Window controls
     windowControl: '🪟 Window Controls',
     windowControlDesc: 'Configure always-on-top and system tray behavior',
+    windowOpacity: 'Window Opacity',
+    windowOpacityDesc: 'Make the panel semi-transparent (mini and full panel share this) so you can see through it',
     alwaysOnTop: 'Always on Top',
     alwaysOnTopDesc: 'Keep the app window above other windows',
     alwaysOnTopEnabled: 'Always on top enabled',

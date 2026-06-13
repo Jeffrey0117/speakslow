@@ -138,6 +138,12 @@ const SettingsPage = () => {
     }));
   };
 
+  // 視窗透明度：即時套用 + 持久化（IPC 端會存設定）
+  const handleOpacityChange = async (value) => {
+    setSettings(prev => ({ ...prev, window_opacity: value }));
+    try { await window.electronAPI?.setWindowOpacity?.(value); } catch (e) { /* ignore */ }
+  };
+
   // 处理开关切换并自动保存
   const handleToggleChange = async (key, value) => {
     setSettings(prev => ({
@@ -594,6 +600,30 @@ const SettingsPage = () => {
                       } inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
                     />
                   </button>
+                </div>
+
+                {/* 視窗透明度滑桿（迷你 / 一般面板共用） */}
+                <div>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <label className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                      {t('settings.windowOpacity')}
+                    </label>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 tabular-nums">
+                      {Math.round((settings.window_opacity ?? 1) * 100)}%
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                    {t('settings.windowOpacityDesc')}
+                  </p>
+                  <input
+                    type="range"
+                    min="30"
+                    max="100"
+                    step="5"
+                    value={Math.round((settings.window_opacity ?? 1) * 100)}
+                    onChange={(e) => handleOpacityChange(Number(e.target.value) / 100)}
+                    className="w-full accent-blue-600 cursor-pointer"
+                  />
                 </div>
 
                 {/* 縮小到托盤開關 */}

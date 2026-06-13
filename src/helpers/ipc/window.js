@@ -200,6 +200,15 @@ module.exports = function register(ctx) {
     catch (error) { return false; }
   });
 
+  // 視窗透明度（迷你 / 一般共用）：套用 + 存設定
+  ipcMain.handle("set-window-opacity", async (event, value) => {
+    try {
+      const res = ctx.windowManager.setWindowOpacity(value);
+      try { ctx.databaseManager?.setSetting?.('window_opacity', res.opacity); } catch (e) { /* ignore */ }
+      return res;
+    } catch (error) { return { success: false, error: error.message }; }
+  });
+
   ipcMain.handle("set-always-on-top", async (event, value) => {
     try {
       ctx.windowManager.setMainWindowAlwaysOnTop(value);
