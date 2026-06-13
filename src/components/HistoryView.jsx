@@ -168,6 +168,45 @@ export const HistoryView = () => {
   const [filteredTranscriptions, setFilteredTranscriptions] = React.useState([]);
   const [stats, setStats] = React.useState(null);
   const [dailyStats, setDailyStats] = React.useState([]);
+  const [playingId, setPlayingId] = React.useState(null); // 正在播放的那筆 id
+  const audioRef = React.useRef(null);
+
+  // 播放 / 停止某筆錄音（讀 WAV → base64 → Audio 播）
+  const handlePlay = async (item) => {
+    try {
+      // 再點同一筆 → 停
+      if (playingId === item.id) {
+        if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+        setPlayingId(null);
+        return;
+      }
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+      const res = await window.electronAPI?.getAudioFile?.(item.audio_path);
+      if (!res?.success || !res.data) { setPlayingId(null); return; }
+      const a = new Audio(`data:${res.mimeType || 'audio/wav'};base64,${res.data}`);
+      audioRef.current = a;
+      a.onended = () => { setPlayingId(null); audioRef.current = null; };
+      a.play().catch(() => { setPlayingId(null); });
+      setPlayingId(item.id);
+    } catch (e) {
+      setPlayingId(null);
+    }
+  };
+
+  // 下載 / 另存錄音
+  const handleDownload = async (item) => {
+    try {
+      const sd = await window.electronAPI?.showSaveDialog?.({
+        defaultPath: `recording_${item.id}.wav`,
+        filters: [{ name: 'WAV', extensions: ['wav'] }],
+      });
+      if (sd?.canceled || !sd?.filePath) return;
+      await window.electronAPI?.saveAudioFile?.(item.audio_path, sd.filePath);
+    } catch (e) { /* ignore */ }
+  };
+
+  // 離開頁面時停掉播放
+  React.useEffect(() => () => { if (audioRef.current) { try { audioRef.current.pause(); } catch (e) {} } }, []);
 
   const handleCopy = async (text) => {
     try {
@@ -362,6 +401,30 @@ export const HistoryView = () => {
                   <div className="flex space-x-2">
                     {item.audio_path && (
                       <>
+                        <button
+                          onClick={() => handlePlay(item)}
+                          className="p-2 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
+                          title={playingId === item.id ? t('history.stopPlay') : t('history.play')}
+                        >
+                          {playingId === item.id ? (
+                            <svg className="w-4 h-4 text-emerald-500 dark:text-emerald-400" fill="currentColor" viewBox="0 0 24 24">
+                              <rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" />
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4 text-emerald-500 dark:text-emerald-400" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z" />
+                            </svg>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleDownload(item)}
+                          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                          title={t('history.download')}
+                        >
+                          <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                        </button>
                         <button
                           onClick={() => handleRetranscribe(item.id, 'paraformer')}
                           disabled={retranscribingId === item.id}
