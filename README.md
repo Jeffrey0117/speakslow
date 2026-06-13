@@ -15,7 +15,7 @@
 <img src="https://img.shields.io/badge/ASR-sherpa--onnx-orange" alt="ASR">
 <img src="https://img.shields.io/badge/100%25-local-success" alt="Local">
 
-🌐 **[官方網站 / 介紹頁](https://jeffrey0117.github.io/SpeakSlow/)**
+🌐 **[官方網站 / 介紹頁](https://jeffrey0117.github.io/SpeakSlow/)** ・ 📖 **[完整使用教學](https://jeffrey0117.github.io/SpeakSlow/#/guide)**
 
 </div>
 
