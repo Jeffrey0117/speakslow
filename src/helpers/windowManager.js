@@ -356,29 +356,33 @@ class WindowManager {
     //（DWM 不清、底下的 app 不重繪就一直掛著）。hide 會強迫合成器清掉
     // 整個舊表面，show 之後只有新位置有像素。
     this.mainWindow.hide();
-    this.mainWindow.setResizable(true);
-    if (enabled) {
-      this._preMiniBounds = this.mainWindow.getBounds();
-      const wa = screen.getPrimaryDisplay().workArea;
-      const w = 300;
-      const h = 64;
-      this.mainWindow.setMinimumSize(w, h);
-      this.mainWindow.setBounds({
-        x: wa.x + wa.width - w - 16,
-        y: wa.y + wa.height - h - 16,
-        width: w,
-        height: h,
-      });
-    } else if (this._preMiniBounds) {
-      this.mainWindow.setMinimumSize(472, 470);
-      this.mainWindow.setBounds(this._preMiniBounds);
-    }
-    this.mainWindow.setResizable(false);
-    this.mainWindow.show();
-    // 透明視窗縮放後 Windows 常留殘影（DWM 不重繪舊區域），強制重繪一次
+    // hide 與 show 不能同一拍：DWM 需要一個合成幀才會真正丟棄舊表面，
+    // 否則舊位置的像素仍會殘留在畫面上（實測 hide+show 同步呼叫仍有殘影）。
     setTimeout(() => {
-      try { this.mainWindow.webContents.invalidate(); } catch (e) { /* ignore */ }
-    }, 60);
+      if (!this.mainWindow || this.mainWindow.isDestroyed()) return;
+      this.mainWindow.setResizable(true);
+      if (enabled) {
+        const wa = screen.getPrimaryDisplay().workArea;
+        const w = 300;
+        const h = 64;
+        this.mainWindow.setMinimumSize(w, h);
+        this.mainWindow.setBounds({
+          x: wa.x + wa.width - w - 16,
+          y: wa.y + wa.height - h - 16,
+          width: w,
+          height: h,
+        });
+      } else if (this._preMiniBounds) {
+        this.mainWindow.setMinimumSize(472, 470);
+        this.mainWindow.setBounds(this._preMiniBounds);
+      }
+      this.mainWindow.setResizable(false);
+      this.mainWindow.show();
+      setTimeout(() => {
+        try { this.mainWindow.webContents.invalidate(); } catch (e) { /* ignore */ }
+      }, 60);
+    }, 90);
+    if (enabled) this._preMiniBounds = this.mainWindow.getBounds();
     return { success: true, mini: enabled };
   }
 
