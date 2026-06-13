@@ -1153,19 +1153,19 @@ export default function App() {
       success: 'text-emerald-500 dark:text-emerald-400',
       error: 'text-red-500 dark:text-red-400',
       warning: 'text-amber-500 dark:text-amber-400',
-      info: 'text-orange-500 dark:text-orange-400',
+      info: 'text-sky-500 dark:text-sky-400',
     }[miniFlash.type] || 'text-gray-900 dark:text-white') : '';
     return (
       <div
         className={`h-screen w-screen flex items-center gap-3 px-3 bg-white/95 dark:bg-gray-900/95 rounded-xl shadow-2xl overflow-hidden select-none ${
           commandMode
-            ? 'border-2 border-orange-500 ring-1 ring-orange-400/40'
+            ? 'border-2 border-sky-500 ring-1 ring-sky-400/40'
             : 'border border-gray-200 dark:border-gray-700/70'
         }`}
         style={{ WebkitAppRegion: 'drag' }}
       >
         <div className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
-          isRecording ? 'bg-red-500 animate-pulse' : commandMode ? 'bg-orange-100 dark:bg-orange-900/40' : 'bg-gray-100 dark:bg-gray-800'
+          isRecording ? 'bg-red-500 animate-pulse' : commandMode ? 'bg-sky-100 dark:bg-sky-900/40' : 'bg-gray-100 dark:bg-gray-800'
         }`}>
           <img src="./icon.png" alt="" className="w-7 h-7 rounded-md" draggable="false" />
         </div>
@@ -1173,11 +1173,11 @@ export default function App() {
           <div className={`text-[13px] font-semibold leading-tight ${
             miniFlash ? flashColor
               : isRecording ? 'text-red-500 dark:text-red-400'
-              : commandMode ? 'text-orange-600 dark:text-orange-400'
+              : commandMode ? 'text-sky-600 dark:text-sky-400'
               : 'text-gray-900 dark:text-white'
           }`}>
             {miniFlash ? miniFlash.message
-              : isRecording ? t('panel.recordingIndicator')
+              : isRecording ? (commandMode ? t('panel.commandListening') : t('panel.recordingIndicator'))
               : (isRecordingProcessing || isOptimizing) ? t('app.processing')
               : commandMode ? t('panel.commandModeBadge')
               : t('panel.miniIdle')}
@@ -1226,7 +1226,7 @@ export default function App() {
     <div className="h-screen w-screen p-8">
       {/* 卡片：透明外層留足夠邊距，讓柔和陰影完整顯示、不被視窗裁成硬邊方塊 */}
       <div className={`h-full bg-gradient-to-br from-slate-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 px-4 pt-4 pb-2 rounded-3xl overflow-hidden flex flex-col shadow-[0_10px_30px_rgba(0,0,0,0.16)] ${
-        commandMode ? 'ring-2 ring-orange-500 ring-inset' : ''
+        commandMode ? 'ring-2 ring-sky-500 ring-inset' : ''
       }`}>
       {/* 主界面 */}
       <div className="w-full max-w-2xl mx-auto flex-1 min-h-0 flex flex-col">
@@ -1243,8 +1243,8 @@ export default function App() {
                 {t('appName')}
               </h1>
               {commandMode && (
-                <span className="non-draggable inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300 border border-orange-300 dark:border-orange-700">
-                  <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+                <span className="non-draggable inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-sky-100 text-sky-700 dark:bg-sky-900/50 dark:text-sky-300 border border-sky-300 dark:border-sky-700">
+                  <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse" />
                   {t('panel.commandModeBadge')}
                 </span>
               )}
