@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 
 const LINKS = [
   { to: '/', label: '首頁' },
+  { to: '/guide', label: '使用教學' },
   { to: '/why', label: '為什麼免費' },
   { to: '/compare', label: '工具比較' },
   { to: '/story', label: '開發故事' },

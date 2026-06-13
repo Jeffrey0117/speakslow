@@ -5,6 +5,7 @@ import DualDisplayPage from './pages/DualDisplayPage'
 import WhyFreePage from './pages/WhyFreePage'
 import ComparePage from './pages/ComparePage'
 import StoryPage from './pages/StoryPage'
+import GuidePage from './pages/GuidePage'
 import './index.css'
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
     <HashRouter>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/guide" element={<GuidePage />} />
         <Route path="/why" element={<WhyFreePage />} />
         <Route path="/compare" element={<ComparePage />} />
         <Route path="/story" element={<StoryPage />} />
