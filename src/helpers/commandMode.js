@@ -114,9 +114,11 @@ const EMOJI_MAP = {
 
 function lookupEmoji(norm) {
   if (!norm) return null;
-  // 容忍「火焰表情 / 火焰符號 / 火焰的表情」這種講法
-  const key = norm.replace(/的$/, "").replace(/(表情符號|表情|符號|emoji)$/i, "").replace(/的$/, "");
-  return EMOJI_MAP[key] || EMOJI_MAP[norm] || null;
+  // 必須帶「表情 / 符號 / emoji」後綴才當表情輸入，避免「火焰」這種被當文字的詞被誤吃。
+  // 沒後綴 → 不是表情；有後綴但名字沒對應（瘋狗表情）→ 也回 null，交給後面處理。
+  const m = norm.match(/^(.+?)的?(表情符號|表情|符號|emoji)$/i);
+  if (!m) return null;
+  return EMOJI_MAP[m[1]] || null;
 }
 
 // 正規化辨識結果：去空白、去標點、轉小寫，方便關鍵詞比對
