@@ -139,12 +139,11 @@ async function applyToSelection(ctx, label, producer) {
   }
   await delay(280); // 等 Ctrl+V 落地
 
-  // （不再用 Shift+← 把結果選回來 —— 那會在畫面上一格一格刷、又醜又慢。
-  //   指令流的「複製」改成直接拿 resultText 寫剪貼簿，不需要靠選取。）
-
-  // 還原使用者原本的剪貼簿（貼上已 await 完成，安全；後續「複製」會自己再寫）
-  clipboard.writeText(userClipboard);
-  // resultText 讓指令流的「複製」可以直接拿結果寫剪貼簿（不靠脆弱的選取+Ctrl+C）
+  // 刻意「不還原」使用者原本的剪貼簿 —— 讓結果留在剪貼簿。
+  // 這樣唯讀來源（文章 / PDF：選得到字但貼不回去）也救得回：貼上失敗沒關係，
+  // 結果就在剪貼簿，使用者自己 Ctrl+V 貼到別處即可。可編輯來源則照樣在地替換，
+  // 結果也順便在剪貼簿（無害）。代價只是蓋掉原本剪貼簿內容，剛做完轉換很直覺。
+  // resultText 讓指令流的「複製」可以直接拿結果（不靠脆弱的選取+Ctrl+C）。
   return { matched: true, success: true, label, resultText: out };
 }
 
@@ -280,7 +279,14 @@ async function runVoiceCommand(ctx, text) {
   const allOk = ran.every((r) => r.success);
   const labels = ran.map((r) => r.label).join(" → ");
   const firstErr = ran.find((r) => !r.success);
-  return { matched: true, success: allOk, label: labels, error: firstErr ? firstErr.error : undefined };
+  // 帶上最後的轉換結果（若有）→ 讓提示顯示「已複製」、唯讀來源也救得回
+  return {
+    matched: true,
+    success: allOk,
+    label: labels,
+    error: firstErr ? firstErr.error : undefined,
+    resultText: lastResult != null ? lastResult : undefined,
+  };
 }
 
 module.exports = { runVoiceCommand, matchCommand, splitCommands, BUILTIN_COMMANDS };

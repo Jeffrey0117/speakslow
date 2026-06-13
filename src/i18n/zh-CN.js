@@ -338,6 +338,7 @@ export default {
     commandRescued: '改为听写（这段照打出来）',
     commandToggleIgnored: '听写中，不切换（要切请先讲完或按 Esc）',
     commandDone: '✓ {label}',
+    commandDoneCopied: '✓ {label}（已复制）',
     commandFailed: '{label}：{error}',
     commandUnknown: '没有对应指令',
     commandError: '指令失败'

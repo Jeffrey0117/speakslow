@@ -562,7 +562,12 @@ export default function App() {
         const res = await window.electronAPI?.runVoiceCommand?.(text);
         if (res?.matched) {
           if (res.success) {
-            showNotification('success', t('panel.commandDone', { label: res.label }));
+            // 有 resultText 代表是轉換/翻譯/AI（結果已在剪貼簿）→ 提示已複製，
+            // 這樣唯讀來源貼不回去時，使用者也知道可以自己 Ctrl+V
+            showNotification('success',
+              res.resultText
+                ? t('panel.commandDoneCopied', { label: res.label })
+                : t('panel.commandDone', { label: res.label }));
           } else {
             showNotification('warning', t('panel.commandFailed', { label: res.label, error: res.error || '' }));
           }

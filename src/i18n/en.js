@@ -338,6 +338,7 @@ export default {
     commandRescued: 'Switched to dictation (this one types out)',
     commandToggleIgnored: "Dictating — not switching (finish or press Esc first)",
     commandDone: '✓ {label}',
+    commandDoneCopied: '✓ {label} (copied)',
     commandFailed: '{label}: {error}',
     commandUnknown: 'No matching command',
     commandError: 'Command failed'
