@@ -351,7 +351,7 @@ export default function App() {
     if (miniModeRef.current) {
       setMiniFlash({ type, message });
       if (miniFlashTimer.current) clearTimeout(miniFlashTimer.current);
-      miniFlashTimer.current = setTimeout(() => setMiniFlash(null), 1800);
+      miniFlashTimer.current = setTimeout(() => setMiniFlash(null), 1000);
       return;
     }
     toast[type](message, options);
@@ -1163,7 +1163,7 @@ export default function App() {
       success: 'text-emerald-500 dark:text-emerald-400',
       error: 'text-red-500 dark:text-red-400',
       warning: 'text-amber-500 dark:text-amber-400',
-      info: 'text-sky-500 dark:text-sky-400',
+      info: 'text-gray-700 dark:text-gray-200',
     }[miniFlash.type] || 'text-gray-900 dark:text-white') : '';
     return (
       <div
