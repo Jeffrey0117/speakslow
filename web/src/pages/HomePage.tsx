@@ -5,7 +5,7 @@ import Nav from '../components/Nav'
 
 const REPO = 'https://github.com/Jeffrey0117/SpeakSlow'
 // 一鍵直接下載最新版 exe（不丟到 Releases 頁讓人猜要點哪個檔）
-const DOWNLOAD = `${REPO}/releases/latest/download/SpeakSlow-Setup.exe`
+const DOWNLOAD = `${REPO}/releases/download/v1.0.7/SpeakSlow-Setup-1.0.7.exe`
 
 export default function HomePage() {
   return (

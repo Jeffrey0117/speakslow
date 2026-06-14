@@ -10,7 +10,7 @@ const LINKS = [
 ]
 
 // 一鍵直接下載最新版 exe（不丟到 Releases 頁讓人猜要點哪個檔）
-const RELEASES = 'https://github.com/Jeffrey0117/SpeakSlow/releases/latest/download/SpeakSlow-Setup.exe'
+const RELEASES = 'https://github.com/Jeffrey0117/SpeakSlow/releases/download/v1.0.7/SpeakSlow-Setup-1.0.7.exe'
 
 export default function Nav() {
   const { pathname } = useLocation()
