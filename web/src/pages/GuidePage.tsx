@@ -343,9 +343,7 @@ export default function GuidePage() {
         {/* CTA */}
         <div className="text-center mt-12">
           <a
-            href="https://github.com/Jeffrey0117/SpeakSlow/releases"
-            target="_blank"
-            rel="noreferrer"
+            href="https://github.com/Jeffrey0117/SpeakSlow/releases/latest/download/SpeakSlow-Setup.exe"
             className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition-colors shadow-lg"
           >
             免費下載，跟著教學玩一遍

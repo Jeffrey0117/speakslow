@@ -4,6 +4,8 @@ import screenshot from '../assets/screenshot.png'
 import Nav from '../components/Nav'
 
 const REPO = 'https://github.com/Jeffrey0117/SpeakSlow'
+// 一鍵直接下載最新版 exe（不丟到 Releases 頁讓人猜要點哪個檔）
+const DOWNLOAD = `${REPO}/releases/latest/download/SpeakSlow-Setup.exe`
 
 export default function HomePage() {
   return (
@@ -41,9 +43,7 @@ export default function HomePage() {
           {/* Primary CTAs */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
             <a
-              href={`${REPO}/releases`}
-              target="_blank"
-              rel="noreferrer"
+              href={DOWNLOAD}
               className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition-colors shadow-lg"
             >
               <Download className="w-5 h-5" /> 下載 Windows 版（免費）
